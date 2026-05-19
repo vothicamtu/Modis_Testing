@@ -1,0 +1,300 @@
+name: Modis Performance Tests
+
+on:
+  # Run on schedule (weekly)
+  schedule:
+    - cron: '0 2 * * 1'  # Every Monday at 2 AM UTC
+  
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of performance test to run'
+        required: true
+        default: 'load'
+        type: choice
+        options:
+          - load
+          - stress
+          - spike
+          - endurance
+          - all
+      users:
+        description: 'Number of concurrent users'
+        required: false
+        default: '50'
+      duration:
+        description: 'Test duration in seconds'
+        required: false
+        default: '300'
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+  # Run on PR to main (smoke test only)
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Modis_BE_TL/**'
+      - 'testing/performance/**'
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    
+    strategy:
+      matrix:
+        java-version: [11]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ matrix.java-version }}
+        distribution: 'temurin'
+        
+    - name: Cache JMeter installation
+      uses: actions/cache@v3
+      with:
+        path: ~/apache-jmeter
+        key: jmeter-5.6.3
+        
+    - name: Install JMeter
+      run: |
+        if [ ! -d ~/apache-jmeter ]; then
+          cd ~
+          wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip
+          unzip apache-jmeter-5.6.3.zip
+          mv apache-jmeter-5.6.3 apache-jmeter
+        fi
+        echo "$HOME/apache-jmeter/bin" >> $GITHUB_PATH
+        
+    - name: Verify JMeter installation
+      run: |
+        jmeter -v
+        
+    - name: Set up test environment
+      working-directory: testing/performance/jmeter
+      run: |
+        chmod +x scripts/setup-environment.sh
+        ./scripts/setup-environment.sh
+        
+    - name: Create sample image
+      working-directory: testing/performance/jmeter
+      run: |
+        # Create a simple test image using ImageMagick
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
+        convert -size 400x400 xc:lightblue \
+                -pointsize 30 -fill black -gravity center \
+                -annotate +0+0 "CI Test Image" \
+                test-data/sample-image.jpg
+                
+    - name: Determine test configuration
+      id: test-config
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          echo "test_type=smoke" >> $GITHUB_OUTPUT
+          echo "users=1" >> $GITHUB_OUTPUT
+          echo "duration=60" >> $GITHUB_OUTPUT
+          echo "ramp_up=10" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event.inputs.test_type }}" == "all" ]; then
+          echo "test_type=all" >> $GITHUB_OUTPUT
+          echo "users=25" >> $GITHUB_OUTPUT
+          echo "duration=300" >> $GITHUB_OUTPUT
+          echo "ramp_up=60" >> $GITHUB_OUTPUT
+        else
+          echo "test_type=${{ github.event.inputs.test_type || 'load' }}" >> $GITHUB_OUTPUT
+          echo "users=${{ github.event.inputs.users || '50' }}" >> $GITHUB_OUTPUT
+          echo "duration=${{ github.event.inputs.duration || '300' }}" >> $GITHUB_OUTPUT
+          echo "ramp_up=$((${{ github.event.inputs.users || '50' }} * 2))" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Set target environment
+      id: environment
+      run: |
+        if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+          echo "base_url=https://modis-backend.onrender.com" >> $GITHUB_OUTPUT
+        else
+          echo "base_url=https://modis-backend-staging.onrender.com" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Run smoke test (PR only)
+      if: github.event_name == 'pull_request'
+      working-directory: testing/performance/jmeter
+      run: |
+        echo "Running smoke test for PR validation..."
+        jmeter -n -t test-plans/load-tests/modis-load-test.jmx \
+          -Jusers=1 \
+          -Jramp_up=10 \
+          -Jduration=60 \
+          -Jbase_url=${{ steps.environment.outputs.base_url }} \
+          -l results/smoke-test-pr.jtl \
+          -e -o reports/smoke-test-pr
+          
+    - name: Run load test
+      if: steps.test-config.outputs.test_type == 'load' || steps.test-config.outputs.test_type == 'all'
+      working-directory: testing/performance/jmeter
+      run: |
+        echo "Running load test..."
+        jmeter -n -t test-plans/load-tests/modis-load-test.jmx \
+          -Jusers=${{ steps.test-config.outputs.users }} \
+          -Jramp_up=${{ steps.test-config.outputs.ramp_up }} \
+          -Jduration=${{ steps.test-config.outputs.duration }} \
+          -Jbase_url=${{ steps.environment.outputs.base_url }} \
+          -l results/load-test-ci.jtl \
+          -e -o reports/load-test-ci
+          
+    - name: Run stress test
+      if: steps.test-config.outputs.test_type == 'stress' || steps.test-config.outputs.test_type == 'all'
+      working-directory: testing/performance/jmeter
+      run: |
+        echo "Running stress test..."
+        jmeter -n -t test-plans/stress-tests/modis-stress-test.jmx \
+          -Jusers=$((${{ steps.test-config.outputs.users }} * 2)) \
+          -Jramp_up=${{ steps.test-config.outputs.ramp_up }} \
+          -Jduration=${{ steps.test-config.outputs.duration }} \
+          -Jbase_url=${{ steps.environment.outputs.base_url }} \
+          -l results/stress-test-ci.jtl \
+          -e -o reports/stress-test-ci
+          
+    - name: Run spike test
+      if: steps.test-config.outputs.test_type == 'spike' || steps.test-config.outputs.test_type == 'all'
+      working-directory: testing/performance/jmeter
+      run: |
+        echo "Running spike test..."
+        jmeter -n -t test-plans/spike-tests/modis-spike-test.jmx \
+          -Jusers=$((${{ steps.test-config.outputs.users }} * 5)) \
+          -Jramp_up=30 \
+          -Jduration=180 \
+          -Jbase_url=${{ steps.environment.outputs.base_url }} \
+          -l results/spike-test-ci.jtl \
+          -e -o reports/spike-test-ci
+          
+    - name: Run image upload test
+      if: steps.test-config.outputs.test_type == 'load' || steps.test-config.outputs.test_type == 'all'
+      working-directory: testing/performance/jmeter
+      run: |
+        echo "Running image upload test..."
+        jmeter -n -t test-plans/load-tests/modis-image-upload-test.jmx \
+          -Jusers=10 \
+          -Jramp_up=60 \
+          -Jduration=300 \
+          -Jbase_url=${{ steps.environment.outputs.base_url }} \
+          -l results/image-upload-test-ci.jtl \
+          -e -o reports/image-upload-test-ci
+          
+    - name: Analyze results
+      working-directory: testing/performance/jmeter
+      run: |
+        echo "Analyzing performance test results..."
+        
+        # Create results summary
+        echo "# Performance Test Results Summary" > results-summary.md
+        echo "**Date:** $(date)" >> results-summary.md
+        echo "**Environment:** ${{ steps.environment.outputs.base_url }}" >> results-summary.md
+        echo "**Test Type:** ${{ steps.test-config.outputs.test_type }}" >> results-summary.md
+        echo "**Users:** ${{ steps.test-config.outputs.users }}" >> results-summary.md
+        echo "**Duration:** ${{ steps.test-config.outputs.duration }}s" >> results-summary.md
+        echo "" >> results-summary.md
+        
+        # Analyze each result file
+        for jtl_file in results/*.jtl; do
+          if [ -f "$jtl_file" ]; then
+            test_name=$(basename "$jtl_file" .jtl)
+            echo "## $test_name Results" >> results-summary.md
+            
+            # Calculate basic metrics
+            total_samples=$(tail -n +2 "$jtl_file" | wc -l)
+            if [ $total_samples -gt 0 ]; then
+              avg_response_time=$(tail -n +2 "$jtl_file" | cut -d',' -f2 | awk '{sum+=$1} END {print sum/NR}')
+              error_count=$(tail -n +2 "$jtl_file" | cut -d',' -f8 | grep -c "false" || echo "0")
+              error_rate=$(echo "scale=2; $error_count * 100 / $total_samples" | bc -l)
+              
+              echo "- **Total Samples:** $total_samples" >> results-summary.md
+              echo "- **Average Response Time:** ${avg_response_time}ms" >> results-summary.md
+              echo "- **Error Rate:** ${error_rate}%" >> results-summary.md
+              echo "" >> results-summary.md
+              
+              # Check if results meet criteria
+              if (( $(echo "$avg_response_time > 5000" | bc -l) )); then
+                echo "⚠️ **WARNING:** Average response time exceeds 5 seconds" >> results-summary.md
+              fi
+              
+              if (( $(echo "$error_rate > 2" | bc -l) )); then
+                echo "❌ **FAILURE:** Error rate exceeds 2%" >> results-summary.md
+                echo "performance_test_failed=true" >> $GITHUB_ENV
+              fi
+            fi
+          fi
+        done
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-test-results-${{ github.run_number }}
+        path: |
+          testing/performance/jmeter/results/
+          testing/performance/jmeter/reports/
+          testing/performance/jmeter/results-summary.md
+        retention-days: 30
+        
+    - name: Comment PR with results (PR only)
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = 'testing/performance/jmeter/results-summary.md';
+          
+          if (fs.existsSync(path)) {
+            const summary = fs.readFileSync(path, 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 Performance Test Results\n\n${summary}\n\n📊 Full results are available in the [workflow artifacts](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
+            });
+          }
+          
+    - name: Fail if performance criteria not met
+      if: env.performance_test_failed == 'true'
+      run: |
+        echo "Performance test failed to meet criteria"
+        exit 1
+        
+    - name: Notify Slack (on failure)
+      if: failure() && github.event_name != 'pull_request'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: |
+          🚨 Modis Performance Test Failed
+          Test Type: ${{ steps.test-config.outputs.test_type }}
+          Environment: ${{ steps.environment.outputs.base_url }}
+          Check the workflow for details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        
+    - name: Notify Slack (on success)
+      if: success() && github.event_name != 'pull_request'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: |
+          ✅ Modis Performance Test Passed
+          Test Type: ${{ steps.test-config.outputs.test_type }}
+          Environment: ${{ steps.environment.outputs.base_url }}
+          Results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

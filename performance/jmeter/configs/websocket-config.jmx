@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="WebSocket Configuration for Modis" enabled="true">
+      <stringProp name="TestPlan.comments">WebSocket/STOMP configuration for real-time features testing</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="WS_BASE_URL" elementType="Argument">
+            <stringProp name="Argument.name">WS_BASE_URL</stringProp>
+            <stringProp name="Argument.value">${__P(wshost,modis-backend.onrender.com)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="WS_PROTOCOL" elementType="Argument">
+            <stringProp name="Argument.name">WS_PROTOCOL</stringProp>
+            <stringProp name="Argument.value">wss</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="WS_PATH" elementType="Argument">
+            <stringProp name="Argument.name">WS_PATH</stringProp>
+            <stringProp name="Argument.value">/ws</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <!-- WebSocket Sampler Template -->
+      <BeanShellSampler guiclass="BeanShellSamplerGui" testclass="BeanShellSampler" testname="WebSocket Connection Template" enabled="false">
+        <stringProp name="BeanShellSampler.query">
+// WebSocket connection simulation for STOMP protocol
+// This is a template - actual WebSocket testing requires WebSocket samplers plugin
+
+import java.net.URI;
+import java.util.concurrent.CountDownLatch;
+
+// WebSocket connection parameters
+String wsUrl = "${WS_PROTOCOL}://${WS_BASE_URL}${WS_PATH}?token=" + vars.get("jwt_token");
+log.info("Connecting to WebSocket: " + wsUrl);
+
+// STOMP frame templates
+String connectFrame = "CONNECT\n" +
+                     "accept-version:1.0,1.1,2.0\n" +
+                     "heart-beat:10000,10000\n" +
+                     "\n" +
+                     "\u0000";
+
+String subscribeFrame = "SUBSCRIBE\n" +
+                       "id:sub-0\n" +
+                       "destination:/user/queue/private\n" +
+                       "\n" +
+                       "\u0000";
+
+String messageFrame = "SEND\n" +
+                     "destination:/app/private\n" +
+                     "content-type:application/json\n" +
+                     "\n" +
+                     "{\"receiverId\":\"" + vars.get("target_user_id") + "\",\"content\":\"Test message from performance test\"}\n" +
+                     "\u0000";
+
+// Store frames for use in actual WebSocket samplers
+vars.put("stomp_connect_frame", connectFrame);
+vars.put("stomp_subscribe_frame", subscribeFrame);
+vars.put("stomp_message_frame", messageFrame);
+vars.put("ws_url", wsUrl);
+
+SampleResult.setSuccessful(true);
+SampleResult.setResponseMessage("WebSocket frames prepared");
+SampleResult.setResponseData("STOMP frames generated for WebSocket testing", "UTF-8");
+        </stringProp>
+        <stringProp name="BeanShellSampler.filename"></stringProp>
+        <stringProp name="BeanShellSampler.parameters"></stringProp>
+        <boolProp name="BeanShellSampler.resetInterpreter">false</boolProp>
+      </BeanShellSampler>
+      <hashTree/>
+      
+      <!-- Message Templates for Chat Testing -->
+      <BeanShellPreProcessor guiclass="TestBeanGUI" testclass="BeanShellPreProcessor" testname="Generate Chat Message" enabled="false">
+        <stringProp name="BeanShellPreProcessor.query">
+// Generate random chat message for testing
+String[] messageTypes = {"text", "emoji", "reaction"};
+String[] textMessages = {
+    "Hey! How are you?",
+    "What's up?",
+    "Nice photo!",
+    "Thanks for sharing!",
+    "Love this! 💕",
+    "Amazing work!",
+    "So cool! 😎",
+    "Great shot! 📸",
+    "This is awesome!",
+    "Keep it up! 💪"
+};
+String[] emojis = {"😊", "❤️", "👍", "😂", "🔥", "😍", "🎉", "💪", "👏", "🌟"};
+
+String messageType = messageTypes[(int)(Math.random() * messageTypes.length)];
+String content = "";
+
+if (messageType.equals("text")) {
+    content = textMessages[(int)(Math.random() * textMessages.length)];
+} else if (messageType.equals("emoji")) {
+    content = emojis[(int)(Math.random() * emojis.length)];
+} else {
+    content = emojis[(int)(Math.random() * emojis.length)];
+}
+
+vars.put("message_type", messageType);
+vars.put("message_content", content);
+vars.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        </stringProp>
+        <stringProp name="BeanShellPreProcessor.filename"></stringProp>
+        <stringProp name="BeanShellPreProcessor.parameters"></stringProp>
+        <boolProp name="BeanShellPreProcessor.resetInterpreter">false</boolProp>
+      </BeanShellPreProcessor>
+      <hashTree/>
+      
+      <!-- Real-time Event Simulation -->
+      <BeanShellSampler guiclass="BeanShellSamplerGui" testclass="BeanShellSampler" testname="Simulate Real-time Events" enabled="false">
+        <stringProp name="BeanShellSampler.query">
+// Simulate various real-time events that would trigger WebSocket messages
+String[] eventTypes = {
+    "new_post", "post_reaction", "friend_request", 
+    "message_received", "user_online", "user_offline"
+};
+
+String eventType = eventTypes[(int)(Math.random() * eventTypes.length)];
+String eventData = "";
+
+switch(eventType) {
+    case "new_post":
+        eventData = "{\"type\":\"new_post\",\"postId\":\"" + (int)(Math.random() * 1000) + "\",\"userId\":\"" + vars.get("user_id") + "\"}";
+        break;
+    case "post_reaction":
+        eventData = "{\"type\":\"post_reaction\",\"postId\":\"" + (int)(Math.random() * 1000) + "\",\"emoji\":\"❤️\",\"userId\":\"" + vars.get("user_id") + "\"}";
+        break;
+    case "friend_request":
+        eventData = "{\"type\":\"friend_request\",\"fromUserId\":\"" + vars.get("user_id") + "\",\"toUserId\":\"" + (int)(Math.random() * 100) + "\"}";
+        break;
+    case "message_received":
+        eventData = "{\"type\":\"message_received\",\"fromUserId\":\"" + (int)(Math.random() * 100) + "\",\"content\":\"" + vars.get("message_content") + "\"}";
+        break;
+    case "user_online":
+        eventData = "{\"type\":\"user_online\",\"userId\":\"" + vars.get("user_id") + "\"}";
+        break;
+    case "user_offline":
+        eventData = "{\"type\":\"user_offline\",\"userId\":\"" + vars.get("user_id") + "\"}";
+        break;
+}
+
+vars.put("event_type", eventType);
+vars.put("event_data", eventData);
+
+log.info("Generated event: " + eventType + " - " + eventData);
+
+SampleResult.setSuccessful(true);
+SampleResult.setResponseMessage("Real-time event simulated: " + eventType);
+SampleResult.setResponseData(eventData, "UTF-8");
+        </stringProp>
+        <stringProp name="BeanShellSampler.filename"></stringProp>
+        <stringProp name="BeanShellSampler.parameters"></stringProp>
+        <boolProp name="BeanShellSampler.resetInterpreter">false</boolProp>
+      </BeanShellSampler>
+      <hashTree/>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

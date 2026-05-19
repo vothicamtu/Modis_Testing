@@ -1,0 +1,202 @@
+{
+  "testPhotos": [
+    {
+      "id": "photo_001",
+      "filename": "test_photo_1.jpg",
+      "caption": "Beautiful sunset at the beach",
+      "timestamp": "2024-01-15T18:30:00Z",
+      "location": "Beach Resort",
+      "tags": ["sunset", "beach", "nature"],
+      "recipients": ["friend_001", "friend_002"]
+    },
+    {
+      "id": "photo_002",
+      "filename": "test_photo_2.jpg", 
+      "caption": "Delicious dinner with friends",
+      "timestamp": "2024-01-14T19:45:00Z",
+      "location": "Downtown Restaurant",
+      "tags": ["food", "friends", "dinner"],
+      "recipients": ["friend_001", "friend_003", "friend_004"]
+    },
+    {
+      "id": "photo_003",
+      "filename": "test_photo_3.jpg",
+      "caption": "Morning coffee ☕",
+      "timestamp": "2024-01-14T08:15:00Z",
+      "location": "Home",
+      "tags": ["coffee", "morning", "lifestyle"],
+      "recipients": ["friend_002"]
+    },
+    {
+      "id": "photo_004",
+      "filename": "test_photo_4.jpg",
+      "caption": "",
+      "timestamp": "2024-01-13T16:20:00Z",
+      "location": "City Park",
+      "tags": ["park", "nature", "walking"],
+      "recipients": ["friend_001", "friend_002", "friend_003"]
+    },
+    {
+      "id": "photo_005",
+      "filename": "test_photo_5.jpg",
+      "caption": "Weekend hiking adventure! 🏔️",
+      "timestamp": "2024-01-13T12:00:00Z",
+      "location": "Mountain Trail",
+      "tags": ["hiking", "mountains", "adventure", "weekend"],
+      "recipients": ["friend_004", "friend_005"]
+    }
+  ],
+  "captionTemplates": {
+    "nature": [
+      "Beautiful day in nature 🌿",
+      "Amazing sunset today 🌅",
+      "Love this peaceful place 🌲",
+      "Nature at its finest 🍃",
+      "Perfect weather for outdoor activities ☀️"
+    ],
+    "food": [
+      "Delicious meal! 😋",
+      "Trying something new today 🍽️",
+      "Homemade goodness 👨‍🍳",
+      "Food coma incoming 🤤",
+      "Best restaurant in town! ⭐"
+    ],
+    "friends": [
+      "Great time with amazing friends! 👫",
+      "Squad goals achieved 💪",
+      "Making memories with the best people ❤️",
+      "Friends that make life better 🌟",
+      "Grateful for these wonderful people 🙏"
+    ],
+    "lifestyle": [
+      "Living my best life ✨",
+      "Simple moments, big happiness 😊",
+      "Everyday magic 🌈",
+      "Life is good 👍",
+      "Blessed and grateful 🙏"
+    ],
+    "travel": [
+      "Adventure awaits! ✈️",
+      "Exploring new places 🗺️",
+      "Travel memories in the making 📸",
+      "Wanderlust satisfied 🌍",
+      "New city, new experiences 🏙️"
+    ]
+  },
+  "testScenarios": {
+    "captureAndSend": {
+      "description": "Capture photo and send to friends",
+      "caption": "Test photo from automation",
+      "recipients": ["friend_001", "friend_002"],
+      "expectedResult": "photo_sent_successfully"
+    },
+    "captureWithoutCaption": {
+      "description": "Capture and send photo without caption",
+      "caption": "",
+      "recipients": ["friend_001"],
+      "expectedResult": "photo_sent_successfully"
+    },
+    "captureWithLongCaption": {
+      "description": "Test photo with very long caption",
+      "caption": "This is a very long caption that tests the maximum length allowed by the application. It should either be accepted in full or truncated appropriately based on the app's validation rules. The caption continues to provide enough text for thorough testing of the caption input functionality and validation.",
+      "recipients": ["friend_002"],
+      "expectedResult": "caption_handled_appropriately"
+    },
+    "captureSelectAllFriends": {
+      "description": "Capture photo and send to all friends",
+      "caption": "Photo for everyone! 📸",
+      "selectAll": true,
+      "expectedResult": "photo_sent_to_all_friends"
+    },
+    "captureNoRecipients": {
+      "description": "Try to send photo without selecting recipients",
+      "caption": "Test photo",
+      "recipients": [],
+      "expectedResult": "send_button_disabled"
+    }
+  },
+  "cameraSettings": {
+    "defaultCamera": "back",
+    "flashModes": ["auto", "on", "off"],
+    "supportedResolutions": ["1080p", "720p", "480p"],
+    "supportedFormats": ["JPEG", "PNG"],
+    "maxPhotoSize": "10MB",
+    "compressionQuality": 0.8
+  },
+  "photoValidation": {
+    "maxCaptionLength": 500,
+    "minCaptionLength": 0,
+    "allowEmptyCaption": true,
+    "supportedCharacters": "alphanumeric, emoji, punctuation, unicode",
+    "maxRecipients": 50,
+    "minRecipients": 1
+  },
+  "galleryTestData": {
+    "emptyGallery": {
+      "title": "No Photos Yet",
+      "message": "Start capturing memories by taking your first photo!",
+      "actionButton": "Take Photo"
+    },
+    "loadingGallery": {
+      "message": "Loading photos...",
+      "showSpinner": true
+    },
+    "errorGallery": {
+      "title": "Unable to Load Photos",
+      "message": "Please check your connection and try again.",
+      "retryButton": "Retry"
+    }
+  },
+  "performanceTestData": {
+    "rapidCaptures": 5,
+    "captureDelay": 1000,
+    "bulkPhotos": 20,
+    "largeGallerySize": 100,
+    "scrollTestPhotos": 50
+  },
+  "photoEffects": {
+    "filters": [
+      "none",
+      "vintage", 
+      "black_white",
+      "sepia",
+      "bright",
+      "contrast"
+    ],
+    "adjustments": {
+      "brightness": [-100, 100],
+      "contrast": [-100, 100],
+      "saturation": [-100, 100],
+      "exposure": [-2, 2]
+    }
+  },
+  "sharingOptions": {
+    "platforms": [
+      "modis_friends",
+      "facebook",
+      "instagram", 
+      "twitter",
+      "whatsapp",
+      "messenger"
+    ],
+    "privacyLevels": [
+      "friends_only",
+      "public",
+      "private"
+    ]
+  },
+  "testImages": {
+    "sampleImagePaths": [
+      "/storage/emulated/0/Pictures/test_image_1.jpg",
+      "/storage/emulated/0/Pictures/test_image_2.jpg",
+      "/storage/emulated/0/Pictures/test_image_3.jpg"
+    ],
+    "imageFormats": ["jpg", "jpeg", "png", "gif"],
+    "imageSizes": {
+      "small": "100KB",
+      "medium": "1MB", 
+      "large": "5MB",
+      "xlarge": "10MB"
+    }
+  }
+}

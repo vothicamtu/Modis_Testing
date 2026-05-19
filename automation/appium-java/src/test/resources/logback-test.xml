@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    
+    <!-- Properties -->
+    <property name="LOG_DIR" value="logs" />
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+    <property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n" />
+    
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+    
+    <!-- File Appender - All Logs -->
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/modis-automation-all.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/modis-automation-all.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- File Appender - Test Execution -->
+    <appender name="FILE_TEST" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/modis-test-execution.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/modis-test-execution.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+    
+    <!-- File Appender - Errors Only -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/modis-errors.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/modis-errors.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>5MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>300MB</totalSizeCap>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+    
+    <!-- File Appender - Debug Logs -->
+    <appender name="FILE_DEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/modis-debug.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/modis-debug.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+    
+    <!-- Async Appender for Performance -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE_ALL" />
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+    
+    <!-- Logger Configurations -->
+    
+    <!-- Root Logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+        <appender-ref ref="FILE_ERROR" />
+    </root>
+    
+    <!-- Application Loggers -->
+    <logger name="com.modis" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_TEST" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Test Execution Logger -->
+    <logger name="com.modis.tests" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE_TEST" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Page Objects Logger -->
+    <logger name="com.modis.pages" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Utils Logger -->
+    <logger name="com.modis.utils" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_DEBUG" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Driver Manager Logger -->
+    <logger name="com.modis.drivers" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Third-party Loggers -->
+    
+    <!-- Appium Logger -->
+    <logger name="io.appium" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Selenium Logger -->
+    <logger name="org.openqa.selenium" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- TestNG Logger -->
+    <logger name="org.testng" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- HTTP Client Logger -->
+    <logger name="okhttp3" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Jackson Logger -->
+    <logger name="com.fasterxml.jackson" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL" />
+        <appender-ref ref="FILE_ERROR" />
+    </logger>
+    
+    <!-- Maven Surefire Logger -->
+    <logger name="org.apache.maven.surefire" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL" />
+    </logger>
+    
+    <!-- Conditional Logging Based on Environment -->
+    
+    <!-- Development Environment - More Verbose -->
+    <if condition='property("test.environment").equals("dev")'>
+        <then>
+            <logger name="com.modis" level="DEBUG" />
+            <logger name="io.appium" level="INFO" />
+            <logger name="org.openqa.selenium" level="INFO" />
+        </then>
+    </if>
+    
+    <!-- CI Environment - Less Verbose -->
+    <if condition='property("ci.headless").equals("true")'>
+        <then>
+            <logger name="com.modis" level="INFO" />
+            <logger name="io.appium" level="ERROR" />
+            <logger name="org.openqa.selenium" level="ERROR" />
+            
+            <!-- Disable console logging in CI -->
+            <root level="INFO">
+                <appender-ref ref="ASYNC_FILE" />
+                <appender-ref ref="FILE_ERROR" />
+            </root>
+        </then>
+    </if>
+    
+    <!-- Performance Testing - Minimal Logging -->
+    <if condition='property("test.performance").equals("true")'>
+        <then>
+            <logger name="com.modis" level="WARN" />
+            <logger name="io.appium" level="ERROR" />
+            <logger name="org.openqa.selenium" level="ERROR" />
+        </then>
+    </if>
+    
+</configuration>

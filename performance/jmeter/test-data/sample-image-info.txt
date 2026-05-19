@@ -1,0 +1,52 @@
+# Sample Image for Testing
+
+Để test image upload, bạn cần tạo file sample-image.jpg trong thư mục này.
+
+## Tạo sample image:
+
+### Option 1: Sử dụng online tool
+1. Truy cập https://via.placeholder.com/400x400.jpg
+2. Save as "sample-image.jpg" trong thư mục test-data/
+
+### Option 2: Sử dụng ImageMagick (nếu có cài đặt)
+```bash
+convert -size 400x400 xc:lightblue -pointsize 30 -fill black -gravity center -annotate +0+0 "Test Image" sample-image.jpg
+```
+
+### Option 3: Sử dụng Python (nếu có PIL/Pillow)
+```python
+from PIL import Image, ImageDraw, ImageFont
+import os
+
+# Create a 400x400 image
+img = Image.new('RGB', (400, 400), color='lightblue')
+draw = ImageDraw.Draw(img)
+
+# Add text
+try:
+    font = ImageFont.truetype("arial.ttf", 30)
+except:
+    font = ImageFont.load_default()
+
+text = "Test Image"
+bbox = draw.textbbox((0, 0), text, font=font)
+text_width = bbox[2] - bbox[0]
+text_height = bbox[3] - bbox[1]
+x = (400 - text_width) // 2
+y = (400 - text_height) // 2
+
+draw.text((x, y), text, fill='black', font=font)
+
+# Save
+img.save('sample-image.jpg', 'JPEG')
+print("Sample image created successfully!")
+```
+
+### Option 4: Copy từ ảnh có sẵn
+Copy bất kỳ file ảnh .jpg nào và rename thành "sample-image.jpg"
+
+## Yêu cầu:
+- File name: sample-image.jpg
+- Format: JPEG
+- Size: Khoảng 400x400 pixels (hoặc tương tự)
+- File size: < 5MB để test realistic mobile upload

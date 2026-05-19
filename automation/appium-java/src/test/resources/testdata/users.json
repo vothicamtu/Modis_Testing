@@ -1,0 +1,244 @@
+{
+  "testUsers": [
+    {
+      "id": "test_user_1",
+      "username": "testuser1",
+      "password": "testpass123",
+      "email": "testuser1@example.com",
+      "phone": "1234567890",
+      "fullname": "Test User One",
+      "role": "user",
+      "status": "active"
+    },
+    {
+      "id": "test_user_2",
+      "username": "testuser2",
+      "password": "testpass123",
+      "email": "testuser2@example.com",
+      "phone": "1234567891",
+      "fullname": "Test User Two",
+      "role": "user",
+      "status": "active"
+    },
+    {
+      "id": "test_admin",
+      "username": "testadmin",
+      "password": "adminpass123",
+      "email": "testadmin@example.com",
+      "phone": "1234567892",
+      "fullname": "Test Admin",
+      "role": "admin",
+      "status": "active"
+    },
+    {
+      "id": "test_user_inactive",
+      "username": "inactiveuser",
+      "password": "testpass123",
+      "email": "inactive@example.com",
+      "phone": "1234567893",
+      "fullname": "Inactive User",
+      "role": "user",
+      "status": "inactive"
+    }
+  ],
+  "invalidUsers": [
+    {
+      "username": "invaliduser",
+      "password": "wrongpass",
+      "email": "invalid@example.com",
+      "expectedError": "Invalid username or password"
+    },
+    {
+      "username": "",
+      "password": "",
+      "email": "",
+      "expectedError": "Username and password are required"
+    },
+    {
+      "username": "testuser1",
+      "password": "wrongpass",
+      "email": "testuser1@example.com",
+      "expectedError": "Invalid password"
+    }
+  ],
+  "signupTestData": [
+    {
+      "username": "newuser1",
+      "password": "newpass123",
+      "confirmPassword": "newpass123",
+      "email": "newuser1@example.com",
+      "phone": "9876543210",
+      "fullname": "New User One",
+      "expectedResult": "success"
+    },
+    {
+      "username": "testuser1",
+      "password": "newpass123",
+      "confirmPassword": "newpass123",
+      "email": "different@example.com",
+      "phone": "9876543211",
+      "fullname": "Duplicate Username",
+      "expectedResult": "error",
+      "expectedError": "Username already exists"
+    },
+    {
+      "username": "newuser2",
+      "password": "pass123",
+      "confirmPassword": "differentpass",
+      "email": "newuser2@example.com",
+      "phone": "9876543212",
+      "fullname": "Mismatched Password",
+      "expectedResult": "error",
+      "expectedError": "Passwords do not match"
+    },
+    {
+      "username": "newuser3",
+      "password": "newpass123",
+      "confirmPassword": "newpass123",
+      "email": "invalidemail",
+      "phone": "9876543213",
+      "fullname": "Invalid Email",
+      "expectedResult": "error",
+      "expectedError": "Invalid email format"
+    }
+  ],
+  "friendsTestData": [
+    {
+      "userId": "friend_1",
+      "username": "friend1",
+      "fullname": "Friend One",
+      "status": "friend",
+      "mutualFriends": 5
+    },
+    {
+      "userId": "friend_2",
+      "username": "friend2",
+      "fullname": "Friend Two",
+      "status": "friend",
+      "mutualFriends": 3
+    },
+    {
+      "userId": "pending_request_1",
+      "username": "pendingreq1",
+      "fullname": "Pending Request One",
+      "status": "pending_received",
+      "mutualFriends": 2
+    },
+    {
+      "userId": "sent_request_1",
+      "username": "sentreq1",
+      "fullname": "Sent Request One",
+      "status": "pending_sent",
+      "mutualFriends": 1
+    },
+    {
+      "userId": "search_user_1",
+      "username": "searchuser1",
+      "fullname": "Search User One",
+      "status": "not_friend",
+      "mutualFriends": 0
+    }
+  ],
+  "conversationsTestData": [
+    {
+      "conversationId": "conv_1",
+      "participantId": "friend_1",
+      "participantName": "Friend One",
+      "lastMessage": "Hello, how are you?",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "unreadCount": 2,
+      "messageType": "text"
+    },
+    {
+      "conversationId": "conv_2",
+      "participantId": "friend_2",
+      "participantName": "Friend Two",
+      "lastMessage": "Photo",
+      "timestamp": "2024-01-15T09:15:00Z",
+      "unreadCount": 0,
+      "messageType": "image"
+    },
+    {
+      "conversationId": "conv_3",
+      "participantId": "test_user_2",
+      "participantName": "Test User Two",
+      "lastMessage": "Thanks for the photo!",
+      "timestamp": "2024-01-14T18:45:00Z",
+      "unreadCount": 1,
+      "messageType": "text"
+    }
+  ],
+  "messagesTestData": [
+    {
+      "messageId": "msg_1",
+      "conversationId": "conv_1",
+      "senderId": "test_user_1",
+      "receiverId": "friend_1",
+      "content": "Hello, how are you?",
+      "type": "text",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "status": "delivered"
+    },
+    {
+      "messageId": "msg_2",
+      "conversationId": "conv_1",
+      "senderId": "friend_1",
+      "receiverId": "test_user_1",
+      "content": "I'm doing great, thanks!",
+      "type": "text",
+      "timestamp": "2024-01-15T10:32:00Z",
+      "status": "read"
+    },
+    {
+      "messageId": "msg_3",
+      "conversationId": "conv_2",
+      "senderId": "test_user_1",
+      "receiverId": "friend_2",
+      "content": "image_url_here",
+      "type": "image",
+      "timestamp": "2024-01-15T09:15:00Z",
+      "status": "delivered"
+    }
+  ],
+  "searchTestData": [
+    {
+      "query": "friend",
+      "expectedResults": ["friend1", "friend2"],
+      "resultCount": 2
+    },
+    {
+      "query": "test",
+      "expectedResults": ["testuser1", "testuser2"],
+      "resultCount": 2
+    },
+    {
+      "query": "nonexistent",
+      "expectedResults": [],
+      "resultCount": 0
+    },
+    {
+      "query": "",
+      "expectedResults": [],
+      "resultCount": 0,
+      "expectedError": "Search query cannot be empty"
+    }
+  ],
+  "validationTestData": {
+    "usernames": {
+      "valid": ["user123", "testuser", "valid_user", "user_123"],
+      "invalid": ["ab", "a".repeat(25), "user@123", "user space"]
+    },
+    "passwords": {
+      "valid": ["pass123", "validpassword", "Test123!"],
+      "invalid": ["12345", "a".repeat(55)]
+    },
+    "emails": {
+      "valid": ["test@example.com", "user.name@domain.co.uk", "test+tag@example.org"],
+      "invalid": ["invalid", "test@", "@example.com", "test.example.com"]
+    },
+    "phones": {
+      "valid": ["1234567890", "12345678901", "123456789012345"],
+      "invalid": ["123", "abcdefghij", "123-456-7890"]
+    }
+  }
+}

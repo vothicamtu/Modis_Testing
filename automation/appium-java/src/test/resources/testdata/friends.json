@@ -1,0 +1,203 @@
+{
+  "testFriends": [
+    {
+      "id": "friend_001",
+      "username": "alice_test",
+      "fullName": "Alice Johnson",
+      "email": "alice.test@example.com",
+      "phone": "1234567890",
+      "status": "friend",
+      "avatarUrl": "https://example.com/avatars/alice.jpg"
+    },
+    {
+      "id": "friend_002", 
+      "username": "bob_test",
+      "fullName": "Bob Smith",
+      "email": "bob.test@example.com",
+      "phone": "2345678901",
+      "status": "friend",
+      "avatarUrl": "https://example.com/avatars/bob.jpg"
+    },
+    {
+      "id": "friend_003",
+      "username": "charlie_test",
+      "fullName": "Charlie Brown",
+      "email": "charlie.test@example.com", 
+      "phone": "3456789012",
+      "status": "friend",
+      "avatarUrl": "https://example.com/avatars/charlie.jpg"
+    },
+    {
+      "id": "friend_004",
+      "username": "diana_test",
+      "fullName": "Diana Prince",
+      "email": "diana.test@example.com",
+      "phone": "4567890123",
+      "status": "pending_request",
+      "avatarUrl": "https://example.com/avatars/diana.jpg"
+    },
+    {
+      "id": "friend_005",
+      "username": "eve_test",
+      "fullName": "Eve Wilson",
+      "email": "eve.test@example.com",
+      "phone": "5678901234",
+      "status": "sent_request",
+      "avatarUrl": "https://example.com/avatars/eve.jpg"
+    }
+  ],
+  "friendRequests": [
+    {
+      "id": "request_001",
+      "fromUserId": "user_123",
+      "fromUsername": "john_doe",
+      "fromFullName": "John Doe",
+      "requestDate": "2024-01-15T10:30:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "request_002",
+      "fromUserId": "user_456", 
+      "fromUsername": "jane_smith",
+      "fromFullName": "Jane Smith",
+      "requestDate": "2024-01-14T15:45:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "request_003",
+      "fromUserId": "user_789",
+      "fromUsername": "mike_jones",
+      "fromFullName": "Mike Jones", 
+      "requestDate": "2024-01-13T09:20:00Z",
+      "status": "pending"
+    }
+  ],
+  "sentRequests": [
+    {
+      "id": "sent_001",
+      "toUserId": "user_321",
+      "toUsername": "sarah_connor",
+      "toFullName": "Sarah Connor",
+      "requestDate": "2024-01-12T14:15:00Z",
+      "status": "pending"
+    },
+    {
+      "id": "sent_002",
+      "toUserId": "user_654",
+      "toUsername": "tom_hanks", 
+      "toFullName": "Tom Hanks",
+      "requestDate": "2024-01-11T11:30:00Z",
+      "status": "pending"
+    }
+  ],
+  "searchResults": [
+    {
+      "id": "search_001",
+      "username": "alex_test",
+      "fullName": "Alex Rodriguez",
+      "email": "alex.test@example.com",
+      "mutualFriends": 3,
+      "canAddFriend": true,
+      "relationshipStatus": "none"
+    },
+    {
+      "id": "search_002",
+      "username": "lisa_test",
+      "fullName": "Lisa Anderson", 
+      "email": "lisa.test@example.com",
+      "mutualFriends": 1,
+      "canAddFriend": true,
+      "relationshipStatus": "none"
+    },
+    {
+      "id": "search_003",
+      "username": "mark_test",
+      "fullName": "Mark Thompson",
+      "email": "mark.test@example.com",
+      "mutualFriends": 0,
+      "canAddFriend": false,
+      "relationshipStatus": "blocked"
+    }
+  ],
+  "testScenarios": {
+    "addFriend": {
+      "description": "Test adding a new friend",
+      "searchTerm": "alex_test",
+      "expectedResult": "friend_request_sent"
+    },
+    "acceptRequest": {
+      "description": "Test accepting a friend request",
+      "requestId": "request_001",
+      "expectedResult": "friend_added"
+    },
+    "declineRequest": {
+      "description": "Test declining a friend request", 
+      "requestId": "request_002",
+      "expectedResult": "request_declined"
+    },
+    "searchFriends": {
+      "description": "Test searching existing friends",
+      "searchTerm": "alice",
+      "expectedResults": ["alice_test"]
+    },
+    "searchNoResults": {
+      "description": "Test search with no results",
+      "searchTerm": "nonexistentuser12345",
+      "expectedResults": []
+    }
+  },
+  "friendsListData": {
+    "emptyState": {
+      "title": "No Friends Yet",
+      "message": "Start connecting with people by searching for them or accepting friend requests.",
+      "actionButton": "Find Friends"
+    },
+    "loadingState": {
+      "message": "Loading friends...",
+      "showSpinner": true
+    },
+    "errorState": {
+      "title": "Unable to Load Friends",
+      "message": "Please check your connection and try again.",
+      "retryButton": "Retry"
+    }
+  },
+  "searchValidation": {
+    "minSearchLength": 2,
+    "maxSearchLength": 50,
+    "allowedCharacters": "alphanumeric, underscore, dot",
+    "caseSensitive": false,
+    "searchDelay": 500
+  },
+  "friendRequestLimits": {
+    "maxPendingRequests": 100,
+    "maxSentRequests": 50,
+    "dailyRequestLimit": 20,
+    "cooldownPeriod": 24
+  },
+  "testUsers": {
+    "activeUser": {
+      "username": "test_user_main",
+      "password": "testpass123",
+      "friendsCount": 15,
+      "pendingRequestsCount": 3,
+      "sentRequestsCount": 2
+    },
+    "friendUser": {
+      "username": "test_friend_user",
+      "password": "friendpass123",
+      "relationshipStatus": "friend"
+    },
+    "strangerUser": {
+      "username": "test_stranger_user", 
+      "password": "strangerpass123",
+      "relationshipStatus": "none"
+    }
+  },
+  "performanceTestData": {
+    "largeFriendsList": 100,
+    "bulkRequests": 10,
+    "searchResultsLimit": 20,
+    "scrollTestItems": 50
+  }
+}

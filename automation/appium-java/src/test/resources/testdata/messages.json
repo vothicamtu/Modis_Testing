@@ -1,0 +1,189 @@
+{
+  "testMessages": [
+    {
+      "id": "msg_001",
+      "content": "Hello, how are you today?",
+      "type": "text",
+      "category": "greeting"
+    },
+    {
+      "id": "msg_002", 
+      "content": "Good morning! Hope you have a great day!",
+      "type": "text",
+      "category": "greeting"
+    },
+    {
+      "id": "msg_003",
+      "content": "Thanks for sharing that photo, it looks amazing!",
+      "type": "text", 
+      "category": "response"
+    },
+    {
+      "id": "msg_004",
+      "content": "Can we meet up later this evening?",
+      "type": "text",
+      "category": "question"
+    },
+    {
+      "id": "msg_005",
+      "content": "Sure, what time works best for you?",
+      "type": "text",
+      "category": "response"
+    },
+    {
+      "id": "msg_006",
+      "content": "This is a test message for automation testing purposes. It contains multiple sentences to test how the app handles longer messages. The message should be displayed properly in the conversation view.",
+      "type": "text",
+      "category": "long_message"
+    },
+    {
+      "id": "msg_007",
+      "content": "😀😃😄😁😆😅😂🤣",
+      "type": "text",
+      "category": "emoji"
+    },
+    {
+      "id": "msg_008",
+      "content": "Check out this link: https://example.com",
+      "type": "text",
+      "category": "link"
+    },
+    {
+      "id": "msg_009",
+      "content": "Meeting at 3 PM tomorrow",
+      "type": "text",
+      "category": "appointment"
+    },
+    {
+      "id": "msg_010",
+      "content": "👍",
+      "type": "text",
+      "category": "reaction"
+    }
+  ],
+  "messageTemplates": {
+    "greeting": [
+      "Hello!",
+      "Hi there!",
+      "Good morning!",
+      "Good afternoon!",
+      "Good evening!",
+      "Hey!",
+      "How are you?",
+      "What's up?"
+    ],
+    "response": [
+      "Thanks!",
+      "You're welcome!",
+      "No problem!",
+      "Sure thing!",
+      "Absolutely!",
+      "Of course!",
+      "I agree!",
+      "Sounds good!"
+    ],
+    "question": [
+      "How are you doing?",
+      "What are you up to?",
+      "Any plans for today?",
+      "How was your day?",
+      "What do you think?",
+      "Can you help me?",
+      "Are you free later?",
+      "Want to hang out?"
+    ],
+    "emoji": [
+      "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣",
+      "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰",
+      "👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘", "👏",
+      "❤️", "💙", "💚", "💛", "🧡", "💜", "🖤", "🤍"
+    ]
+  },
+  "conversationScenarios": [
+    {
+      "name": "basic_greeting",
+      "description": "Basic greeting conversation",
+      "messages": [
+        "Hello!",
+        "Hi there! How are you?",
+        "I'm doing great, thanks! How about you?",
+        "Pretty good, just working on some projects."
+      ]
+    },
+    {
+      "name": "photo_sharing",
+      "description": "Conversation about sharing photos",
+      "messages": [
+        "Did you see the photo I sent?",
+        "Yes! It looks amazing!",
+        "Thanks! I took it during my trip last weekend.",
+        "Where was this taken?",
+        "At the beach near the city center."
+      ]
+    },
+    {
+      "name": "meeting_planning",
+      "description": "Planning a meeting or hangout",
+      "messages": [
+        "Want to meet up later?",
+        "Sure! What time works for you?",
+        "How about 3 PM?",
+        "Perfect! Where should we meet?",
+        "Let's meet at the coffee shop downtown."
+      ]
+    },
+    {
+      "name": "long_conversation",
+      "description": "Extended conversation for scrolling tests",
+      "messages": [
+        "Hey, how was your weekend?",
+        "It was great! I went hiking with some friends.",
+        "That sounds fun! Where did you go?",
+        "We went to the mountains about an hour from here.",
+        "Nice! I love hiking. Did you take any photos?",
+        "Yes, I took tons! The views were incredible.",
+        "You should share some of them!",
+        "I will! I'm still going through all of them.",
+        "Take your time. I'm excited to see them.",
+        "Thanks! I'll send the best ones later today.",
+        "Sounds good! I can't wait to see them.",
+        "By the way, do you want to join us next time?",
+        "Absolutely! I'd love to go hiking with you guys.",
+        "Great! I'll let you know when we plan the next trip.",
+        "Perfect! Thanks for thinking of me."
+      ]
+    }
+  ],
+  "testData": {
+    "shortMessage": "Hi!",
+    "mediumMessage": "This is a medium length message for testing purposes.",
+    "longMessage": "This is a very long message that is used for testing how the application handles messages that exceed the typical length. It should be displayed properly in the conversation view and should not cause any UI issues or performance problems. The message continues to provide enough content for thorough testing of the message display functionality.",
+    "emptyMessage": "",
+    "whitespaceMessage": "   ",
+    "specialCharacters": "!@#$%^&*()_+-=[]{}|;':\",./<>?",
+    "numbersOnly": "1234567890",
+    "mixedContent": "Hello! 😀 Check this: https://example.com #hashtag @mention",
+    "unicodeMessage": "Hello 世界 🌍 Привет мир 🌎 مرحبا بالعالم 🌏",
+    "repeatedCharacters": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "newlineMessage": "Line 1\nLine 2\nLine 3"
+  },
+  "messageValidation": {
+    "maxLength": 1000,
+    "minLength": 1,
+    "allowEmptyMessage": false,
+    "allowWhitespaceOnly": false,
+    "supportedCharacters": "alphanumeric, emoji, punctuation, unicode",
+    "unsupportedCharacters": "control characters"
+  },
+  "performanceTestData": {
+    "rapidMessages": [
+      "Message 1",
+      "Message 2", 
+      "Message 3",
+      "Message 4",
+      "Message 5"
+    ],
+    "bulkMessages": 50,
+    "messageDelay": 100
+  }
+}

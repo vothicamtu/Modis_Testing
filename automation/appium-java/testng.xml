@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<suite name="Modis Mobile App Test Suite" verbose="1" parallel="false" thread-count="1">
+    
+    <parameter name="platform" value="android"/>
+    <parameter name="deviceName" value="Android Emulator"/>
+    <parameter name="platformVersion" value="11.0"/>
+    
+    <listeners>
+        <listener class-name="com.modis.listeners.TestListener"/>
+    </listeners>
+
+    <!-- Smoke Test Suite - Critical Path Testing -->
+    <test name="Smoke Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.AuthenticationTests">
+                <methods>
+                    <include name="testValidLogin"/>
+                    <include name="testValidSignup"/>
+                </methods>
+            </class>
+            <class name="com.modis.tests.NavigationTests">
+                <methods>
+                    <include name="testNavigateToProfile"/>
+                    <include name="testNavigateToCamera"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+
+    <!-- Authentication Test Suite -->
+    <test name="Authentication Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="authentication"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.AuthenticationTests"/>
+        </classes>
+    </test>
+
+    <!-- Navigation Test Suite -->
+    <test name="Navigation Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="navigation"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.NavigationTests"/>
+        </classes>
+    </test>
+
+    <!-- Camera Test Suite -->
+    <test name="Camera Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="camera"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.CameraTests"/>
+        </classes>
+    </test>
+
+    <!-- Messaging Test Suite -->
+    <test name="Messaging Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="messaging"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.MessagingTests"/>
+        </classes>
+    </test>
+
+    <!-- Friends Test Suite -->
+    <test name="Friends Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="friends"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.FriendsTests"/>
+        </classes>
+    </test>
+
+    <!-- Profile Test Suite -->
+    <test name="Profile Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="profile"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.ProfileTests"/>
+        </classes>
+    </test>
+
+    <!-- Regression Test Suite - All Critical Functionality -->
+    <test name="Regression Tests" enabled="true">
+        <groups>
+            <run>
+                <include name="regression"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.AuthenticationTests"/>
+            <class name="com.modis.tests.NavigationTests"/>
+            <class name="com.modis.tests.CameraTests"/>
+            <class name="com.modis.tests.MessagingTests"/>
+            <class name="com.modis.tests.FriendsTests"/>
+            <class name="com.modis.tests.ProfileTests"/>
+        </classes>
+    </test>
+
+    <!-- Full Test Suite - All Tests -->
+    <test name="Full Test Suite" enabled="false">
+        <classes>
+            <class name="com.modis.tests.AuthenticationTests"/>
+            <class name="com.modis.tests.NavigationTests"/>
+            <class name="com.modis.tests.CameraTests"/>
+            <class name="com.modis.tests.MessagingTests"/>
+            <class name="com.modis.tests.FriendsTests"/>
+            <class name="com.modis.tests.ProfileTests"/>
+        </classes>
+    </test>
+
+</suite>

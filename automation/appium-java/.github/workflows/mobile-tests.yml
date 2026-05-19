@@ -1,0 +1,370 @@
+name: Mobile App Automation Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'testing/automation/appium-java/**'
+      - 'Modis_FE_TL_ANDROID/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'testing/automation/appium-java/**'
+      - 'Modis_FE_TL_ANDROID/**'
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - regression
+          - authentication
+          - navigation
+          - camera
+          - messaging
+          - friends
+          - profile
+          - full
+      platform:
+        description: 'Target platform'
+        required: true
+        default: 'android'
+        type: choice
+        options:
+          - android
+          - ios
+
+env:
+  JAVA_VERSION: '11'
+  NODE_VERSION: '18'
+  APPIUM_VERSION: '2.0.0'
+
+jobs:
+  android-tests:
+    if: github.event.inputs.platform == 'android' || github.event.inputs.platform == '' || github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        api-level: [28, 29, 30]
+        target: [default]
+        arch: [x86_64]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Cache Node modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-
+        
+    - name: Install Appium
+      run: |
+        npm install -g appium@${{ env.APPIUM_VERSION }}
+        appium driver install uiautomator2
+        appium --version
+        
+    - name: Enable KVM group perms
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+        
+    - name: AVD cache
+      uses: actions/cache@v3
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
+        
+    - name: Create AVD and generate snapshot for caching
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: ${{ matrix.api-level }}
+        target: ${{ matrix.target }}
+        arch: ${{ matrix.arch }}
+        force-avd-creation: false
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: false
+        script: echo "Generated AVD snapshot for caching."
+        
+    - name: Build Android app (if needed)
+      working-directory: Modis_FE_TL_ANDROID
+      run: |
+        if [ -f "android/gradlew" ]; then
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          echo "APK_PATH=$(find . -name "*.apk" -type f | head -1)" >> $GITHUB_ENV
+        else
+          echo "No Android build files found, using pre-built APK"
+        fi
+        
+    - name: Start Appium Server
+      run: |
+        appium server --port 4723 --log-level error &
+        sleep 5
+        curl -s http://127.0.0.1:4723/status || (echo "Appium server failed to start" && exit 1)
+        
+    - name: Run Android Tests
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: ${{ matrix.api-level }}
+        target: ${{ matrix.target }}
+        arch: ${{ matrix.arch }}
+        force-avd-creation: false
+        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: true
+        script: |
+          cd testing/automation/appium-java
+          
+          # Set test suite
+          TEST_SUITE="${{ github.event.inputs.test_suite || 'smoke' }}"
+          
+          # Wait for emulator to be ready
+          adb wait-for-device
+          adb shell input keyevent 82 # Unlock screen
+          
+          # Run tests
+          chmod +x run-tests.sh
+          ./run-tests.sh --platform android --device "Android Emulator" --version ${{ matrix.api-level }} --suite $TEST_SUITE
+          
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: android-test-results-api${{ matrix.api-level }}
+        path: |
+          testing/automation/appium-java/target/surefire-reports/
+          testing/automation/appium-java/screenshots/
+          testing/automation/appium-java/logs/
+          
+    - name: Upload Allure Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: android-allure-results-api${{ matrix.api-level }}
+        path: testing/automation/appium-java/target/allure-results/
+        
+    - name: Publish Test Results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Android Tests (API ${{ matrix.api-level }})
+        path: testing/automation/appium-java/target/surefire-reports/*.xml
+        reporter: java-junit
+        fail-on-error: false
+
+  ios-tests:
+    if: github.event.inputs.platform == 'ios' && github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    
+    strategy:
+      matrix:
+        ios-version: ['15.5', '16.0']
+        device: ['iPhone 13', 'iPhone 14']
+      fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Install Appium
+      run: |
+        npm install -g appium@${{ env.APPIUM_VERSION }}
+        appium driver install xcuitest
+        appium --version
+        
+    - name: List available simulators
+      run: xcrun simctl list devices available
+      
+    - name: Build iOS app (if needed)
+      working-directory: Modis_FE_TL_ANDROID
+      run: |
+        if [ -f "ios/Podfile" ]; then
+          cd ios
+          pod install
+          xcodebuild -workspace *.xcworkspace -scheme Modis -configuration Debug -sdk iphonesimulator -derivedDataPath build
+          echo "APP_PATH=$(find build -name "*.app" -type d | head -1)" >> $GITHUB_ENV
+        else
+          echo "No iOS build files found, using pre-built app"
+        fi
+        
+    - name: Start iOS Simulator
+      run: |
+        DEVICE_ID=$(xcrun simctl create "Test Device" "${{ matrix.device }}" "${{ matrix.ios-version }}")
+        xcrun simctl boot $DEVICE_ID
+        echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
+        
+    - name: Start Appium Server
+      run: |
+        appium server --port 4723 --log-level error &
+        sleep 5
+        curl -s http://127.0.0.1:4723/status || (echo "Appium server failed to start" && exit 1)
+        
+    - name: Run iOS Tests
+      working-directory: testing/automation/appium-java
+      run: |
+        # Set test suite
+        TEST_SUITE="${{ github.event.inputs.test_suite || 'smoke' }}"
+        
+        # Run tests
+        chmod +x run-tests.sh
+        ./run-tests.sh --platform ios --device "${{ matrix.device }}" --version "${{ matrix.ios-version }}" --suite $TEST_SUITE
+        
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: ios-test-results-${{ matrix.device }}-${{ matrix.ios-version }}
+        path: |
+          testing/automation/appium-java/target/surefire-reports/
+          testing/automation/appium-java/screenshots/
+          testing/automation/appium-java/logs/
+          
+    - name: Upload Allure Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: ios-allure-results-${{ matrix.device }}-${{ matrix.ios-version }}
+        path: testing/automation/appium-java/target/allure-results/
+        
+    - name: Publish Test Results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: iOS Tests (${{ matrix.device }} - ${{ matrix.ios-version }})
+        path: testing/automation/appium-java/target/surefire-reports/*.xml
+        reporter: java-junit
+        fail-on-error: false
+
+  generate-report:
+    needs: [android-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Install Allure
+      run: npm install -g allure-commandline
+      
+    - name: Generate Allure Report
+      run: |
+        mkdir -p allure-results
+        find . -name "allure-results" -type d -exec cp -r {}/* allure-results/ \; 2>/dev/null || true
+        
+        if [ "$(ls -A allure-results)" ]; then
+          allure generate allure-results -o allure-report --clean
+        else
+          echo "No Allure results found"
+        fi
+        
+    - name: Upload Allure Report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: allure-report
+        path: allure-report/
+        
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./allure-report
+        destination_dir: test-reports
+
+  notify:
+    needs: [android-tests, ios-tests, generate-report]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Notify on success
+      if: needs.android-tests.result == 'success'
+      run: |
+        echo " Mobile automation tests passed successfully!"
+        
+    - name: Notify on failure
+      if: needs.android-tests.result == 'failure'
+      run: |
+        echo " Mobile automation tests failed!"
+        echo "Check the test results and logs for details."
+        
+    - name: Create issue on failure
+      if: needs.android-tests.result == 'failure' && github.event_name == 'schedule'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Scheduled Mobile Tests Failed',
+            body: `The scheduled mobile automation tests failed on ${new Date().toISOString()}.
+            
+            **Workflow:** ${context.workflow}
+            **Run ID:** ${context.runId}
+            **Commit:** ${context.sha}
+            
+            Please check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details.`,
+            labels: ['bug', 'automation', 'mobile-tests']
+          })

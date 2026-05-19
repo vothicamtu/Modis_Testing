@@ -1,0 +1,44 @@
+# JMeter Performance Testing - Generated Files
+
+# Results và Reports (auto-generated)
+results/*.jtl
+results/*.csv
+results/*.log
+reports/*/
+reports/*.html
+
+# JMeter logs
+jmeter.log
+jmeter_*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup files
+*.bak
+*.backup
+
+# Keep directory structure
+!results/.gitkeep
+!reports/.gitkeep
+
+# Sensitive data (nếu có)
+*.key
+*.pem
+secrets.properties
