@@ -5,8 +5,9 @@ import com.modis.utils.ConfigReader;
 import com.modis.utils.LoggerUtil;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.android.options.UiAutomator2Options;
 import io.appium.java_client.ios.IOSDriver;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import io.appium.java_client.ios.options.XCUITestOptions;
 import org.slf4j.Logger;
 
 import java.net.MalformedURLException;
@@ -48,17 +49,16 @@ public class DriverManager {
         logger.info("Creating driver for platform: {}", platform);
         
         AppiumDriver appiumDriver;
-        DesiredCapabilities capabilities = new DesiredCapabilities();
         
         try {
             switch (platform.toLowerCase()) {
                 case "android":
-                    capabilities = getAndroidCapabilities();
-                    appiumDriver = new AndroidDriver(getAppiumServerURL(), capabilities);
+                    UiAutomator2Options androidOptions = getAndroidOptions();
+                    appiumDriver = new AndroidDriver(getAppiumServerURL(), androidOptions);
                     break;
                 case "ios":
-                    capabilities = getIOSCapabilities();
-                    appiumDriver = new IOSDriver(getAppiumServerURL(), capabilities);
+                    XCUITestOptions iosOptions = getIOSOptions();
+                    appiumDriver = new IOSDriver(getAppiumServerURL(), iosOptions);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported platform: " + platform);
@@ -77,94 +77,97 @@ public class DriverManager {
     }
     
     /**
-     * Get Android capabilities
-     * @return DesiredCapabilities for Android
+     * Get Android options
+     * @return UiAutomator2Options for Android
      */
-    private static DesiredCapabilities getAndroidCapabilities() {
-        DesiredCapabilities capabilities = new DesiredCapabilities();
+    private static UiAutomator2Options getAndroidOptions() {
+        UiAutomator2Options options = new UiAutomator2Options();
         
         // Platform capabilities
-        capabilities.setCapability("platformName", "Android");
-        capabilities.setCapability("automationName", "UiAutomator2");
-        capabilities.setCapability("deviceName", ConfigReader.getProperty("android.deviceName", AppConstants.DEFAULT_DEVICE_NAME));
-        capabilities.setCapability("platformVersion", ConfigReader.getProperty("android.platformVersion", AppConstants.DEFAULT_PLATFORM_VERSION));
+        options.setPlatformName("Android");
+        options.setAutomationName("UiAutomator2");
+        options.setDeviceName(ConfigReader.getProperty("android.deviceName", AppConstants.DEFAULT_DEVICE_NAME));
+        options.setPlatformVersion(ConfigReader.getProperty("android.platformVersion", AppConstants.DEFAULT_PLATFORM_VERSION));
         
         // App capabilities
         String appPath = ConfigReader.getProperty("android.appPath");
         if (appPath != null && !appPath.isEmpty()) {
-            capabilities.setCapability("app", appPath);
+            options.setApp(appPath);
         } else {
-            capabilities.setCapability("appPackage", ConfigReader.getProperty("android.appPackage", AppConstants.APP_PACKAGE));
-            capabilities.setCapability("appActivity", ConfigReader.getProperty("android.appActivity", AppConstants.APP_ACTIVITY));
+            options.setAppPackage(ConfigReader.getProperty("android.appPackage", AppConstants.APP_PACKAGE));
+            options.setAppActivity(ConfigReader.getProperty("android.appActivity", AppConstants.APP_ACTIVITY));
         }
         
         // Performance and behavior capabilities
-        capabilities.setCapability("noReset", ConfigReader.getBooleanProperty("android.noReset", false));
-        capabilities.setCapability("fullReset", ConfigReader.getBooleanProperty("android.fullReset", false));
-        capabilities.setCapability("autoGrantPermissions", ConfigReader.getBooleanProperty("android.autoGrantPermissions", true));
-        capabilities.setCapability("autoAcceptAlerts", ConfigReader.getBooleanProperty("android.autoAcceptAlerts", true));
-        capabilities.setCapability("autoDismissAlerts", ConfigReader.getBooleanProperty("android.autoDismissAlerts", true));
+        options.setNoReset(ConfigReader.getBooleanProperty("android.noReset", false));
+        options.setFullReset(ConfigReader.getBooleanProperty("android.fullReset", false));
+        
+        // Set other capabilities via generic setCapability to ensure maximum compatibility
+        options.setCapability("autoGrantPermissions", ConfigReader.getBooleanProperty("android.autoGrantPermissions", true));
+        options.setCapability("autoAcceptAlerts", ConfigReader.getBooleanProperty("android.autoAcceptAlerts", true));
+        options.setCapability("autoDismissAlerts", ConfigReader.getBooleanProperty("android.autoDismissAlerts", true));
         
         // Network and performance
-        capabilities.setCapability("networkSpeed", ConfigReader.getProperty("android.networkSpeed", "full"));
-        capabilities.setCapability("gpsEnabled", ConfigReader.getBooleanProperty("android.gpsEnabled", true));
+        options.setCapability("networkSpeed", ConfigReader.getProperty("android.networkSpeed", "full"));
+        options.setCapability("gpsEnabled", ConfigReader.getBooleanProperty("android.gpsEnabled", true));
         
         // Timeouts
-        capabilities.setCapability("newCommandTimeout", ConfigReader.getIntProperty("android.newCommandTimeout", 300));
-        capabilities.setCapability("androidInstallTimeout", ConfigReader.getIntProperty("android.installTimeout", 90000));
+        options.setNewCommandTimeout(Duration.ofSeconds(ConfigReader.getIntProperty("android.newCommandTimeout", 300)));
+        options.setCapability("androidInstallTimeout", ConfigReader.getIntProperty("android.installTimeout", 90000));
         
         // UiAutomator2 specific
-        capabilities.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.serverLaunchTimeout", 60000));
-        capabilities.setCapability("uiautomator2ServerInstallTimeout", ConfigReader.getIntProperty("android.serverInstallTimeout", 30000));
+        options.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.serverLaunchTimeout", 60000));
+        options.setCapability("uiautomator2ServerInstallTimeout", ConfigReader.getIntProperty("android.serverInstallTimeout", 30000));
         
         // Additional Android capabilities
-        capabilities.setCapability("skipUnlock", ConfigReader.getBooleanProperty("android.skipUnlock", true));
-        capabilities.setCapability("unlockType", ConfigReader.getProperty("android.unlockType", "pin"));
-        capabilities.setCapability("unlockKey", ConfigReader.getProperty("android.unlockKey", "1234"));
+        options.setCapability("skipUnlock", ConfigReader.getBooleanProperty("android.skipUnlock", true));
+        options.setCapability("unlockType", ConfigReader.getProperty("android.unlockType", "pin"));
+        options.setCapability("unlockKey", ConfigReader.getProperty("android.unlockKey", "1234"));
         
         // Logging
-        capabilities.setCapability("enablePerformanceLogging", ConfigReader.getBooleanProperty("android.enablePerformanceLogging", false));
+        options.setCapability("enablePerformanceLogging", ConfigReader.getBooleanProperty("android.enablePerformanceLogging", false));
         
-        logger.info("Android capabilities configured: {}", capabilities.asMap());
-        return capabilities;
+        logger.info("Android options configured: {}", options.asMap());
+        return options;
     }
     
     /**
-     * Get iOS capabilities
-     * @return DesiredCapabilities for iOS
+     * Get iOS options
+     * @return XCUITestOptions for iOS
      */
-    private static DesiredCapabilities getIOSCapabilities() {
-        DesiredCapabilities capabilities = new DesiredCapabilities();
+    private static XCUITestOptions getIOSOptions() {
+        XCUITestOptions options = new XCUITestOptions();
         
         // Platform capabilities
-        capabilities.setCapability("platformName", "iOS");
-        capabilities.setCapability("automationName", "XCUITest");
-        capabilities.setCapability("deviceName", ConfigReader.getProperty("ios.deviceName", "iPhone Simulator"));
-        capabilities.setCapability("platformVersion", ConfigReader.getProperty("ios.platformVersion", "15.0"));
+        options.setPlatformName("iOS");
+        options.setAutomationName("XCUITest");
+        options.setDeviceName(ConfigReader.getProperty("ios.deviceName", "iPhone Simulator"));
+        options.setPlatformVersion(ConfigReader.getProperty("ios.platformVersion", "15.0"));
         
         // App capabilities
         String appPath = ConfigReader.getProperty("ios.appPath");
         if (appPath != null && !appPath.isEmpty()) {
-            capabilities.setCapability("app", appPath);
+            options.setApp(appPath);
         } else {
-            capabilities.setCapability("bundleId", ConfigReader.getProperty("ios.bundleId", AppConstants.APP_PACKAGE));
+            options.setBundleId(ConfigReader.getProperty("ios.bundleId", AppConstants.APP_PACKAGE));
         }
         
         // Performance and behavior capabilities
-        capabilities.setCapability("noReset", ConfigReader.getBooleanProperty("ios.noReset", false));
-        capabilities.setCapability("fullReset", ConfigReader.getBooleanProperty("ios.fullReset", false));
-        capabilities.setCapability("autoAcceptAlerts", ConfigReader.getBooleanProperty("ios.autoAcceptAlerts", true));
-        capabilities.setCapability("autoDismissAlerts", ConfigReader.getBooleanProperty("ios.autoDismissAlerts", true));
+        options.setNoReset(ConfigReader.getBooleanProperty("ios.noReset", false));
+        options.setFullReset(ConfigReader.getBooleanProperty("ios.fullReset", false));
+        
+        options.setCapability("autoAcceptAlerts", ConfigReader.getBooleanProperty("ios.autoAcceptAlerts", true));
+        options.setCapability("autoDismissAlerts", ConfigReader.getBooleanProperty("ios.autoDismissAlerts", true));
         
         // XCUITest specific
-        capabilities.setCapability("wdaLaunchTimeout", ConfigReader.getIntProperty("ios.wdaLaunchTimeout", 60000));
-        capabilities.setCapability("wdaConnectionTimeout", ConfigReader.getIntProperty("ios.wdaConnectionTimeout", 60000));
+        options.setCapability("wdaLaunchTimeout", ConfigReader.getIntProperty("ios.wdaLaunchTimeout", 60000));
+        options.setCapability("wdaConnectionTimeout", ConfigReader.getIntProperty("ios.wdaConnectionTimeout", 60000));
         
         // Timeouts
-        capabilities.setCapability("newCommandTimeout", ConfigReader.getIntProperty("ios.newCommandTimeout", 300));
+        options.setNewCommandTimeout(Duration.ofSeconds(ConfigReader.getIntProperty("ios.newCommandTimeout", 300)));
         
-        logger.info("iOS capabilities configured: {}", capabilities.asMap());
-        return capabilities;
+        logger.info("iOS options configured: {}", options.asMap());
+        return options;
     }
     
     /**

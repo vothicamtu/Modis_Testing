@@ -8,7 +8,7 @@ public class AppConstants {
     
     // ==================== APP INFORMATION ====================
     public static final String APP_NAME = "Modis";
-    public static final String APP_PACKAGE = "com.modis.app";
+    public static final String APP_PACKAGE = "com.modis";
     public static final String APP_ACTIVITY = "com.modis.MainActivity";
     public static final String APP_BUNDLE_ID = "com.modis.app";
     
