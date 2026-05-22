@@ -15,3 +15,21 @@ target/
 # OS
 .DS_Store
 Thumbs.db
+
+# JMeter reports
+performance/jmeter/report/
+
+# bower
+bower_components/
+
+# logs
+*.log
+
+# screenshots
+screenshots/
+target/ui-dumps/
+
+# generated reports
+reports/
+allure-results/
+allure-report/
