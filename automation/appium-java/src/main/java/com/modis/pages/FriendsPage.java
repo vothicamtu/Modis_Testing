@@ -585,4 +585,56 @@ public class FriendsPage extends BasePage {
     public boolean isSentRequestsListDisplayed() { return true; }
     public int getSentRequestsCount() { return 1; }
     public boolean isEmptySentStateDisplayed() { return false; }
+    
+    // ==================== FRIEND SEARCH AND REQUEST ACTIONS ====================
+    
+    /**
+     * Check if user appears in search results
+     * @param username Username to check in search results
+     * @return true if user is found in search results
+     */
+    public boolean isUserInSearchResults(String username) {
+        logger.info("Checking if user is in search results: " + username);
+        waitForElementVisible(TestIDs.FRIENDS_SCROLL);
+        
+        // Look for user in search results
+        String userXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
+        try {
+            WebElement element = findByXPath(userXpath);
+            return element != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Check if friend request is from specific user
+     * @param username Username to check for friend request
+     * @return true if request is from the user
+     */
+    public boolean isRequestFromUser(String username) {
+        logger.info("Checking if friend request is from user: " + username);
+        waitForElementVisible(TestIDs.FRIENDS_SCROLL);
+        
+        // Look for friend request from specific user
+        String requestXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
+        try {
+            WebElement element = findByXPath(requestXpath);
+            return element != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Get the request sender name by username
+     * @param username Username to get request name for
+     * @return The displayed request sender name
+     */
+    public String getRequestNameByUsername(String username) {
+        logger.info("Getting request name for username: " + username);
+        String requestXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
+        WebElement requestElement = findByXPath(requestXpath);
+        return getText(requestElement);
+    }
 }

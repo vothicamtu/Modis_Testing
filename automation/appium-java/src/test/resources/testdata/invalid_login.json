@@ -1,0 +1,180 @@
+{
+  "invalid_credentials": [
+    {
+      "username": "invalid_user",
+      "password": "invalid_pass",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Completely invalid credentials"
+    },
+    {
+      "username": "",
+      "password": "password123",
+      "expected_error": "Vui lòng nhập đầy đủ thông tin!",
+      "description": "Empty username"
+    },
+    {
+      "username": "testuser",
+      "password": "",
+      "expected_error": "Vui lòng nhập đầy đủ thông tin!",
+      "description": "Empty password"
+    },
+    {
+      "username": "",
+      "password": "",
+      "expected_error": "Vui lòng nhập đầy đủ thông tin!",
+      "description": "Both fields empty"
+    },
+    {
+      "username": "admin",
+      "password": "wrongpassword",
+      "expected_error": "Mật khẩu không chính xác!",
+      "description": "Valid username with wrong password"
+    },
+    {
+      "username": "nonexistent@email.com",
+      "password": "password123",
+      "expected_error": "Tên đăng nhập không chính xác!",
+      "description": "Email format username that doesn't exist"
+    },
+    {
+      "username": "test123",
+      "password": "123456",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Weak common credentials"
+    },
+    {
+      "username": "user@#$%",
+      "password": "password",
+      "expected_error": "Tên đăng nhập không chính xác!",
+      "description": "Username with special characters"
+    },
+    {
+      "username": "user with spaces",
+      "password": "pass with spaces",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Credentials with spaces"
+    },
+    {
+      "username": "verylongusernamethatexceedsnormallimits",
+      "password": "verylongpasswordthatexceedsnormallimits",
+      "expected_error": "Tên đăng nhập không chính xác!",
+      "description": "Extremely long credentials"
+    }
+  ],
+  "sql_injection_attempts": [
+    {
+      "username": "admin' OR '1'='1",
+      "password": "password",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "SQL injection in username"
+    },
+    {
+      "username": "admin",
+      "password": "' OR '1'='1",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "SQL injection in password"
+    },
+    {
+      "username": "admin'; DROP TABLE users; --",
+      "password": "password",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "SQL injection with DROP TABLE"
+    },
+    {
+      "username": "admin",
+      "password": "password'; SELECT * FROM users; --",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "SQL injection with SELECT"
+    }
+  ],
+  "xss_attempts": [
+    {
+      "username": "<script>alert('xss')</script>",
+      "password": "password",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "XSS attempt in username"
+    },
+    {
+      "username": "admin",
+      "password": "<script>alert('xss')</script>",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "XSS attempt in password"
+    },
+    {
+      "username": "javascript:alert('xss')",
+      "password": "password",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "JavaScript protocol in username"
+    },
+    {
+      "username": "<img src=x onerror=alert('xss')>",
+      "password": "password",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Image XSS in username"
+    }
+  ],
+  "boundary_values": [
+    {
+      "username": "a",
+      "password": "b",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Single character credentials"
+    },
+    {
+      "username": "ab",
+      "password": "cd",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Two character credentials"
+    },
+    {
+      "username": "   ",
+      "password": "   ",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Whitespace only credentials"
+    },
+    {
+      "username": "user\t",
+      "password": "pass\t",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Credentials with tab characters"
+    },
+    {
+      "username": "user\n",
+      "password": "pass\n",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Credentials with newline characters"
+    }
+  ],
+  "unicode_tests": [
+    {
+      "username": "用户名",
+      "password": "密码",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Chinese characters"
+    },
+    {
+      "username": "пользователь",
+      "password": "пароль",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Cyrillic characters"
+    },
+    {
+      "username": "مستخدم",
+      "password": "كلمة المرور",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Arabic characters"
+    },
+    {
+      "username": "ユーザー",
+      "password": "パスワード",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Japanese characters"
+    },
+    {
+      "username": "🙂😀😃",
+      "password": "🔒🔑🛡️",
+      "expected_error": "Tài khoản hoặc mật khẩu không chính xác",
+      "description": "Emoji characters"
+    }
+  ]
+}

@@ -86,7 +86,7 @@ public class LoadingPage extends BasePage {
      * @return BasePage (could be LoginPage or HomePage depending on auth state)
      */
     public BasePage waitForAutoNavigation() {
-        logger.info("Waiting for automatic navigation from loading screen");
+        logger.info("Waiting for app to be ready after launch (and performing required landing navigation)");
 
         // ROOT CAUSE FIX:
         // RN screens were setting `accessible={true}` on the root container (Loading/Login/Signup/Home),
@@ -109,14 +109,34 @@ public class LoadingPage extends BasePage {
             if (isElementDisplayedByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT) ||
                 isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON)) {
                 logger.info("Detected Login screen");
-                return new LoginPage();
+                return new LoginPage().waitForPageToLoad();
             }
 
-            // Still on Loading screen (buttons visible)
-            if (isElementDisplayedByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON) ||
-                isElementDisplayedByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON)) {
-                logger.info("Detected Loading screen (manual navigation available)");
-                return this;
+            // Landing/Loading screen requires manual navigation: tap Login/Signup first
+            if (isElementDisplayedByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON)) {
+                logger.info("Detected landing page -> tapping Login button");
+                return clickLoginButton(); // already waits for LoginPage readiness
+            }
+
+            if (isElementDisplayedByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON)) {
+                // Fallback: if only signup is visible, go to signup then to login
+                logger.info("Detected landing page -> Login not visible, tapping Signup then navigating to Login");
+                SignupPage signupPage = clickSignupButton();
+                try {
+                    signupPage.waitForPageToLoad();
+                } catch (Exception ignored) {
+                }
+                LoginPage loginPage = signupPage.clickLoginLink();
+                loginPage.waitForPageToLoad();
+                return loginPage;
+            }
+
+            // Small backoff to avoid busy looping
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
         }
 

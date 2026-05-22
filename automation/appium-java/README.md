@@ -315,7 +315,7 @@ Dưới đây là tổng hợp các lỗi kinh điển trong quá trình cài đ
 * **Nguyên nhân**: Mismatch cổng kết nối (Port) hoặc thiếu cấu hình namespace driver.
 * **Cách sửa**: 
   1. Đảm bảo Appium Server đang chạy trên cổng `4723`.
-  2. Trong Appium Inspector, hãy điền Remote Path là `/` hoặc `/wd/hub` tùy theo cách bạn chạy driver (Lớp DriverManager tự động xử lý ghép nối đường dẫn linh hoạt).
+  2. Trong Appium Inspector (Appium 2/3), Remote Path phải là `/` (KHÔNG dùng `/wd/hub`).
   3. Điền đầy đủ các thông tin capabilities theo định dạng chuẩn W3C (Ví dụ: `appium:automationName` thay vì `automationName`).
 
 ### Lỗi 4: Lỗi phiên bản Chromedriver không tương thích (`SessionNotCreatedException`)

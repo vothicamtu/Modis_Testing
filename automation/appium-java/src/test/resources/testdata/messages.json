@@ -1,189 +1,246 @@
 {
   "testMessages": [
     {
-      "id": "msg_001",
-      "content": "Hello, how are you today?",
+      "id": "696b7d47cc3f0070b47bd944",
+      "senderId": "69677d706997303fe53eda0b",
+      "senderUsername": "u001",
+      "receiverId": "696952fd47f1eb29287b6642",
+      "receiverUsername": "camtu",
+      "content": "Hi",
       "type": "text",
+      "timestamp": "2026-01-17T12:15:00.739Z",
       "category": "greeting"
     },
     {
-      "id": "msg_002", 
-      "content": "Good morning! Hope you have a great day!",
+      "id": "696b7d71cc3f0070b47bd945",
+      "senderId": "696c8579c5785f1596a2fd1c",
+      "senderUsername": "lucdeptrai",
+      "receiverId": "696952fd47f1eb29287b6642",
+      "receiverUsername": "camtu",
+      "content": "Hellooooooooooooooo",
       "type": "text",
+      "timestamp": "2026-01-17T12:15:43.107Z",
       "category": "greeting"
     },
     {
-      "id": "msg_003",
-      "content": "Thanks for sharing that photo, it looks amazing!",
-      "type": "text", 
+      "id": "696b9f47cc3f0070b47bd94b",
+      "senderId": "69677d706997303fe53eda0b",
+      "senderUsername": "u001",
+      "receiverId": "696952fd47f1eb29287b6642",
+      "receiverUsername": "camtu",
+      "content": "Xong riu",
+      "type": "text",
+      "timestamp": "2026-01-17T14:40:05.060Z",
       "category": "response"
     },
     {
-      "id": "msg_004",
-      "content": "Can we meet up later this evening?",
+      "id": "696c8f8f056ddb923c35a031",
+      "senderId": "696c8579c5785f1596a2fd1c",
+      "senderUsername": "lucdeptrai",
+      "receiverId": "696caf82dc39dada8285850d",
+      "receiverUsername": "Asuy",
+      "content": "Cậu cơm chưa",
       "type": "text",
+      "timestamp": "2026-01-18T07:45:16.319Z",
       "category": "question"
     },
     {
-      "id": "msg_005",
-      "content": "Sure, what time works best for you?",
+      "id": "696d864dea229b2844b8d270",
+      "senderId": "696caf82dc39dada8285850d",
+      "senderUsername": "Asuy",
+      "receiverId": "696c8579c5785f1596a2fd1c",
+      "receiverUsername": "lucdeptrai",
+      "content": "Tớ cơm rồi",
       "type": "text",
+      "timestamp": "2026-01-19T01:18:04.121Z",
       "category": "response"
     },
     {
-      "id": "msg_006",
-      "content": "This is a test message for automation testing purposes. It contains multiple sentences to test how the app handles longer messages. The message should be displayed properly in the conversation view.",
+      "id": "696d8688e66e4f8a7ac207f7",
+      "senderId": "696caf82dc39dada8285850d",
+      "senderUsername": "Asuy",
+      "receiverId": "696c86c9bdfcd41d4055d791",
+      "receiverUsername": "tu",
+      "content": "Hello cậu cậu cho tớ làm quen nhé",
       "type": "text",
-      "category": "long_message"
+      "timestamp": "2026-01-18T21:13:35.477Z",
+      "category": "greeting"
     },
     {
-      "id": "msg_007",
-      "content": "😀😃😄😁😆😅😂🤣",
+      "id": "69c569886ae15a0ad1728963",
+      "senderId": "69c2ae2a576b681565ab5bf0",
+      "senderUsername": "tune",
+      "receiverId": "696c86c9bdfcd41d4055d791",
+      "receiverUsername": "tu",
+      "content": "Gì dị",
       "type": "text",
+      "timestamp": "2026-03-26T17:14:47.176Z",
+      "category": "question"
+    },
+    {
+      "id": "69cd2435b81b8a0f1bd3862b",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "senderUsername": "tu",
+      "receiverId": "69c2ae2a576b681565ab5bf0",
+      "receiverUsername": "tune",
+      "content": "🤤",
+      "type": "text",
+      "timestamp": "2026-04-01T13:57:07.730Z",
       "category": "emoji"
     },
     {
-      "id": "msg_008",
-      "content": "Check out this link: https://example.com",
+      "id": "69cd243ab81b8a0f1bd3862c",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "senderUsername": "tu",
+      "receiverId": "69c2ae2a576b681565ab5bf0",
+      "receiverUsername": "tune",
+      "content": "\n😢",
       "type": "text",
-      "category": "link"
+      "timestamp": "2026-04-01T13:57:13.331Z",
+      "category": "emoji"
     },
     {
-      "id": "msg_009",
-      "content": "Meeting at 3 PM tomorrow",
+      "id": "69e090706ac9fa73c64f86b3",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "senderUsername": "tu",
+      "receiverId": "69c2ae2a576b681565ab5bf0",
+      "receiverUsername": "tune",
+      "content": "Cày dữ he",
       "type": "text",
-      "category": "appointment"
-    },
-    {
-      "id": "msg_010",
-      "content": "👍",
-      "type": "text",
-      "category": "reaction"
+      "timestamp": "2026-04-16T07:31:57.456Z",
+      "category": "response"
     }
   ],
   "messageTemplates": {
     "greeting": [
       "Hello!",
-      "Hi there!",
-      "Good morning!",
-      "Good afternoon!",
-      "Good evening!",
-      "Hey!",
-      "How are you?",
-      "What's up?"
+      "Hi",
+      "Xin chào!",
+      "Chào bạn!",
+      "Hế lô!",
+      "Halooo",
+      "Chào buổi sáng!",
+      "Chào buổi chiều!"
     ],
     "response": [
-      "Thanks!",
-      "You're welcome!",
-      "No problem!",
-      "Sure thing!",
-      "Absolutely!",
-      "Of course!",
-      "I agree!",
-      "Sounds good!"
+      "Cảm ơn!",
+      "Không có gì!",
+      "Được rồi!",
+      "OK!",
+      "Tất nhiên!",
+      "Đồng ý!",
+      "Hay đó!",
+      "Tớ cơm rồi"
     ],
     "question": [
-      "How are you doing?",
-      "What are you up to?",
-      "Any plans for today?",
-      "How was your day?",
-      "What do you think?",
-      "Can you help me?",
-      "Are you free later?",
-      "Want to hang out?"
+      "Bạn khỏe không?",
+      "Làm gì đó?",
+      "Có kế hoạch gì hôm nay không?",
+      "Hôm nay thế nào?",
+      "Bạn nghĩ sao?",
+      "Cậu cơm chưa?",
+      "Rảnh không?",
+      "Gì dị?"
     ],
     "emoji": [
       "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣",
       "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰",
       "👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘", "👏",
-      "❤️", "💙", "💚", "💛", "🧡", "💜", "🖤", "🤍"
+      "❤️", "💙", "💚", "💛", "🧡", "💜", "🖤", "🤍",
+      "🤤", "😢", "😭", "😱"
     ]
   },
   "conversationScenarios": [
     {
-      "name": "basic_greeting",
-      "description": "Basic greeting conversation",
+      "name": "basic_greeting_vietnamese",
+      "description": "Cuộc trò chuyện chào hỏi cơ bản",
+      "participants": ["u001", "camtu"],
       "messages": [
-        "Hello!",
-        "Hi there! How are you?",
-        "I'm doing great, thanks! How about you?",
-        "Pretty good, just working on some projects."
+        "Hi",
+        "Xin chào! Bạn khỏe không?",
+        "Tôi khỏe, cảm ơn! Còn bạn thì sao?",
+        "Tôi cũng ổn, đang làm việc."
       ]
     },
     {
-      "name": "photo_sharing",
-      "description": "Conversation about sharing photos",
+      "name": "food_conversation",
+      "description": "Cuộc trò chuyện về đồ ăn",
+      "participants": ["lucdeptrai", "Asuy"],
       "messages": [
-        "Did you see the photo I sent?",
-        "Yes! It looks amazing!",
-        "Thanks! I took it during my trip last weekend.",
-        "Where was this taken?",
-        "At the beach near the city center."
+        "Cậu cơm chưa?",
+        "Tớ cơm rồi",
+        "Ăn gì vậy?",
+        "Cơm tấm thôi",
+        "Ngon không?"
       ]
     },
     {
-      "name": "meeting_planning",
-      "description": "Planning a meeting or hangout",
+      "name": "friend_request_conversation",
+      "description": "Cuộc trò chuyện làm quen",
+      "participants": ["Asuy", "tu"],
       "messages": [
-        "Want to meet up later?",
-        "Sure! What time works for you?",
-        "How about 3 PM?",
-        "Perfect! Where should we meet?",
-        "Let's meet at the coffee shop downtown."
+        "Hello cậu cậu cho tớ làm quen nhé",
+        "Hello cậu, tớ không muốn làm quen với cậu",
+        "Tại sao vậy?",
+        "Tớ không quen người lạ",
+        "Hiểu rồi, xin lỗi nhé"
       ]
     },
     {
-      "name": "long_conversation",
-      "description": "Extended conversation for scrolling tests",
+      "name": "emoji_conversation",
+      "description": "Cuộc trò chuyện với emoji",
+      "participants": ["tu", "tune"],
       "messages": [
-        "Hey, how was your weekend?",
-        "It was great! I went hiking with some friends.",
-        "That sounds fun! Where did you go?",
-        "We went to the mountains about an hour from here.",
-        "Nice! I love hiking. Did you take any photos?",
-        "Yes, I took tons! The views were incredible.",
-        "You should share some of them!",
-        "I will! I'm still going through all of them.",
-        "Take your time. I'm excited to see them.",
-        "Thanks! I'll send the best ones later today.",
-        "Sounds good! I can't wait to see them.",
-        "By the way, do you want to join us next time?",
-        "Absolutely! I'd love to go hiking with you guys.",
-        "Great! I'll let you know when we plan the next trip.",
-        "Perfect! Thanks for thinking of me."
+        "Gì dị",
+        "🤤",
+        "😢",
+        "Sao vậy?",
+        "Không có gì đâu"
       ]
     }
   ],
   "testData": {
-    "shortMessage": "Hi!",
-    "mediumMessage": "This is a medium length message for testing purposes.",
-    "longMessage": "This is a very long message that is used for testing how the application handles messages that exceed the typical length. It should be displayed properly in the conversation view and should not cause any UI issues or performance problems. The message continues to provide enough content for thorough testing of the message display functionality.",
+    "shortMessage": "Hi",
+    "mediumMessage": "Cậu cơm chưa? Tớ đang đói quá",
+    "longMessage": "Hello cậu cậu cho tớ làm quen nhé. Tớ thấy cậu có vẻ thú vị và muốn trò chuyện cùng cậu. Hy vọng chúng ta có thể trở thành bạn bè tốt.",
     "emptyMessage": "",
     "whitespaceMessage": "   ",
     "specialCharacters": "!@#$%^&*()_+-=[]{}|;':\",./<>?",
     "numbersOnly": "1234567890",
-    "mixedContent": "Hello! 😀 Check this: https://example.com #hashtag @mention",
-    "unicodeMessage": "Hello 世界 🌍 Привет мир 🌎 مرحبا بالعالم 🌏",
-    "repeatedCharacters": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "newlineMessage": "Line 1\nLine 2\nLine 3"
+    "mixedContent": "Hello! 😀 Xem này: https://modis.com #modis @u001",
+    "unicodeMessage": "Xin chào 世界 🌍 Привет мир 🌎 مرحبا بالعالم 🌏",
+    "repeatedCharacters": "Hellooooooooooooooo",
+    "newlineMessage": "Dòng 1\nDòng 2\nDòng 3",
+    "vietnameseMessage": "Chào bạn! Hôm nay thế nào? Có gì vui không?",
+    "emojiOnly": "🤤😢👍❤️"
   },
   "messageValidation": {
     "maxLength": 1000,
     "minLength": 1,
     "allowEmptyMessage": false,
     "allowWhitespaceOnly": false,
-    "supportedCharacters": "alphanumeric, emoji, punctuation, unicode",
+    "supportedCharacters": "alphanumeric, emoji, punctuation, unicode, vietnamese",
     "unsupportedCharacters": "control characters"
   },
   "performanceTestData": {
     "rapidMessages": [
-      "Message 1",
-      "Message 2", 
-      "Message 3",
-      "Message 4",
-      "Message 5"
+      "Hi",
+      "Xin chào",
+      "Cậu cơm chưa?",
+      "Tớ cơm rồi",
+      "Hay đó!"
     ],
     "bulkMessages": 50,
     "messageDelay": 100
+  },
+  "realTimeTestData": {
+    "senderId": "696c8579c5785f1596a2fd1c",
+    "receiverId": "696caf82dc39dada8285850d",
+    "testMessages": [
+      "Test real time",
+      "Hihi",
+      "Hii",
+      "Loo"
+    ]
   }
 }

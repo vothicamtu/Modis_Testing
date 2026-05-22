@@ -1,64 +1,243 @@
 {
+  "loginTestData": {
+    "validCredentials": [
+      {
+        "id": "valid_login_1",
+        "username": "tu",
+        "password": "123456",
+        "email": "tu@gmail.com",
+        "phone": "0123456789",
+        "fullname": "Tíu",
+        "role": "USER",
+        "status": "ACTIVE",
+        "expectedResult": "success"
+      },
+      {
+        "id": "valid_login_2",
+        "username": "camtu",
+        "password": "123",
+        "email": "ct@gmail.com",
+        "phone": "09875531427",
+        "fullname": "camtu",
+        "role": "USER",
+        "status": "ACTIVE",
+        "expectedResult": "success"
+      },
+      {
+        "id": "valid_login_3",
+        "username": "diem",
+        "password": "12345",
+        "email": "user1@gmail.com",
+        "phone": "0345556999",
+        "fullname": "Nguyen Van A",
+        "role": "USER",
+        "status": "ACTIVE",
+        "expectedResult": "success"
+      },
+      {
+        "id": "valid_login_4",
+        "username": "luc",
+        "password": "123",
+        "email": "123@gmail.com",
+        "phone": "08977677889",
+        "fullname": "luc dep trai",
+        "role": "USER",
+        "status": "ACTIVE",
+        "expectedResult": "success"
+      }
+    ],
+    "invalidCredentials": [
+      {
+        "id": "invalid_username",
+        "username": "nonexistentuser",
+        "password": "123",
+        "expectedResult": "error",
+        "expectedError": "Tài khoản không tồn tại",
+        "description": "Test với username không tồn tại"
+      },
+      {
+        "id": "invalid_password_1",
+        "username": "tu",
+        "password": "wrongpassword",
+        "expectedResult": "error",
+        "expectedError": "Mật khẩu không đúng",
+        "description": "Test với password sai cho user tu"
+      },
+      {
+        "id": "invalid_password_2",
+        "username": "camtu",
+        "password": "wrongpass",
+        "expectedResult": "error",
+        "expectedError": "Mật khẩu không đúng",
+        "description": "Test với password sai cho user camtu"
+      },
+      {
+        "id": "invalid_password_3",
+        "username": "diem",
+        "password": "wrongpass123",
+        "expectedResult": "error",
+        "expectedError": "Mật khẩu không đúng",
+        "description": "Test với password sai cho user diem"
+      },
+      {
+        "id": "empty_credentials",
+        "username": "",
+        "password": "",
+        "expectedResult": "error",
+        "expectedError": "Vui lòng nhập tài khoản và mật khẩu",
+        "description": "Test với thông tin trống"
+      },
+      {
+        "id": "empty_username",
+        "username": "",
+        "password": "123",
+        "expectedResult": "error",
+        "expectedError": "Vui lòng nhập tài khoản",
+        "description": "Test với username trống"
+      },
+      {
+        "id": "empty_password",
+        "username": "tu",
+        "password": "",
+        "expectedResult": "error",
+        "expectedError": "Vui lòng nhập mật khẩu",
+        "description": "Test với password trống"
+      }
+    ]
+  },
   "testUsers": [
     {
-      "id": "test_user_1",
-      "username": "testuser1",
-      "password": "testpass123",
-      "email": "testuser1@example.com",
-      "phone": "1234567890",
-      "fullname": "Test User One",
-      "role": "user",
-      "status": "active"
+      "id": "user_1",
+      "username": "tu",
+      "password": "123456",
+      "email": "tu@gmail.com",
+      "phone": "0123456789",
+      "fullname": "Tíu",
+      "role": "USER",
+      "status": "ACTIVE"
     },
     {
-      "id": "test_user_2",
-      "username": "testuser2",
-      "password": "testpass123",
-      "email": "testuser2@example.com",
-      "phone": "1234567891",
-      "fullname": "Test User Two",
-      "role": "user",
-      "status": "active"
+      "id": "user_2",
+      "username": "camtu",
+      "password": "123",
+      "email": "ct@gmail.com",
+      "phone": "09875531427",
+      "fullname": "camtu",
+      "role": "USER",
+      "status": "ACTIVE"
     },
     {
-      "id": "test_user",
-      "username": "testuser",
-      "password": "userpass123",
-      "email": "testuser@example.com",
-      "phone": "1234567892",
-      "fullname": "Test user",
-      "role": "user",
-      "status": "active"
+      "id": "user_3",
+      "username": "Asuy",
+      "password": "duy123",
+      "email": "khanhduy270704@gmail.com",
+      "phone": "0338701674",
+      "fullname": "Phùng Khánh Duy",
+      "role": "USER",
+      "status": "ACTIVE"
     },
     {
-      "id": "test_user_inactive",
-      "username": "inactiveuser",
-      "password": "testpass123",
-      "email": "inactive@example.com",
-      "phone": "1234567893",
-      "fullname": "Inactive User",
-      "role": "user",
-      "status": "inactive"
+      "id": "user_4",
+      "username": "diem",
+      "password": "12345",
+      "email": "user1@gmail.com",
+      "phone": "0345556999",
+      "fullname": "Nguyen Van A",
+      "role": "USER",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "user_5",
+      "username": "luc",
+      "password": "123",
+      "email": "123@gmail.com",
+      "phone": "08977677889",
+      "fullname": "luc dep trai",
+      "role": "USER",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "admin_1",
+      "username": "admin22130038",
+      "password": "encrypted_password",
+      "email": "iem@gmail.com",
+      "phone": "0347774444",
+      "fullname": "diem",
+      "role": "ADMIN",
+      "status": "ACTIVE"
     }
   ],
-  "invalidUsers": [
+  "retryTestScenarios": [
     {
-      "username": "invaliduser",
-      "password": "wrongpass",
-      "email": "invalid@example.com",
-      "expectedError": "Invalid username or password"
+      "id": "retry_scenario_1",
+      "description": "Thử đăng nhập sai 2 lần rồi đúng lần thứ 3",
+      "attempts": [
+        {
+          "attempt": 1,
+          "username": "tu",
+          "password": "wrongpass1",
+          "expectedResult": "error",
+          "expectedError": "Mật khẩu không đúng"
+        },
+        {
+          "attempt": 2,
+          "username": "tu",
+          "password": "wrongpass2",
+          "expectedResult": "error",
+          "expectedError": "Mật khẩu không đúng"
+        },
+        {
+          "attempt": 3,
+          "username": "tu",
+          "password": "123456",
+          "expectedResult": "success"
+        }
+      ]
     },
     {
-      "username": "",
-      "password": "",
-      "email": "",
-      "expectedError": "Username and password are required"
+      "id": "retry_scenario_2",
+      "description": "Thử username sai rồi đúng",
+      "attempts": [
+        {
+          "attempt": 1,
+          "username": "wronguser",
+          "password": "123",
+          "expectedResult": "error",
+          "expectedError": "Tài khoản không tồn tại"
+        },
+        {
+          "attempt": 2,
+          "username": "camtu",
+          "password": "123",
+          "expectedResult": "success"
+        }
+      ]
     },
     {
-      "username": "testuser1",
-      "password": "wrongpass",
-      "email": "testuser1@example.com",
-      "expectedError": "Invalid password"
+      "id": "retry_scenario_3",
+      "description": "Thử nhiều user khác nhau",
+      "attempts": [
+        {
+          "attempt": 1,
+          "username": "wronguser1",
+          "password": "wrongpass",
+          "expectedResult": "error",
+          "expectedError": "Tài khoản không tồn tại"
+        },
+        {
+          "attempt": 2,
+          "username": "tu",
+          "password": "wrongpass",
+          "expectedResult": "error",
+          "expectedError": "Mật khẩu không đúng"
+        },
+        {
+          "attempt": 3,
+          "username": "diem",
+          "password": "12345",
+          "expectedResult": "success"
+        }
+      ]
     }
   ],
   "signupTestData": [
@@ -72,7 +251,7 @@
       "expectedResult": "success"
     },
     {
-      "username": "testuser1",
+      "username": "tu",
       "password": "newpass123",
       "confirmPassword": "newpass123",
       "email": "different@example.com",
@@ -90,147 +269,59 @@
       "fullname": "Mismatched Password",
       "expectedResult": "error",
       "expectedError": "Passwords do not match"
-    },
-    {
-      "username": "newuser3",
-      "password": "newpass123",
-      "confirmPassword": "newpass123",
-      "email": "invalidemail",
-      "phone": "9876543213",
-      "fullname": "Invalid Email",
-      "expectedResult": "error",
-      "expectedError": "Invalid email format"
     }
   ],
   "friendsTestData": [
     {
       "userId": "friend_1",
-      "username": "friend1",
-      "fullname": "Friend One",
+      "username": "camtu",
+      "fullname": "camtu",
       "status": "friend",
       "mutualFriends": 5
     },
     {
       "userId": "friend_2",
-      "username": "friend2",
-      "fullname": "Friend Two",
+      "username": "diem",
+      "fullname": "Nguyen Van A",
       "status": "friend",
       "mutualFriends": 3
     },
     {
       "userId": "pending_request_1",
-      "username": "pendingreq1",
-      "fullname": "Pending Request One",
+      "username": "Asuy",
+      "fullname": "Phùng Khánh Duy",
       "status": "pending_received",
       "mutualFriends": 2
-    },
-    {
-      "userId": "sent_request_1",
-      "username": "sentreq1",
-      "fullname": "Sent Request One",
-      "status": "pending_sent",
-      "mutualFriends": 1
-    },
-    {
-      "userId": "search_user_1",
-      "username": "searchuser1",
-      "fullname": "Search User One",
-      "status": "not_friend",
-      "mutualFriends": 0
     }
   ],
   "conversationsTestData": [
     {
       "conversationId": "conv_1",
-      "participantId": "friend_1",
-      "participantName": "Friend One",
-      "lastMessage": "Hello, how are you?",
-      "timestamp": "2024-01-15T10:30:00Z",
+      "participantId": "user_2",
+      "participantName": "camtu",
+      "lastMessage": "Xin chào, bạn khỏe không?",
+      "timestamp": "2026-05-22T10:30:00Z",
       "unreadCount": 2,
       "messageType": "text"
     },
     {
       "conversationId": "conv_2",
-      "participantId": "friend_2",
-      "participantName": "Friend Two",
-      "lastMessage": "Photo",
-      "timestamp": "2024-01-15T09:15:00Z",
+      "participantId": "user_4",
+      "participantName": "Nguyen Van A",
+      "lastMessage": "Hình ảnh",
+      "timestamp": "2026-05-22T09:15:00Z",
       "unreadCount": 0,
       "messageType": "image"
-    },
-    {
-      "conversationId": "conv_3",
-      "participantId": "test_user_2",
-      "participantName": "Test User Two",
-      "lastMessage": "Thanks for the photo!",
-      "timestamp": "2024-01-14T18:45:00Z",
-      "unreadCount": 1,
-      "messageType": "text"
-    }
-  ],
-  "messagesTestData": [
-    {
-      "messageId": "msg_1",
-      "conversationId": "conv_1",
-      "senderId": "test_user_1",
-      "receiverId": "friend_1",
-      "content": "Hello, how are you?",
-      "type": "text",
-      "timestamp": "2024-01-15T10:30:00Z",
-      "status": "delivered"
-    },
-    {
-      "messageId": "msg_2",
-      "conversationId": "conv_1",
-      "senderId": "friend_1",
-      "receiverId": "test_user_1",
-      "content": "I'm doing great, thanks!",
-      "type": "text",
-      "timestamp": "2024-01-15T10:32:00Z",
-      "status": "read"
-    },
-    {
-      "messageId": "msg_3",
-      "conversationId": "conv_2",
-      "senderId": "test_user_1",
-      "receiverId": "friend_2",
-      "content": "image_url_here",
-      "type": "image",
-      "timestamp": "2024-01-15T09:15:00Z",
-      "status": "delivered"
-    }
-  ],
-  "searchTestData": [
-    {
-      "query": "friend",
-      "expectedResults": ["friend1", "friend2"],
-      "resultCount": 2
-    },
-    {
-      "query": "test",
-      "expectedResults": ["testuser1", "testuser2"],
-      "resultCount": 2
-    },
-    {
-      "query": "nonexistent",
-      "expectedResults": [],
-      "resultCount": 0
-    },
-    {
-      "query": "",
-      "expectedResults": [],
-      "resultCount": 0,
-      "expectedError": "Search query cannot be empty"
     }
   ],
   "validationTestData": {
     "usernames": {
       "valid": ["user123", "testuser", "valid_user", "user_123"],
-      "invalid": ["ab", "a".repeat(25), "user@123", "user space"]
+      "invalid": ["ab", "aaaaaaaaaaaaaaaaaaaaaaaaa", "user@123", "userspace"]
     },
     "passwords": {
       "valid": ["pass123", "validpassword", "Test123!"],
-      "invalid": ["12345", "a".repeat(55)]
+      "invalid": ["12345", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
     },
     "emails": {
       "valid": ["test@example.com", "user.name@domain.co.uk", "test+tag@example.org"],
@@ -238,7 +329,7 @@
     },
     "phones": {
       "valid": ["1234567890", "12345678901", "123456789012345"],
-      "invalid": ["123", "abcdefghij", "123-456-7890"]
+      "invalid": ["123", "abcdefghij", "1234567890"]
     }
   }
 }

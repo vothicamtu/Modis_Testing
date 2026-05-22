@@ -3,32 +3,155 @@ package com.modis.tests;
 import com.modis.base.BaseTest;
 import com.modis.constants.AppConstants;
 import com.modis.pages.*;
+import com.modis.utils.TestDataReader;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+import java.util.Map;
+import java.util.List;
 
 /**
- * Test class for Camera functionality
- * Covers camera operations, photo capture, and photo sending
+ * Test class for Camera functionality with real data
+ * Covers camera operations, photo capture, and photo sending using actual photo data
  */
 public class CameraTests extends BaseTest {
     
     private HomePage homePage;
+    private TestDataReader testDataReader = new TestDataReader();
+    
+    // ==================== DATA PROVIDERS ====================
+    
+    @DataProvider(name = "testPhotosData")
+    public Object[][] getTestPhotosData() {
+        List<Map<String, Object>> photos = testDataReader.getTestPhotos();
+        Object[][] data = new Object[Math.min(photos.size(), 3)][];
+        
+        for (int i = 0; i < Math.min(photos.size(), 3); i++) {
+            Map<String, Object> photo = photos.get(i);
+            data[i] = new Object[]{
+                photo.get("id"),
+                photo.get("senderUsername"),
+                photo.get("caption"),
+                photo.get("recipientUsernames")
+            };
+        }
+        return data;
+    }
+    
+    @DataProvider(name = "photoScenariosData")
+    public Object[][] getPhotoScenariosData() {
+        Map<String, Map<String, Object>> scenarios = testDataReader.getPhotoTestScenarios();
+        Object[][] data = new Object[scenarios.size()][];
+        
+        int i = 0;
+        for (Map.Entry<String, Map<String, Object>> entry : scenarios.entrySet()) {
+            Map<String, Object> scenario = entry.getValue();
+            data[i] = new Object[]{
+                entry.getKey(),
+                scenario.get("description"),
+                scenario.get("caption"),
+                scenario.get("recipients"),
+                scenario.get("expectedResult")
+            };
+            i++;
+        }
+        return data;
+    }
     
     @BeforeMethod(groups = {"camera", "regression"})
     public void loginBeforeTest() {
-        logger.info("Logging in before camera test");
+        logger.info("Logging in before camera test with real user data");
+        
+        // Use real user data for login
+        Map<String, Object> testUser = testDataReader.getRandomValidUser();
+        String username = (String) testUser.get("username");
+        String password = (String) testUser.get("password");
         
         LoadingPage loadingPage = new LoadingPage();
         LoginPage loginPage = loadingPage.clickLoginButton();
-        homePage = (HomePage) loginPage.loginWithTestUser();
+        homePage = (HomePage) loginPage.login(username, password);
         
         Assert.assertTrue(homePage.isDisplayed(), "Should be logged in before camera tests");
+        logger.info("Logged in successfully with user: " + username);
+    }
+    
+    // ==================== PHOTO DATA TESTS ====================
+    
+    @Test(priority = 1, groups = {"camera", "regression", "data"}, 
+          dataProvider = "testPhotosData", description = "Verify photo data from real database")
+    public void testPhotosWithRealData(String photoId, String senderUsername, String caption, List<String> recipients) {
+        logger.info("Testing photo data - Sender: " + senderUsername + " Caption: " + caption);
+        
+        TakePage takePage = homePage.navigateToCamera();
+        
+        // Test photo capture with real caption
+        if (caption != null && !caption.trim().isEmpty()) {
+            // Simulate taking a photo
+            takePage.capturePhoto();
+            
+            // Add caption from real data
+            takePage.addCaption(caption);
+            
+            // Select recipients from real data
+            if (recipients != null && !recipients.isEmpty()) {
+                for (String recipient : recipients) {
+                    if (takePage.isRecipientAvailable(recipient)) {
+                        takePage.selectRecipient(recipient);
+                    }
+                }
+            }
+            
+            // Send photo
+            takePage.sendPhoto();
+            
+            // Verify photo was sent successfully
+            Assert.assertTrue(takePage.isPhotoSentSuccessfully(), 
+                "Photo should be sent successfully with real data");
+        }
+        
+        logger.info("Photo data test completed for sender: " + senderUsername);
+    }
+    
+    @Test(priority = 2, groups = {"camera", "regression", "data"}, 
+          dataProvider = "photoScenariosData", description = "Verify photo scenarios with real data")
+    public void testPhotoScenariosWithRealData(String scenarioName, String description, String caption, 
+                                             List<String> recipients, String expectedResult) {
+        logger.info("Testing photo scenario: " + scenarioName + " - " + description);
+        
+        TakePage takePage = homePage.navigateToCamera();
+        
+        // Execute scenario based on real data
+        takePage.capturePhoto();
+        
+        if (caption != null && !caption.trim().isEmpty()) {
+            takePage.addCaption(caption);
+        }
+        
+        if (recipients != null && !recipients.isEmpty()) {
+            for (String recipient : recipients) {
+                if (takePage.isRecipientAvailable(recipient)) {
+                    takePage.selectRecipient(recipient);
+                }
+            }
+        }
+        
+        // Verify expected result
+        if ("photo_sent_successfully".equals(expectedResult)) {
+            takePage.sendPhoto();
+            Assert.assertTrue(takePage.isPhotoSentSuccessfully(), 
+                "Photo should be sent successfully for scenario: " + scenarioName);
+        } else if ("send_button_disabled".equals(expectedResult)) {
+            Assert.assertFalse(takePage.isSendButtonEnabled(), 
+                "Send button should be disabled for scenario: " + scenarioName);
+        }
+        
+        logger.info("Photo scenario test completed: " + scenarioName);
     }
     
     // ==================== NAVIGATION TESTS ====================
     
-    @Test(priority = 1, groups = {"camera", "smoke"}, 
+    @Test(priority = 3, groups = {"camera", "smoke"}, 
           description = "Verify navigation to camera screen")
     public void testNavigateToCamera() {
         logger.info("Starting navigate to camera test");
@@ -41,7 +164,7 @@ public class CameraTests extends BaseTest {
         logger.info("Navigate to camera test completed successfully");
     }
     
-    @Test(priority = 2, groups = {"camera", "navigation"}, 
+    @Test(priority = 4, groups = {"camera", "navigation"}, 
           description = "Verify back navigation from camera screen")
     public void testBackNavigationFromCamera() {
         logger.info("Starting back navigation from camera test");

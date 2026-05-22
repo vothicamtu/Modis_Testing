@@ -3,32 +3,136 @@ package com.modis.tests;
 import com.modis.base.BaseTest;
 import com.modis.constants.AppConstants;
 import com.modis.pages.*;
+import com.modis.utils.TestDataReader;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+import java.util.Map;
+import java.util.List;
 
 /**
- * Test class for Friends functionality
- * Covers friend search, friend requests, and friend management
+ * Test class for Friends functionality with real data
+ * Covers friend search, friend requests, and friend management using actual user data
  */
 public class FriendsTests extends BaseTest {
     
     private HomePage homePage;
+    private TestDataReader testDataReader = new TestDataReader();
+    
+    // ==================== DATA PROVIDERS ====================
+    
+    @DataProvider(name = "testFriendsData")
+    public Object[][] getTestFriendsData() {
+        List<Map<String, Object>> friends = testDataReader.getTestFriends();
+        Object[][] data = new Object[friends.size()][];
+        
+        for (int i = 0; i < friends.size(); i++) {
+            Map<String, Object> friend = friends.get(i);
+            data[i] = new Object[]{
+                friend.get("id"),
+                friend.get("username"),
+                friend.get("fullName"),
+                friend.get("email"),
+                friend.get("status")
+            };
+        }
+        return data;
+    }
+    
+    @DataProvider(name = "friendRequestsData")
+    public Object[][] getFriendRequestsData() {
+        List<Map<String, Object>> requests = testDataReader.getFriendRequests();
+        Object[][] data = new Object[requests.size()][];
+        
+        for (int i = 0; i < requests.size(); i++) {
+            Map<String, Object> request = requests.get(i);
+            data[i] = new Object[]{
+                request.get("id"),
+                request.get("senderUsername"),
+                request.get("senderFullName"),
+                request.get("status")
+            };
+        }
+        return data;
+    }
     
     @BeforeMethod(groups = {"friends", "regression"})
     public void loginBeforeTest() {
-        logger.info("Logging in before friends test");
+        logger.info("Logging in before friends test with real user data");
+        
+        // Use real user data for login
+        Map<String, Object> testUser = testDataReader.getRandomValidUser();
+        String username = (String) testUser.get("username");
+        String password = (String) testUser.get("password");
         
         LoadingPage loadingPage = new LoadingPage();
         LoginPage loginPage = loadingPage.clickLoginButton();
-        homePage = (HomePage) loginPage.loginWithTestUser();
+        homePage = (HomePage) loginPage.login(username, password);
         
         Assert.assertTrue(homePage.isDisplayed(), "Should be logged in before friends tests");
+        logger.info("Logged in successfully with user: " + username);
+    }
+    
+    // ==================== FRIENDS DATA TESTS ====================
+    
+    @Test(priority = 1, groups = {"friends", "regression", "data"}, 
+          dataProvider = "testFriendsData", description = "Verify friends data from real database")
+    public void testFriendsWithRealData(String friendId, String username, String fullName, String email, String status) {
+        logger.info("Testing friend data - Username: " + username + ", FullName: " + fullName);
+        
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        
+        // Search for the specific friend
+        friendsPage.searchFriends(username);
+        
+        if (friendsPage.hasSearchResults()) {
+            // Verify friend appears in search results
+            Assert.assertTrue(friendsPage.isUserInSearchResults(username), 
+                "User " + username + " should appear in search results");
+            
+            // Verify friend details if found
+            if (friendsPage.isUserInSearchResults(username)) {
+                String displayedName = friendsPage.getSearchResultName(username);
+                Assert.assertTrue(displayedName.contains(fullName) || displayedName.contains(username),
+                    "Displayed name should contain expected fullname or username");
+            }
+        }
+        
+        logger.info("Friend data test completed for: " + username);
+    }
+    
+    @Test(priority = 2, groups = {"friends", "regression", "data"}, 
+          dataProvider = "friendRequestsData", description = "Verify friend requests data from real database")
+    public void testFriendRequestsWithRealData(String requestId, String senderUsername, String senderFullName, String status) {
+        logger.info("Testing friend request data - Sender: " + senderUsername + ", Status: " + status);
+        
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        friendsPage.clickRequestsTab();
+        
+        if (friendsPage.hasFriendRequests()) {
+            // Look for the specific friend request
+            if (friendsPage.isRequestFromUser(senderUsername)) {
+                String displayedName = friendsPage.getRequestNameByUsername(senderUsername);
+                Assert.assertTrue(displayedName.contains(senderFullName) || displayedName.contains(senderUsername),
+                    "Request should show correct sender name");
+                
+                // Verify request has proper action buttons based on status
+                if ("pending".equals(status)) {
+                    Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(senderUsername), 
+                        "Accept button should be displayed for pending requests");
+                    Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(senderUsername), 
+                        "Decline button should be displayed for pending requests");
+                }
+            }
+        }
+        
+        logger.info("Friend request data test completed for: " + senderUsername);
     }
     
     // ==================== NAVIGATION TESTS ====================
     
-    @Test(priority = 1, groups = {"friends", "smoke"}, 
+    @Test(priority = 3, groups = {"friends", "smoke"}, 
           description = "Verify navigation to friends screen")
     public void testNavigateToFriends() {
         logger.info("Starting navigate to friends test");

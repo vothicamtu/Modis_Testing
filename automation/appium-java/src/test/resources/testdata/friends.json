@@ -1,165 +1,170 @@
 {
   "testFriends": [
     {
-      "id": "friend_001",
-      "username": "alice_test",
-      "fullName": "Alice Johnson",
-      "email": "alice.test@example.com",
-      "phone": "1234567890",
+      "id": "696952fd47f1eb29287b6642",
+      "username": "camtu",
+      "fullName": "camtu",
+      "email": "ct@gmail.com",
+      "phone": "09875531427",
       "status": "friend",
-      "avatarUrl": "https://example.com/avatars/alice.jpg"
+      "avatarUrl": ""
     },
     {
-      "id": "friend_002", 
-      "username": "bob_test",
-      "fullName": "Bob Smith",
-      "email": "bob.test@example.com",
-      "phone": "2345678901",
+      "id": "696b33347562329ea8ea71bc", 
+      "username": "22130038",
+      "fullName": "diem",
+      "email": "iem@gmail.com",
+      "phone": "0347774444",
       "status": "friend",
-      "avatarUrl": "https://example.com/avatars/bob.jpg"
+      "avatarUrl": "https://res.cloudinary.com/dwjztnzgv/image/upload/v1768633178/Modis/tjqvstrlerx5yfkd1hb9.jpg"
     },
     {
-      "id": "friend_003",
-      "username": "charlie_test",
-      "fullName": "Charlie Brown",
-      "email": "charlie.test@example.com", 
-      "phone": "3456789012",
+      "id": "696caf82dc39dada8285850d",
+      "username": "Asuy",
+      "fullName": "Phùng Khánh Duy",
+      "email": "khanhduy270704@gmail.com", 
+      "phone": "0338701674",
       "status": "friend",
-      "avatarUrl": "https://example.com/avatars/charlie.jpg"
+      "avatarUrl": "https://res.cloudinary.com/dwjztnzgv/image/upload/v1769326969/Modis/s3vzvbv2kd4y14itqfrf.jpg"
     },
     {
-      "id": "friend_004",
-      "username": "diana_test",
-      "fullName": "Diana Prince",
-      "email": "diana.test@example.com",
-      "phone": "4567890123",
-      "status": "pending_request",
-      "avatarUrl": "https://example.com/avatars/diana.jpg"
+      "id": "69e0c588b34af37d8a960bf9",
+      "username": "Tài",
+      "fullName": "Võ Tấn Tài",
+      "email": "votan.tai207@gmail.com",
+      "phone": "0373157636",
+      "status": "friend",
+      "avatarUrl": "https://res.cloudinary.com/ds7gtxd6c/image/upload/v1776600089/Modis/k3t7okskx98h8f3l38zw.jpg"
     },
     {
-      "id": "friend_005",
-      "username": "eve_test",
-      "fullName": "Eve Wilson",
-      "email": "eve.test@example.com",
-      "phone": "5678901234",
-      "status": "sent_request",
-      "avatarUrl": "https://example.com/avatars/eve.jpg"
+      "id": "69e4ca7e9916f525447d5802",
+      "username": "ctu",
+      "fullName": "Cẩm Tú",
+      "email": "ct@gmail.com",
+      "phone": "0789654123",
+      "status": "friend",
+      "avatarUrl": ""
     }
   ],
   "friendRequests": [
     {
-      "id": "request_001",
-      "fromUserId": "user_123",
-      "fromUsername": "john_doe",
-      "fromFullName": "John Doe",
-      "requestDate": "2024-01-15T10:30:00Z",
+      "id": "696d84d9ea229b2844b8d26f",
+      "senderId": "696b8bbabec514d554aab9f6",
+      "senderUsername": "thanhdiu",
+      "senderFullName": "Bé Dịu",
+      "receiverId": "696c86c9bdfcd41d4055d791",
+      "requestDate": "2026-01-19T01:11:53.611Z",
       "status": "pending"
     },
     {
-      "id": "request_002",
-      "fromUserId": "user_456", 
-      "fromUsername": "jane_smith",
-      "fromFullName": "Jane Smith",
-      "requestDate": "2024-01-14T15:45:00Z",
+      "id": "696d9b4aea229b2844b8d273",
+      "senderId": "696caf82dc39dada8285850d", 
+      "senderUsername": "Asuy",
+      "senderFullName": "Phùng Khánh Duy",
+      "receiverId": "696b307b458e2dc39526f85b",
+      "requestDate": "2026-01-19T02:47:38.699Z",
       "status": "pending"
     },
     {
-      "id": "request_003",
-      "fromUserId": "user_789",
-      "fromUsername": "mike_jones",
-      "fromFullName": "Mike Jones", 
-      "requestDate": "2024-01-13T09:20:00Z",
+      "id": "69e0e1bccb90682d5fd78574",
+      "senderId": "69e0e0c9cb90682d5fd78573",
+      "senderUsername": "cuongvom",
+      "senderFullName": "Vo Minh Cuong",
+      "receiverId": "696952fd47f1eb29287b6642",
+      "requestDate": "2026-04-16T13:18:52.226Z",
       "status": "pending"
     }
   ],
   "sentRequests": [
     {
-      "id": "sent_001",
-      "toUserId": "user_321",
-      "toUsername": "sarah_connor",
-      "toFullName": "Sarah Connor",
-      "requestDate": "2024-01-12T14:15:00Z",
+      "id": "69e26b0c5120397746f246d2",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "receiverId": "696a493c21ab5ea8540dc6a8",
+      "receiverUsername": "A suy",
+      "receiverFullName": "Phùng Khánh Duy",
+      "requestDate": "2026-04-17T17:17:00.955Z",
       "status": "pending"
     },
     {
-      "id": "sent_002",
-      "toUserId": "user_654",
-      "toUsername": "tom_hanks", 
-      "toFullName": "Tom Hanks",
-      "requestDate": "2024-01-11T11:30:00Z",
+      "id": "69e26b875120397746f246d5",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "receiverId": "696952fd47f1eb29287b6642",
+      "receiverUsername": "camtu",
+      "receiverFullName": "camtu",
+      "requestDate": "2026-04-17T17:19:03.142Z",
       "status": "pending"
     }
   ],
   "searchResults": [
     {
-      "id": "search_001",
-      "username": "alex_test",
-      "fullName": "Alex Rodriguez",
-      "email": "alex.test@example.com",
+      "id": "69677d706997303fe53eda0b",
+      "username": "u001",
+      "fullName": "Đặng Trần Tấn Lực",
+      "email": "a@gmail.com",
       "mutualFriends": 3,
       "canAddFriend": true,
       "relationshipStatus": "none"
     },
     {
-      "id": "search_002",
-      "username": "lisa_test",
-      "fullName": "Lisa Anderson", 
-      "email": "lisa.test@example.com",
+      "id": "696b0c945d6742bdf0d86742",
+      "username": "diem",
+      "fullName": "Nguyen Van A", 
+      "email": "user1@gmail.com",
       "mutualFriends": 1,
       "canAddFriend": true,
       "relationshipStatus": "none"
     },
     {
-      "id": "search_003",
-      "username": "mark_test",
-      "fullName": "Mark Thompson",
-      "email": "mark.test@example.com",
+      "id": "696c84525f30007840f490ef",
+      "username": "luc",
+      "fullName": "luc dep trai",
+      "email": "123@gmail.com",
       "mutualFriends": 0,
-      "canAddFriend": false,
-      "relationshipStatus": "blocked"
+      "canAddFriend": true,
+      "relationshipStatus": "none"
     }
   ],
   "testScenarios": {
     "addFriend": {
-      "description": "Test adding a new friend",
-      "searchTerm": "alex_test",
+      "description": "Test thêm bạn mới",
+      "searchTerm": "u001",
       "expectedResult": "friend_request_sent"
     },
     "acceptRequest": {
-      "description": "Test accepting a friend request",
-      "requestId": "request_001",
+      "description": "Test chấp nhận lời mời kết bạn",
+      "requestId": "696d84d9ea229b2844b8d26f",
       "expectedResult": "friend_added"
     },
     "declineRequest": {
-      "description": "Test declining a friend request", 
-      "requestId": "request_002",
+      "description": "Test từ chối lời mời kết bạn", 
+      "requestId": "696d9b4aea229b2844b8d273",
       "expectedResult": "request_declined"
     },
     "searchFriends": {
-      "description": "Test searching existing friends",
-      "searchTerm": "alice",
-      "expectedResults": ["alice_test"]
+      "description": "Test tìm kiếm bạn bè hiện có",
+      "searchTerm": "camtu",
+      "expectedResults": ["camtu"]
     },
     "searchNoResults": {
-      "description": "Test search with no results",
+      "description": "Test tìm kiếm không có kết quả",
       "searchTerm": "nonexistentuser12345",
       "expectedResults": []
     }
   },
   "friendsListData": {
     "emptyState": {
-      "title": "No Friends Yet",
-      "message": "Start connecting with people by searching for them or accepting friend requests.",
-      "actionButton": "Find Friends"
+      "title": "Chưa có bạn bè",
+      "message": "Bắt đầu kết nối với mọi người bằng cách tìm kiếm hoặc chấp nhận lời mời kết bạn.",
+      "actionButton": "Tìm bạn bè"
     },
     "loadingState": {
-      "message": "Loading friends...",
+      "message": "Đang tải danh sách bạn bè...",
       "showSpinner": true
     },
     "errorState": {
-      "title": "Unable to Load Friends",
-      "message": "Please check your connection and try again.",
-      "retryButton": "Retry"
+      "title": "Không thể tải danh sách bạn bè",
+      "message": "Vui lòng kiểm tra kết nối và thử lại.",
+      "retryButton": "Thử lại"
     }
   },
   "searchValidation": {
@@ -177,20 +182,20 @@
   },
   "testUsers": {
     "activeUser": {
-      "username": "test_user_main",
-      "password": "testpass123",
+      "username": "u001",
+      "password": "123",
       "friendsCount": 15,
       "pendingRequestsCount": 3,
       "sentRequestsCount": 2
     },
     "friendUser": {
-      "username": "test_friend_user",
-      "password": "friendpass123",
+      "username": "camtu",
+      "password": "123",
       "relationshipStatus": "friend"
     },
     "strangerUser": {
-      "username": "test_stranger_user", 
-      "password": "strangerpass123",
+      "username": "luc", 
+      "password": "123",
       "relationshipStatus": "none"
     }
   },

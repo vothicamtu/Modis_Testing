@@ -1,118 +1,185 @@
 {
   "testPhotos": [
     {
-      "id": "photo_001",
-      "filename": "test_photo_1.jpg",
-      "caption": "Beautiful sunset at the beach",
-      "timestamp": "2024-01-15T18:30:00Z",
-      "location": "Beach Resort",
-      "tags": ["sunset", "beach", "nature"],
-      "recipients": ["friend_001", "friend_002"]
+      "id": "696b42ef8a4c252ef24549d1",
+      "senderId": "696a493c21ab5ea8540dc6a8",
+      "senderUsername": "A suy",
+      "filename": "y5rfpftbkhuxugoscu36.jpg",
+      "caption": "Wwtf",
+      "urlImage": "https://res.cloudinary.com/dwjztnzgv/image/upload/v1768637334/Modis/y5rfpftbkhuxugoscu36.jpg",
+      "timestamp": "2026-01-17T08:06:07.692Z",
+      "recipients": ["696952fd47f1eb29287b6642"],
+      "recipientUsernames": ["camtu"],
+      "reactions": []
     },
     {
-      "id": "photo_002",
-      "filename": "test_photo_2.jpg", 
-      "caption": "Delicious dinner with friends",
-      "timestamp": "2024-01-14T19:45:00Z",
-      "location": "Downtown Restaurant",
-      "tags": ["food", "friends", "dinner"],
-      "recipients": ["friend_001", "friend_003", "friend_004"]
+      "id": "696b45578a4c252ef24549d2",
+      "senderId": "696a493c21ab5ea8540dc6a8",
+      "senderUsername": "A suy",
+      "filename": "k5er4npynfrbcx9xc1yd.jpg",
+      "caption": "Chill",
+      "urlImage": "https://res.cloudinary.com/dwjztnzgv/image/upload/v1768637950/Modis/k5er4npynfrbcx9xc1yd.jpg",
+      "timestamp": "2026-01-17T08:16:23.795Z",
+      "recipients": ["696952fd47f1eb29287b6642"],
+      "recipientUsernames": ["camtu"],
+      "reactions": []
     },
     {
-      "id": "photo_003",
-      "filename": "test_photo_3.jpg",
-      "caption": "Morning coffee ☕",
-      "timestamp": "2024-01-14T08:15:00Z",
-      "location": "Home",
-      "tags": ["coffee", "morning", "lifestyle"],
-      "recipients": ["friend_002"]
+      "id": "696b46368a4c252ef24549d4",
+      "senderId": "696a493c21ab5ea8540dc6a8",
+      "senderUsername": "A suy",
+      "filename": "jrbvxs7bue6fj7jppnhi.jpg",
+      "caption": "Mọi thứ muốn hóa điên với tôi",
+      "urlImage": "https://res.cloudinary.com/dwjztnzgv/image/upload/v1768638173/Modis/jrbvxs7bue6fj7jppnhi.jpg",
+      "timestamp": "2026-01-17T08:20:06.455Z",
+      "recipients": ["696952fd47f1eb29287b6642"],
+      "recipientUsernames": ["camtu"],
+      "reactions": [
+        {
+          "receiverId": "696952fd47f1eb29287b6642",
+          "icon": "❤️",
+          "timestamp": "2026-01-18T07:30:20.707Z"
+        }
+      ]
     },
     {
-      "id": "photo_004",
-      "filename": "test_photo_4.jpg",
-      "caption": "",
-      "timestamp": "2024-01-13T16:20:00Z",
-      "location": "City Park",
-      "tags": ["park", "nature", "walking"],
-      "recipients": ["friend_001", "friend_002", "friend_003"]
+      "id": "696d8435ea229b2844b8d26e",
+      "senderId": "696b8bbabec514d554aab9f6",
+      "senderUsername": "thanhdiu",
+      "filename": "renurmzm7w482pkgvr8x.jpg",
+      "caption": "Đáng sợ quá",
+      "urlImage": "https://res.cloudinary.com/dwjztnzgv/image/upload/v1768784947/Modis/renurmzm7w482pkgvr8x.jpg",
+      "timestamp": "2026-01-19T01:09:09.727Z",
+      "recipients": ["696b36d8b4b63e55f26873d7", "696952fd47f1eb29287b6642", "696b33347562329ea8ea71bc", "696caf82dc39dada8285850d"],
+      "recipientUsernames": ["test", "camtu", "22130038", "Asuy"],
+      "reactions": []
     },
     {
-      "id": "photo_005",
-      "filename": "test_photo_5.jpg",
-      "caption": "Weekend hiking adventure! 🏔️",
-      "timestamp": "2024-01-13T12:00:00Z",
-      "location": "Mountain Trail",
-      "tags": ["hiking", "mountains", "adventure", "weekend"],
-      "recipients": ["friend_004", "friend_005"]
+      "id": "696d9a69ea229b2844b8d271",
+      "senderId": "696caf82dc39dada8285850d",
+      "senderUsername": "Asuy",
+      "filename": "leyzsclviwmznnrzkf4g.jpg",
+      "caption": "Trước giờ gờ",
+      "urlImage": "https://res.cloudinary.com/dwjztnzgv/image/upload/v1768790631/Modis/leyzsclviwmznnrzkf4g.jpg",
+      "timestamp": "2026-01-19T02:43:53.524Z",
+      "recipients": ["696b0c945d6742bdf0d86742", "696b307b458e2dc39526f85b", "696b8bbabec514d554aab9f6"],
+      "recipientUsernames": ["diem", "testsignup", "thanhdiu"],
+      "reactions": []
+    },
+    {
+      "id": "69bc32da70d38177037d5986",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "senderUsername": "tu",
+      "filename": "l9mxzrkwymlwkfyojaxn.jpg",
+      "caption": "🕶️ OOTD",
+      "urlImage": "https://res.cloudinary.com/ds7gtxd6c/image/upload/v1773941463/Modis/l9mxzrkwymlwkfyojaxn.jpg",
+      "timestamp": "2026-03-19T17:31:06.907Z",
+      "recipients": ["696c84525f30007840f490ef", "696b33347562329ea8ea71bc", "696caf64d02893bb8489d008"],
+      "recipientUsernames": ["luc", "22130038", "lam"],
+      "reactions": []
+    },
+    {
+      "id": "69bc33fe70d38177037d5987",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "senderUsername": "tu",
+      "filename": "ocoaxawfjtlk5uotu0g2.jpg",
+      "caption": "😍 I love you",
+      "urlImage": "https://res.cloudinary.com/ds7gtxd6c/image/upload/v1773941756/Modis/ocoaxawfjtlk5uotu0g2.jpg",
+      "timestamp": "2026-03-19T17:35:58.818Z",
+      "recipients": ["696c84525f30007840f490ef", "696b33347562329ea8ea71bc", "696caf64d02893bb8489d008"],
+      "recipientUsernames": ["luc", "22130038", "lam"],
+      "reactions": []
+    },
+    {
+      "id": "69b282aad49a8f5cb9bffdfb",
+      "senderId": "696c86c9bdfcd41d4055d791",
+      "senderUsername": "tu",
+      "filename": "kyjievqtkjzlwv2nngbu.jpg",
+      "caption": "Hello",
+      "urlImage": "https://res.cloudinary.com/ds7gtxd6c/image/upload/v1773306536/Modis/kyjievqtkjzlwv2nngbu.jpg",
+      "timestamp": "2026-03-12T09:08:58.838Z",
+      "recipients": ["696c84525f30007840f490ef", "696b33347562329ea8ea71bc"],
+      "recipientUsernames": ["luc", "22130038"],
+      "reactions": []
     }
   ],
   "captionTemplates": {
     "nature": [
-      "Beautiful day in nature 🌿",
-      "Amazing sunset today 🌅",
-      "Love this peaceful place 🌲",
-      "Nature at its finest 🍃",
-      "Perfect weather for outdoor activities ☀️"
+      "Đẹp quá trời 🌿",
+      "Hoàng hôn tuyệt vời hôm nay 🌅",
+      "Yêu nơi yên bình này 🌲",
+      "Thiên nhiên tuyệt đẹp 🍃",
+      "Thời tiết hoàn hảo cho hoạt động ngoài trời ☀️"
     ],
     "food": [
-      "Delicious meal! 😋",
-      "Trying something new today 🍽️",
-      "Homemade goodness 👨‍🍳",
-      "Food coma incoming 🤤",
-      "Best restaurant in town! ⭐"
+      "Ngon tuyệt! 😋",
+      "Thử món mới hôm nay 🍽️",
+      "Đồ tự làm ngon lành 👨‍🍳",
+      "Sắp no căng bụng 🤤",
+      "Nhà hàng ngon nhất thành phố! ⭐"
     ],
     "friends": [
-      "Great time with amazing friends! 👫",
-      "Squad goals achieved 💪",
-      "Making memories with the best people ❤️",
-      "Friends that make life better 🌟",
-      "Grateful for these wonderful people 🙏"
+      "Thời gian tuyệt vời với những người bạn tuyệt vời! 👫",
+      "Mục tiêu nhóm đã đạt được 💪",
+      "Tạo kỷ niệm với những người tốt nhất ❤️",
+      "Bạn bè làm cuộc sống tốt đẹp hơn 🌟",
+      "Biết ơn những người tuyệt vời này 🙏"
     ],
     "lifestyle": [
-      "Living my best life ✨",
-      "Simple moments, big happiness 😊",
-      "Everyday magic 🌈",
-      "Life is good 👍",
-      "Blessed and grateful 🙏"
+      "Sống cuộc sống tốt nhất ✨",
+      "Những khoảnh khắc đơn giản, hạnh phúc lớn 😊",
+      "Phép màu hàng ngày 🌈",
+      "Cuộc sống thật tốt 👍",
+      "Được phước và biết ơn 🙏"
     ],
-    "travel": [
-      "Adventure awaits! ✈️",
-      "Exploring new places 🗺️",
-      "Travel memories in the making 📸",
-      "Wanderlust satisfied 🌍",
-      "New city, new experiences 🏙️"
+    "random": [
+      "Wwtf",
+      "Chill",
+      "Mọi thứ muốn hóa điên với tôi",
+      "Đáng sợ quá",
+      "Trước giờ gờ",
+      "🕶️ OOTD",
+      "😍 I love you",
+      "Hello"
     ]
   },
   "testScenarios": {
     "captureAndSend": {
-      "description": "Capture photo and send to friends",
-      "caption": "Test photo from automation",
-      "recipients": ["friend_001", "friend_002"],
+      "description": "Chụp ảnh và gửi cho bạn bè",
+      "caption": "Ảnh test từ automation",
+      "recipients": ["camtu", "diem"],
       "expectedResult": "photo_sent_successfully"
     },
     "captureWithoutCaption": {
-      "description": "Capture and send photo without caption",
+      "description": "Chụp và gửi ảnh không có caption",
       "caption": "",
-      "recipients": ["friend_001"],
+      "recipients": ["camtu"],
       "expectedResult": "photo_sent_successfully"
     },
     "captureWithLongCaption": {
-      "description": "Test photo with very long caption",
-      "caption": "This is a very long caption that tests the maximum length allowed by the application. It should either be accepted in full or truncated appropriately based on the app's validation rules. The caption continues to provide enough text for thorough testing of the caption input functionality and validation.",
-      "recipients": ["friend_002"],
+      "description": "Test ảnh với caption rất dài",
+      "caption": "Mọi thứ muốn hóa điên với tôi và tôi không biết phải làm gì nữa. Cuộc sống đôi khi thật khó khăn và phức tạp. Nhưng tôi vẫn cố gắng giữ tinh thần lạc quan và tích cực.",
+      "recipients": ["Asuy"],
       "expectedResult": "caption_handled_appropriately"
     },
     "captureSelectAllFriends": {
-      "description": "Capture photo and send to all friends",
-      "caption": "Photo for everyone! 📸",
+      "description": "Chụp ảnh và gửi cho tất cả bạn bè",
+      "caption": "Ảnh cho mọi người! 📸",
       "selectAll": true,
       "expectedResult": "photo_sent_to_all_friends"
     },
     "captureNoRecipients": {
-      "description": "Try to send photo without selecting recipients",
-      "caption": "Test photo",
+      "description": "Thử gửi ảnh mà không chọn người nhận",
+      "caption": "Ảnh test",
       "recipients": [],
       "expectedResult": "send_button_disabled"
+    },
+    "captureWithReaction": {
+      "description": "Chụp ảnh và nhận reaction",
+      "caption": "Ảnh đẹp nhé",
+      "recipients": ["camtu"],
+      "expectedReaction": "❤️",
+      "expectedResult": "photo_received_reaction"
     }
   },
   "cameraSettings": {
@@ -127,24 +194,24 @@
     "maxCaptionLength": 500,
     "minCaptionLength": 0,
     "allowEmptyCaption": true,
-    "supportedCharacters": "alphanumeric, emoji, punctuation, unicode",
+    "supportedCharacters": "alphanumeric, emoji, punctuation, unicode, vietnamese",
     "maxRecipients": 50,
     "minRecipients": 1
   },
   "galleryTestData": {
     "emptyGallery": {
-      "title": "No Photos Yet",
-      "message": "Start capturing memories by taking your first photo!",
-      "actionButton": "Take Photo"
+      "title": "Chưa có ảnh",
+      "message": "Bắt đầu tạo kỷ niệm bằng cách chụp ảnh đầu tiên!",
+      "actionButton": "Chụp ảnh"
     },
     "loadingGallery": {
-      "message": "Loading photos...",
+      "message": "Đang tải ảnh...",
       "showSpinner": true
     },
     "errorGallery": {
-      "title": "Unable to Load Photos",
-      "message": "Please check your connection and try again.",
-      "retryButton": "Retry"
+      "title": "Không thể tải ảnh",
+      "message": "Vui lòng kiểm tra kết nối và thử lại.",
+      "retryButton": "Thử lại"
     }
   },
   "performanceTestData": {
@@ -198,5 +265,16 @@
       "large": "5MB",
       "xlarge": "10MB"
     }
+  },
+  "reactionTypes": [
+    "❤️", "👍", "😂", "😮", "😢", "😡", "🔥", "👀"
+  ],
+  "cloudinaryUrls": {
+    "baseUrl": "https://res.cloudinary.com/",
+    "accounts": [
+      "dwjztnzgv",
+      "ds7gtxd6c"
+    ],
+    "folder": "Modis"
   }
 }

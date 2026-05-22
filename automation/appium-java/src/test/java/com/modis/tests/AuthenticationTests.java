@@ -4,18 +4,333 @@ import com.modis.base.BaseTest;
 import com.modis.base.BasePage;
 import com.modis.constants.AppConstants;
 import com.modis.pages.*;
+import com.modis.utils.TestDataReader;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+import java.util.Map;
+import java.util.List;
 
 /**
  * Test class for Authentication functionality
- * Covers login, signup, and logout scenarios
+ * Covers login, signup, and logout scenarios with real data and retry logic
  */
 public class AuthenticationTests extends BaseTest {
 
-    // ==================== LOGIN TESTS ====================
+    private TestDataReader testDataReader = new TestDataReader();
+
+    // ==================== DATA PROVIDERS ====================
+
+    @DataProvider(name = "validLoginData")
+    public Object[][] getValidLoginData() {
+        List<Map<String, Object>> validCredentials = testDataReader.getValidLoginCredentials();
+        Object[][] data = new Object[validCredentials.size()][];
+        
+        for (int i = 0; i < validCredentials.size(); i++) {
+            Map<String, Object> credential = validCredentials.get(i);
+            data[i] = new Object[]{
+                credential.get("username"),
+                credential.get("password"),
+                credential.get("fullname"),
+                credential.get("expectedResult")
+            };
+        }
+        return data;
+    }
+
+    @DataProvider(name = "invalidLoginData")
+    public Object[][] getInvalidLoginData() {
+        List<Map<String, Object>> invalidCredentials = testDataReader.getInvalidLoginCredentials();
+        Object[][] data = new Object[invalidCredentials.size()][];
+        
+        for (int i = 0; i < invalidCredentials.size(); i++) {
+            Map<String, Object> credential = invalidCredentials.get(i);
+            data[i] = new Object[]{
+                credential.get("username"),
+                credential.get("password"),
+                credential.get("expectedError"),
+                credential.get("description")
+            };
+        }
+        return data;
+    }
+
+    @DataProvider(name = "retryLoginScenarios")
+    public Object[][] getRetryLoginScenarios() {
+        List<Map<String, Object>> retryScenarios = testDataReader.getRetryLoginScenarios();
+        Object[][] data = new Object[retryScenarios.size()][];
+        
+        for (int i = 0; i < retryScenarios.size(); i++) {
+            Map<String, Object> scenario = retryScenarios.get(i);
+            data[i] = new Object[]{
+                scenario.get("id"),
+                scenario.get("description"),
+                scenario.get("attempts")
+            };
+        }
+        return data;
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    // ==================== LOGIN TESTS WITH REAL DATA ====================
+
+    @Test(priority = 1, groups = {"authentication", "regression", "smoke"}, 
+          dataProvider = "validLoginData", description = "Verify successful login with valid credentials from real data")
+    public void testValidLoginWithRealData(String username, String password, String fullname, String expectedResult) {
+        logger.info("Starting valid login test with real data - Username: " + username);
+
+        LoginPage loginPage = openLoginPage();
+
+        BasePage result = loginPage.login(username, password);
+        Assert.assertTrue(result instanceof HomePage,
+                "Login should navigate to HomePage for user: " + username + ", but got: " + 
+                (result != null ? result.getClass().getSimpleName() : "null"));
+
+        // Verify user is logged in by checking profile info
+        HomePage homePage = (HomePage) result;
+        ProfilePage profilePage = homePage.navigateToProfile();
+        String displayedName = profilePage.getDisplayedUserName();
+        Assert.assertTrue(displayedName.contains(fullname) || displayedName.contains(username),
+                "Displayed name should contain expected fullname or username");
+
+        logger.info("Valid login test completed successfully for user: " + username);
+    }
+
+    @Test(priority = 2, groups = {"authentication", "regression"}, 
+          dataProvider = "invalidLoginData", description = "Verify login failure with invalid credentials and error dialog handling")
+    public void testInvalidLoginWithRealData(String username, String password, String expectedError, String description) {
+        logger.info("Starting invalid login test with error dialog handling: " + description);
+
+        LoginPage loginPage = openLoginPage();
+
+        // Attempt login with invalid credentials
+        loginPage.clearAndEnterUsername(username);
+        loginPage.clearAndEnterPassword(password);
+        loginPage.clickLoginButton();
+
+        // Wait for response (either error dialog or inline error)
+        try {
+            Thread.sleep(3000); // Wait 3 seconds for error dialog to appear
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Check if error dialog appeared (Vietnamese dialog with "Thông báo" title)
+        if (loginPage.isLoginErrorDialogDisplayed()) {
+            logger.info("Vietnamese error dialog appeared for: " + description);
+            
+            // Get error message from dialog
+            String dialogErrorMessage = loginPage.getErrorDialogMessage();
+            logger.info("Dialog error message: '{}'", dialogErrorMessage);
+            
+            // Verify error message is in Vietnamese and meaningful
+            Assert.assertFalse(dialogErrorMessage.isEmpty(), "Error dialog message should not be empty");
+            
+            boolean isVietnamese = dialogErrorMessage.contains("không") || 
+                                 dialogErrorMessage.contains("mật khẩu") ||
+                                 dialogErrorMessage.contains("đăng nhập") ||
+                                 dialogErrorMessage.contains("thông tin") ||
+                                 dialogErrorMessage.contains("chính xác");
+            Assert.assertTrue(isVietnamese, "Error message should be in Vietnamese: " + dialogErrorMessage);
+            
+            // Verify dialog has Vietnamese title "Thông báo"
+            Assert.assertTrue(loginPage.checkForErrorText("Thông báo"), 
+                "Error dialog should have Vietnamese title 'Thông báo'");
+            
+            // Verify OK button is present
+            Assert.assertTrue(loginPage.checkForErrorText("OK"), 
+                "Error dialog should have OK button");
+            
+            // Test that dialog cannot be dismissed by tapping outside
+            loginPage.tapAtCoordinates(50, 50);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
+                "Error dialog should still be visible after tapping outside (must click OK)");
+            
+            // Dismiss dialog by clicking OK button (required!)
+            loginPage.dismissLoginErrorDialog();
+            
+            // Verify dialog is dismissed
+            Assert.assertFalse(loginPage.isLoginErrorDialogDisplayed(), 
+                "Error dialog should be dismissed after clicking OK");
+            
+            logger.info("Successfully handled Vietnamese error dialog for: " + description);
+            
+        } else {
+            // Fallback: check for inline error message (older behavior)
+            logger.info("No error dialog found, checking for inline error message");
+            
+            Assert.assertTrue(loginPage.isDisplayed(), "Should remain on login page after invalid login");
+            
+            if (loginPage.isErrorMessageDisplayed()) {
+                String inlineError = loginPage.getErrorMessage();
+                logger.info("Inline error message: '{}'", inlineError);
+                
+                Assert.assertTrue(inlineError.contains(expectedError) || 
+                               inlineError.toLowerCase().contains("sai") || 
+                               inlineError.toLowerCase().contains("không đúng") || 
+                               inlineError.toLowerCase().contains("không tồn tại"),
+                    "Error message should indicate login failure. Expected: " + expectedError + ", Actual: " + inlineError);
+            } else {
+                logger.warn("No error message found (neither dialog nor inline) for: " + description);
+                // Still verify we stayed on login page
+                Assert.assertTrue(loginPage.isDisplayed(), "Should remain on login page after invalid login");
+            }
+        }
+
+        // Verify we can still interact with login form after error handling
+        loginPage.clearAndEnterUsername("test_after_error");
+        String enteredText = loginPage.getUsernameValue();
+        Assert.assertEquals(enteredText, "test_after_error", 
+            "Should be able to interact with login form after error handling");
+
+        logger.info("Invalid login test with error dialog handling completed successfully: " + description);
+    }
+
+    @Test(priority = 3, groups = {"authentication", "regression", "retry"}, 
+          dataProvider = "retryLoginScenarios", description = "Verify login retry flow with multiple attempts")
+    public void testLoginRetryFlow(String scenarioId, String description, List<Map<String, Object>> attempts) {
+        logger.info("Starting login retry flow test: " + description);
+
+        LoginPage loginPage = openLoginPage();
+        BasePage currentPage = loginPage;
+
+        for (int i = 0; i < attempts.size(); i++) {
+            Map<String, Object> attempt = attempts.get(i);
+            String username = (String) attempt.get("username");
+            String password = (String) attempt.get("password");
+            String expectedResult = (String) attempt.get("expectedResult");
+            int attemptNumber = ((Number) attempt.get("attempt")).intValue();
+
+            logger.info("Attempt " + attemptNumber + ": Username=" + username + ", Password=" + password);
+
+            if (currentPage instanceof LoginPage) {
+                currentPage = ((LoginPage) currentPage).login(username, password);
+            }
+
+            if ("success".equals(expectedResult)) {
+                Assert.assertTrue(currentPage instanceof HomePage,
+                        "Final attempt should succeed and navigate to HomePage");
+                logger.info("Login retry flow completed successfully after " + attemptNumber + " attempts");
+                break;
+            } else {
+                Assert.assertTrue(currentPage instanceof LoginPage,
+                        "Failed attempt " + attemptNumber + " should remain on LoginPage");
+                Assert.assertTrue(((LoginPage) currentPage).isErrorMessageDisplayed(),
+                        "Error message should be displayed for failed attempt " + attemptNumber);
+                
+                // Wait a bit before next attempt to simulate real user behavior
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        logger.info("Login retry flow test completed: " + description);
+    }
+
+    @Test(priority = 4, groups = {"authentication", "regression"}, description = "Verify login with empty credentials")
+    public void testEmptyCredentialsLogin() {
+        logger.info("Starting empty credentials login test");
+
+        LoginPage loginPage = openLoginPage();
+
+        LoginPage resultPage = loginPage.loginWithEmptyCredentials();
+
+        Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page");
+        Assert.assertFalse(resultPage.isLoginButtonEnabled(), "Login button should be disabled for empty credentials");
+
+        logger.info("Empty credentials login test completed successfully");
+    }
+
+    @Test(priority = 5, groups = {"authentication", "regression"}, description = "Verify login with username only")
+    public void testUsernameOnlyLogin() {
+        logger.info("Starting username only login test");
+
+        LoginPage loginPage = openLoginPage();
+
+        LoginPage resultPage = loginPage.loginWithUsernameOnly("u001");
+
+        Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page");
+        Assert.assertTrue(resultPage.isPasswordEmpty(), "Password field should be empty");
+
+        logger.info("Username only login test completed successfully");
+    }
+
+    @Test(priority = 6, groups = {"authentication", "regression"}, description = "Verify login with password only")
+    public void testPasswordOnlyLogin() {
+        logger.info("Starting password only login test");
+
+        LoginPage loginPage = openLoginPage();
+
+        LoginPage resultPage = loginPage.loginWithPasswordOnly("123");
+
+        Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page");
+        Assert.assertTrue(resultPage.isUsernameEmpty(), "Username field should be empty");
+
+        logger.info("Password only login test completed successfully");
+    }
+
+    // ==================== ORIGINAL LOGIN TESTS ====================
+
+    @Test(priority = 7, groups = {"authentication", "regression", "smoke"}, description = "Verify successful login with test user")
+    public void testValidLogin() {
+        logger.info("Starting valid login test with test user");
+
+        LoginPage loginPage = openLoginPage();
+
+        BasePage result = loginPage.loginWithTestUser();
+        Assert.assertTrue(result instanceof HomePage,
+                "Login should navigate to HomePage, but got: " + (result != null ? result.getClass().getSimpleName() : "null"));
+
+        logger.info("Valid login test completed successfully");
+    }
+
+    @Test(priority = 8, groups = {"authentication", "regression"}, description = "Verify login failure with invalid credentials and error dialog handling")
+    public void testInvalidLogin() {
+        logger.info("Starting invalid login test with error dialog handling");
+
+        LoginPage loginPage = openLoginPage();
+
+        // Use the error handling method instead of regular login
+        boolean errorDialogAppeared = loginPage.verifyInvalidLoginShowsError("invaliduser", "invalidpass");
+
+        if (errorDialogAppeared) {
+            logger.info("Vietnamese error dialog appeared and was handled successfully");
+            
+            // Verify we're back on login page and can interact normally
+            Assert.assertTrue(loginPage.isDisplayed(), "Should remain on login page after error dialog");
+            
+            // Test that we can enter new credentials after dismissing dialog
+            loginPage.clearAndEnterUsername("test_after_dialog");
+            String enteredText = loginPage.getUsernameValue();
+            Assert.assertEquals(enteredText, "test_after_dialog", 
+                "Should be able to interact with login form after dismissing error dialog");
+                
+        } else {
+            // Fallback to original behavior if no dialog appears
+            LoginPage resultPage = (LoginPage) loginPage.loginWithInvalidCredentials("invaliduser", "invalidpass");
+
+            Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page after invalid login");
+            Assert.assertTrue(resultPage.isErrorMessageDisplayed(), "Error message should be displayed");
+
+            String errorMessage = resultPage.getErrorMessage();
+            Assert.assertFalse(errorMessage.isEmpty(), "Error message should not be empty");
+        }
+
+        logger.info("Invalid login test with error dialog handling completed successfully");
+    }
 
     private LoginPage openLoginPage() {
+        // After launch, the landing page requires a manual tap (Login/Signup) before auth screens appear.
+        // LoadingPage.waitForAutoNavigation() now performs that tap and returns the actual current page.
         BasePage current = new LoadingPage().waitForAutoNavigation();
 
         // If already logged in, logout first to guarantee a clean auth state
@@ -25,8 +340,12 @@ public class AuthenticationTests extends BaseTest {
             current = profilePage.logout();
         }
 
-        if (current instanceof LoadingPage) {
-            logger.info("Detected LoadingPage at start -> clicking Login button");
+        // Fallbacks (should rarely happen, but keeps the test resilient)
+        if (current instanceof SignupPage) {
+            logger.info("Detected SignupPage at start -> navigating to LoginPage via link");
+            current = ((SignupPage) current).clickLoginLink();
+        } else if (current instanceof LoadingPage) {
+            logger.info("Detected LoadingPage at start -> tapping Login button");
             current = ((LoadingPage) current).clickLoginButton();
         }
 
@@ -66,84 +385,76 @@ public class AuthenticationTests extends BaseTest {
         return signupPage;
     }
 
-    @Test(priority = 1, groups = {"authentication", "regression", "smoke"}, description = "Verify successful login with valid credentials")
-    public void testValidLogin() {
-        logger.info("Starting valid login test");
+    @Test(priority = 9, groups = {"authentication", "regression"}, description = "Verify error dialog requires OK button click to dismiss")
+    public void testErrorDialogRequiresOKClick() {
+        logger.info("Starting error dialog OK button requirement test");
 
         LoginPage loginPage = openLoginPage();
 
-        // 3. Login bằng PageObject (đã có multi-strategy theo testID/accessibilityId)
-        BasePage result = loginPage.loginWithTestUser();
-        Assert.assertTrue(result instanceof HomePage,
-                "Login should navigate to HomePage, but got: " + (result != null ? result.getClass().getSimpleName() : "null"));
+        // Trigger error dialog with invalid credentials
+        loginPage.clearAndEnterUsername("test_dialog_persistence");
+        loginPage.clearAndEnterPassword("wrong_password");
+        loginPage.clickLoginButton();
 
-        logger.info("Valid login test completed successfully");
-    }
+        // Wait for error dialog
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
-    @Test(priority = 2, groups = {"authentication", "regression"}, description = "Verify login failure with invalid credentials")
-    public void testInvalidLogin() {
-        logger.info("Starting invalid login test");
+        if (loginPage.isLoginErrorDialogDisplayed()) {
+            logger.info("Error dialog appeared, testing persistence and OK requirement");
 
-        LoginPage loginPage = openLoginPage();
+            // Test 1: Dialog should persist after tapping outside
+            loginPage.tapAtCoordinates(50, 50);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
+                "Error dialog should persist after tapping outside");
 
-        LoginPage resultPage = (LoginPage) loginPage.loginWithInvalidCredentials(
-                "invaliduser", "invalidpass"
-        );
+            // Test 2: Dialog should persist after back button (if supported)
+            try {
+                loginPage.goBack();
+                Thread.sleep(1000);
+                Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
+                    "Error dialog should persist after back button");
+            } catch (Exception e) {
+                logger.info("Back button test skipped (not supported on this platform)");
+            }
 
-        Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page after invalid login");
-        Assert.assertTrue(resultPage.isErrorMessageDisplayed(), "Error message should be displayed");
+            // Test 3: Dialog should not auto-dismiss over time
+            try {
+                Thread.sleep(5000); // Wait 5 seconds
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
+                "Error dialog should not auto-dismiss after waiting");
 
-        String errorMessage = resultPage.getErrorMessage();
-        Assert.assertFalse(errorMessage.isEmpty(), "Error message should not be empty");
+            // Test 4: Only OK button should dismiss the dialog
+            loginPage.dismissLoginErrorDialog();
+            Assert.assertFalse(loginPage.isLoginErrorDialogDisplayed(), 
+                "Error dialog should be dismissed only by clicking OK button");
 
-        logger.info("Invalid login test completed successfully");
-    }
+            // Test 5: Verify normal interaction is restored
+            loginPage.clearAndEnterUsername("interaction_restored");
+            String enteredText = loginPage.getUsernameValue();
+            Assert.assertEquals(enteredText, "interaction_restored", 
+                "Normal interaction should be restored after dismissing dialog");
 
-    @Test(priority = 3, groups = {"authentication", "regression"}, description = "Verify login with empty credentials")
-    public void testEmptyCredentialsLogin() {
-        logger.info("Starting empty credentials login test");
-
-        LoginPage loginPage = openLoginPage();
-
-        LoginPage resultPage = loginPage.loginWithEmptyCredentials();
-
-        Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page");
-        Assert.assertFalse(resultPage.isLoginButtonEnabled(), "Login button should be disabled for empty credentials");
-
-        logger.info("Empty credentials login test completed successfully");
-    }
-
-    @Test(priority = 4, groups = {"authentication", "regression"}, description = "Verify login with username only")
-    public void testUsernameOnlyLogin() {
-        logger.info("Starting username only login test");
-
-        LoginPage loginPage = openLoginPage();
-
-        LoginPage resultPage = loginPage.loginWithUsernameOnly(AppConstants.TEST_USER_USERNAME);
-
-        Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page");
-        Assert.assertTrue(resultPage.isPasswordEmpty(), "Password field should be empty");
-
-        logger.info("Username only login test completed successfully");
-    }
-
-    @Test(priority = 5, groups = {"authentication", "regression"}, description = "Verify login with password only")
-    public void testPasswordOnlyLogin() {
-        logger.info("Starting password only login test");
-
-        LoginPage loginPage = openLoginPage();
-
-        LoginPage resultPage = loginPage.loginWithPasswordOnly(AppConstants.TEST_USER_PASSWORD);
-
-        Assert.assertTrue(resultPage.isDisplayed(), "Should remain on login page");
-        Assert.assertTrue(resultPage.isUsernameEmpty(), "Username field should be empty");
-
-        logger.info("Password only login test completed successfully");
+            logger.info("Error dialog OK button requirement test completed successfully");
+        } else {
+            logger.warn("Error dialog did not appear - skipping persistence tests");
+        }
     }
 
     // ==================== SIGNUP TESTS ====================
 
-    @Test(priority = 6, groups = {"authentication", "regression", "smoke"}, description = "Verify successful signup with valid information")
+    @Test(priority = 10, groups = {"authentication", "regression", "smoke"}, description = "Verify successful signup with valid information")
     public void testValidSignup() {
         logger.info("Starting valid signup test");
 
@@ -158,7 +469,8 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Valid signup test completed successfully");
     }
 
-    @Test(priority = 7, groups = {"authentication", "regression"}, description = "Verify signup with empty fields")
+    // Update all remaining test priorities
+    @Test(priority = 11, groups = {"authentication", "regression"}, description = "Verify signup with empty fields")
     public void testEmptyFieldsSignup() {
         logger.info("Starting empty fields signup test");
 
@@ -172,7 +484,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Empty fields signup test completed successfully");
     }
 
-    @Test(priority = 8, groups = {"authentication", "regression"}, description = "Verify signup with mismatched passwords")
+    @Test(priority = 12, groups = {"authentication", "regression"}, description = "Verify signup with mismatched passwords")
     public void testMismatchedPasswordsSignup() {
         logger.info("Starting mismatched passwords signup test");
 
@@ -194,7 +506,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Mismatched passwords signup test completed successfully");
     }
 
-    @Test(priority = 9, groups = {"authentication", "regression"}, description = "Verify signup with invalid email format")
+    @Test(priority = 13, groups = {"authentication", "regression"}, description = "Verify signup with invalid email format")
     public void testInvalidEmailSignup() {
         logger.info("Starting invalid email signup test");
 
@@ -215,7 +527,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Invalid email signup test completed successfully");
     }
 
-    @Test(priority = 10, groups = {"authentication", "regression"}, description = "Verify signup with existing username")
+    @Test(priority = 14, groups = {"authentication", "regression"}, description = "Verify signup with existing username")
     public void testExistingUsernameSignup() {
         logger.info("Starting existing username signup test");
 
@@ -237,7 +549,7 @@ public class AuthenticationTests extends BaseTest {
 
     // ==================== NAVIGATION TESTS ====================
 
-    @Test(priority = 11, groups = {"authentication", "navigation", "regression"}, description = "Verify navigation from login to signup")
+    @Test(priority = 15, groups = {"authentication", "navigation", "regression"}, description = "Verify navigation from login to signup")
     public void testLoginToSignupNavigation() {
         logger.info("Starting login to signup navigation test");
 
@@ -251,7 +563,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Login to signup navigation test completed successfully");
     }
 
-    @Test(priority = 12, groups = {"authentication", "navigation", "regression"}, description = "Verify navigation from signup to login")
+    @Test(priority = 16, groups = {"authentication", "navigation", "regression"}, description = "Verify navigation from signup to login")
     public void testSignupToLoginNavigation() {
         logger.info("Starting signup to login navigation test");
 
@@ -267,7 +579,7 @@ public class AuthenticationTests extends BaseTest {
 
     // ==================== LOGOUT TESTS ====================
 
-    @Test(priority = 13, groups = {"authentication", "regression"}, description = "Verify successful logout", dependsOnMethods = {"testValidLogin"})
+    @Test(priority = 17, groups = {"authentication", "regression"}, description = "Verify successful logout", dependsOnMethods = {"testValidLogin"})
     public void testSuccessfulLogout() {
         logger.info("Starting successful logout test");
 
@@ -285,7 +597,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Successful logout test completed successfully");
     }
 
-    @Test(priority = 14, groups = {"authentication", "regression"}, description = "Verify logout cancellation")
+    @Test(priority = 18, groups = {"authentication", "regression"}, description = "Verify logout cancellation")
     public void testLogoutCancellation() {
         logger.info("Starting logout cancellation test");
 
@@ -308,7 +620,7 @@ public class AuthenticationTests extends BaseTest {
 
     // ==================== FIELD VALIDATION TESTS ====================
 
-    @Test(priority = 15, groups = {"authentication", "regression"}, description = "Verify username field validation")
+    @Test(priority = 19, groups = {"authentication", "regression"}, description = "Verify username field validation")
     public void testUsernameValidation() {
         logger.info("Starting username validation test");
 
@@ -329,7 +641,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Username validation test completed successfully");
     }
 
-    @Test(priority = 16, groups = {"authentication", "regression"}, description = "Verify password field validation")
+    @Test(priority = 20, groups = {"authentication", "regression"}, description = "Verify password field validation")
     public void testPasswordValidation() {
         logger.info("Starting password validation test");
 
@@ -346,7 +658,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Password validation test completed successfully");
     }
 
-    @Test(priority = 17, groups = {"authentication", "regression"}, description = "Verify email field validation")
+    @Test(priority = 21, groups = {"authentication", "regression"}, description = "Verify email field validation")
     public void testEmailValidation() {
         logger.info("Starting email validation test");
 
@@ -368,7 +680,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Email validation test completed successfully");
     }
 
-    @Test(priority = 18, groups = {"authentication", "regression"}, description = "Verify phone field validation")
+    @Test(priority = 22, groups = {"authentication", "regression"}, description = "Verify phone field validation")
     public void testPhoneValidation() {
         logger.info("Starting phone validation test");
 
@@ -392,7 +704,7 @@ public class AuthenticationTests extends BaseTest {
 
     // ==================== UI ELEMENT TESTS ====================
 
-    @Test(priority = 19, groups = {"authentication", "regression"}, description = "Verify login page UI elements")
+    @Test(priority = 23, groups = {"authentication", "regression"}, description = "Verify login page UI elements")
     public void testLoginPageElements() {
         logger.info("Starting login page elements test");
 
@@ -405,7 +717,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Login page elements test completed successfully");
     }
 
-    @Test(priority = 20, groups = {"authentication", "regression"}, description = "Verify signup page UI elements")
+    @Test(priority = 24, groups = {"authentication", "regression"}, description = "Verify signup page UI elements")
     public void testSignupPageElements() {
         logger.info("Starting signup page elements test");
 

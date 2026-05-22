@@ -557,4 +557,48 @@ public class ConversationPage extends BasePage {
     public boolean isMessageListDisplayed() { return true; }
     public ConversationPage clickSendButton() { return this; }
     public ConversationPage refreshConversation() { return this; }
+    
+    // ==================== MESSAGE VALIDATION ACTIONS ====================
+    
+    /**
+     * Check if message with specific content exists in conversation
+     * @param content Message content to search for
+     * @return true if message with content exists
+     */
+    public boolean hasMessageWithContent(String content) {
+        logger.info("Checking if message exists with content: " + content);
+        waitForElementVisible(TestIDs.CONVERSATION_MESSAGES_LIST);
+        
+        // Check if there are any messages first
+        if (!hasMessages()) {
+            return false;
+        }
+        
+        // Look for message containing the specific content
+        String messageXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", content);
+        try {
+            WebElement element = findByXPath(messageXpath);
+            return element != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Check if message was sent successfully
+     * @param message Message content to verify
+     * @return true if message was sent successfully
+     */
+    public boolean isMessageSent(String message) {
+        logger.info("Checking if message was sent: " + message);
+        
+        // Wait a moment for message to appear
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        return hasMessageWithContent(message);
+    }
 }

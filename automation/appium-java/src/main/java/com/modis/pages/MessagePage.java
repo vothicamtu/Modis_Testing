@@ -483,4 +483,30 @@ public class MessagePage extends BasePage {
     public int getConversationCount() { return 1; }
     public boolean isConversationAvatarDisplayed(String id) { return true; }
     public boolean hasLastMessage(String id) { return true; }
+    
+    // ==================== CONVERSATION MANAGEMENT ACTIONS ====================
+    
+    /**
+     * Check if conversation exists with specific user
+     * @param username Username to check conversation with
+     * @return true if conversation exists
+     */
+    public boolean hasConversationWith(String username) {
+        logger.info("Checking if conversation exists with: " + username);
+        waitForElementVisible(TestIDs.MESSAGE_CONVERSATION_LIST);
+        
+        // Check if there are any conversations first
+        if (!hasConversations()) {
+            return false;
+        }
+        
+        // Look for conversation with the specific username
+        String conversationXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
+        try {
+            WebElement element = findByXPath(conversationXpath);
+            return element != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

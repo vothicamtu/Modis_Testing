@@ -48,6 +48,23 @@ public class TakePage extends BasePage {
     @iOSXCUITFindBy(accessibility = TestIDs.CAMERA_PERMISSION_DIALOG)
     private WebElement cameraPermissionDialog;
     
+    // Caption and recipient elements
+    @AndroidFindBy(id = TestIDs.TAKE_CAPTION_INPUT)
+    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAPTION_INPUT)
+    private WebElement captionInput;
+    
+    @AndroidFindBy(id = TestIDs.TAKE_RECIPIENTS_LIST)
+    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_RECIPIENTS_LIST)
+    private WebElement recipientsList;
+    
+    @AndroidFindBy(id = TestIDs.TAKE_SEND_BUTTON)
+    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_SEND_BUTTON)
+    private WebElement sendButton;
+    
+    @AndroidFindBy(id = TestIDs.TAKE_SUCCESS_MESSAGE)
+    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_SUCCESS_MESSAGE)
+    private WebElement successMessage;
+    
     @AndroidFindBy(id = TestIDs.PERMISSION_ALLOW_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.PERMISSION_ALLOW_BUTTON)
     private WebElement allowPermissionButton;
@@ -443,4 +460,80 @@ public class TakePage extends BasePage {
     public boolean isFrontCameraActive() { return true; }
     public TakePage toggleCamera() { return this; }
     public TakePage waitForCameraSwitch() { return this; }
+    
+    /**
+     * Add caption to the photo
+     * @param caption Caption text to add
+     */
+    public void addCaption(String caption) {
+        logger.info("Adding caption: " + caption);
+        waitForElementVisible(TestIDs.TAKE_CAPTION_INPUT);
+        enterText(captionInput, caption);
+    }
+    
+    /**
+     * Check if recipient is available in the list
+     * @param recipient Recipient username to check
+     * @return true if recipient is available
+     */
+    public boolean isRecipientAvailable(String recipient) {
+        logger.info("Checking if recipient is available: " + recipient);
+        waitForElementVisible(TestIDs.TAKE_RECIPIENTS_LIST);
+        String recipientXpath = String.format("//android.widget.TextView[@text='%s']", recipient);
+        try {
+            WebElement element = findByXPath(recipientXpath);
+            return element != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Select recipient from the list
+     * @param recipient Recipient username to select
+     */
+    public void selectRecipient(String recipient) {
+        logger.info("Selecting recipient: " + recipient);
+        if (isRecipientAvailable(recipient)) {
+            String recipientXpath = String.format("//android.widget.TextView[@text='%s']", recipient);
+            WebElement recipientElement = findByXPath(recipientXpath);
+            clickElement(recipientElement);
+        } else {
+            logger.warn("Recipient not found: " + recipient);
+        }
+    }
+    
+    /**
+     * Send the photo with caption and recipients
+     */
+    public void sendPhoto() {
+        logger.info("Sending photo");
+        waitForElementClickable(TestIDs.TAKE_SEND_BUTTON);
+        clickElement(sendButton);
+    }
+    
+    /**
+     * Check if photo was sent successfully
+     * @return true if photo was sent successfully
+     */
+    public boolean isPhotoSentSuccessfully() {
+        logger.info("Checking if photo was sent successfully");
+        try {
+            waitForElementVisible(TestIDs.TAKE_SUCCESS_MESSAGE);
+            return isElementDisplayed(successMessage);
+        } catch (Exception e) {
+            logger.warn("Success message not found: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if send button is enabled
+     * @return true if send button is enabled
+     */
+    public boolean isSendButtonEnabled() {
+        logger.info("Checking if send button is enabled");
+        waitForElementVisible(TestIDs.TAKE_SEND_BUTTON);
+        return sendButton.isEnabled();
+    }
 }

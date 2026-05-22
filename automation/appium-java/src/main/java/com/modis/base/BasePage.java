@@ -96,11 +96,45 @@ public abstract class BasePage {
         int timeoutSec = Math.max(1, Math.min(maxPerStrategySeconds, remainingSec));
 
         try {
-            return waitUtils.waitForElementToBeVisible(locator, timeoutSec);
+            return pollForVisible(locator, timeoutSec);
         } catch (Exception e) {
             logger.debug("Locator not visible within {}s: {} ({})", timeoutSec, locator, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * React Native + UiAutomator2 stability helper:
+     * Use bounded polling with DriverManager.safelyFindElement() instead of WebDriverWait for the core lookup.
+     *
+     * Why:
+     * - When UiAutomator2 gets into a bad state, WebDriverWait can amplify the problem (each poll becomes a long proxy timeout)
+     * - safelyFindElement() can detect transport errors and perform a controlled session recovery
+     */
+    private WebElement pollForVisible(By locator, int timeoutSec) {
+        long endNs = System.nanoTime() + Duration.ofSeconds(timeoutSec).toNanos();
+        RuntimeException last = null;
+        while (System.nanoTime() < endNs) {
+            try {
+                WebElement el = DriverManager.safelyFindElement(locator);
+                if (el != null && el.isDisplayed()) {
+                    return el;
+                }
+            } catch (RuntimeException e) {
+                last = e;
+            }
+
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        if (last != null) {
+            throw last;
+        }
+        return null;
     }
     
     /**
@@ -276,37 +310,31 @@ public abstract class BasePage {
      * @return true if exists, false otherwise
      */
     protected boolean isElementDisplayedByAccessibilityId(String accessibilityId) {
+        // Keep this check ultra-fast & robust.
+        // It is called frequently for state detection (Loading/Login/Home) so it must not perform expensive waits.
         try {
-            // Strategy 1: Try accessibility ID
-            WebElement element = waitUtils.waitForElementToBePresent(AppiumBy.accessibilityId(accessibilityId), 2);
-            return isElementDisplayed(element);
-        } catch (Exception e1) {
-            try {
-                // Strategy 2: Try resource-id (React Native Android)
-                logger.debug("Accessibility ID '{}' not displayed, trying resource-id", accessibilityId);
-                WebElement element = waitUtils.waitForElementToBePresent(AppiumBy.id(accessibilityId), 2);
-                return isElementDisplayed(element);
-            } catch (Exception e2) {
-                try {
-                    // Strategy 3: Try UiAutomator resourceIdMatches (match được prefix package)
-                    logger.debug("resource-id '{}' not displayed, trying UiAutomator resourceIdMatches", accessibilityId);
-                    String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
-                    WebElement element = waitUtils.waitForElementToBePresent(AppiumBy.androidUIAutomator(uiSelector), 2);
-                    return isElementDisplayed(element);
-                } catch (Exception e3) {
-                    try {
-                        // Strategy 4: XPath contains(@resource-id, ...) (fallback)
-                        logger.debug("UiAutomator resourceIdMatches '{}' not displayed, trying XPath resource-id contains", accessibilityId);
-                        String xpath = String.format("//*[contains(@resource-id,'%s')]", accessibilityId);
-                        WebElement element = waitUtils.waitForElementToBePresent(By.xpath(xpath), 2);
-                        return isElementDisplayed(element);
-                    } catch (Exception e4) {
-                        logger.debug("Element '{}' not displayed with any strategy", accessibilityId);
-                        return false;
-                    }
-                }
-            }
-        }
+            WebElement el = DriverManager.safelyFindElement(AppiumBy.accessibilityId(accessibilityId));
+            if (el != null && isElementDisplayed(el)) return true;
+        } catch (Exception ignored) {}
+
+        try {
+            WebElement el = DriverManager.safelyFindElement(AppiumBy.id(accessibilityId));
+            if (el != null && isElementDisplayed(el)) return true;
+        } catch (Exception ignored) {}
+
+        try {
+            String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
+            WebElement el = DriverManager.safelyFindElement(AppiumBy.androidUIAutomator(uiSelector));
+            if (el != null && isElementDisplayed(el)) return true;
+        } catch (Exception ignored) {}
+
+        try {
+            String xpath = String.format("//*[contains(@resource-id,'%s')]", accessibilityId);
+            WebElement el = DriverManager.safelyFindElement(By.xpath(xpath));
+            if (el != null && isElementDisplayed(el)) return true;
+        } catch (Exception ignored) {}
+
+        return false;
     }
     
     /**

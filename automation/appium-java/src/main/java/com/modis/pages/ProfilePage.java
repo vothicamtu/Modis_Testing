@@ -612,4 +612,18 @@ public class ProfilePage extends BasePage {
     
     public ProfilePage waitForThemeChange() { return this; }
     public boolean isThemeChangeApplied() { return true; }
+    
+    // ==================== PROFILE INFORMATION ACTIONS ====================
+    
+    /**
+     * Get the displayed username text
+     * @return The displayed username
+     */
+    public String getDisplayedUserName() {
+        logger.info("Getting displayed username");
+        waitForElementVisible(TestIDs.PROFILE_USERNAME);
+        String username = getText(usernameText);
+        logger.info("Displayed username: " + username);
+        return username;
+    }
 }

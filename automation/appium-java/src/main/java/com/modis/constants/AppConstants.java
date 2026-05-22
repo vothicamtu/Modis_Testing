@@ -14,7 +14,11 @@ public class AppConstants {
     
     // ==================== APPIUM SERVER CONFIGURATION ====================
     public static final String APPIUM_SERVER_URL = "http://127.0.0.1:4723";
-    public static final String APPIUM_SERVER_PATH = "/wd/hub";
+    /**
+     * Appium 2/3 uses the root ("/") endpoint and MUST NOT use "/wd/hub".
+     * Keep this empty to prevent legacy Appium 1.x path concatenation.
+     */
+    public static final String APPIUM_SERVER_PATH = "";
     
     // ==================== DEVICE CONFIGURATION ====================
     public static final String DEFAULT_PLATFORM = "Android";

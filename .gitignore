@@ -22,9 +22,6 @@ performance/jmeter/report/
 # bower
 bower_components/
 
-# logs
-*.log
-
 # screenshots
 screenshots/
 target/ui-dumps/
@@ -33,3 +30,12 @@ target/ui-dumps/
 reports/
 allure-results/
 allure-report/
+
+# JMeter
+*.jtl
+
+# Screenshots
+*.png
+
+# Local scripts
+start-appium-server.bat

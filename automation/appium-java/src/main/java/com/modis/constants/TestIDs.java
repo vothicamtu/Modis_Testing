@@ -46,6 +46,10 @@ public class TestIDs {
     public static final String TAKE_TOGGLE_CAMERA_BUTTON = "take_toggle_camera_button";
     public static final String TAKE_HISTORY = "take_history";
     public static final String TAKE_CAMERA_PREVIEW = "take_camera_preview";
+    public static final String TAKE_CAPTION_INPUT = "take_caption_input";
+    public static final String TAKE_RECIPIENTS_LIST = "take_recipients_list";
+    public static final String TAKE_SEND_BUTTON = "take_send_button";
+    public static final String TAKE_SUCCESS_MESSAGE = "take_success_message";
     
     // ==================== SEND PHOTO SCREEN ====================
     public static final String SEND_PHOTO_SCREEN = "send_photo_screen";
@@ -140,6 +144,12 @@ public class TestIDs {
     public static final String ALERT_DIALOG = "alert_dialog";
     public static final String ALERT_OK_BUTTON = "alert_ok_button";
     public static final String ALERT_CANCEL_BUTTON = "alert_cancel_button";
+    public static final String ERROR_DIALOG = "error_dialog";
+    public static final String ERROR_DIALOG_TITLE = "error_dialog_title";
+    public static final String ERROR_DIALOG_MESSAGE = "error_dialog_message";
+    public static final String ERROR_DIALOG_OK_BUTTON = "error_dialog_ok_button";
+    public static final String LOGIN_ERROR_DIALOG = "login_error_dialog";
+    public static final String LOGIN_ERROR_OK_BUTTON = "login_error_ok_button";
     
     // ==================== LOADING AND PROGRESS ====================
     public static final String LOADING_SPINNER = "loading_spinner";

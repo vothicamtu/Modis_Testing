@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<suite name="Modis Real Data Test Suite" verbose="1" parallel="false" thread-count="1">
+    <parameter name="platform" value="Android"/>
+    <parameter name="deviceName" value="emulator-5554"/>
+    <parameter name="appPackage" value="com.modis.app"/>
+    <parameter name="appActivity" value="com.modis.MainActivity"/>
+    
+    <listeners>
+        <listener class-name="com.modis.listeners.TestListener"/>
+        <listener class-name="com.modis.listeners.ScreenshotListener"/>
+        <listener class-name="com.modis.listeners.AllureListener"/>
+    </listeners>
+    
+    <!-- Authentication Tests with Real Data -->
+    <test name="Authentication Tests with Real Data" preserve-order="true">
+        <parameter name="testType" value="authentication"/>
+        <groups>
+            <run>
+                <include name="authentication"/>
+                <include name="regression"/>
+                <include name="smoke"/>
+                <include name="data"/>
+                <include name="retry"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.AuthenticationTests">
+                <methods>
+                    <!-- Real Data Tests -->
+                    <include name="testValidLoginWithRealData"/>
+                    <include name="testInvalidLoginWithRealData"/>
+                    <include name="testLoginRetryFlow"/>
+                    
+                    <!-- Error Dialog Tests -->
+                    <include name="testErrorDialogRequiresOKClick"/>
+                    
+                    <!-- Basic Tests -->
+                    <include name="testEmptyCredentialsLogin"/>
+                    <include name="testUsernameOnlyLogin"/>
+                    <include name="testPasswordOnlyLogin"/>
+                    
+                    <!-- Original Tests -->
+                    <include name="testValidLogin"/>
+                    <include name="testInvalidLogin"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    
+    <!-- Friends Tests with Real Data -->
+    <test name="Friends Tests with Real Data" preserve-order="true">
+        <parameter name="testType" value="friends"/>
+        <groups>
+            <run>
+                <include name="friends"/>
+                <include name="regression"/>
+                <include name="smoke"/>
+                <include name="data"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.FriendsTests">
+                <methods>
+                    <!-- Real Data Tests -->
+                    <include name="testFriendsWithRealData"/>
+                    <include name="testFriendRequestsWithRealData"/>
+                    
+                    <!-- Navigation Tests -->
+                    <include name="testNavigateToFriends"/>
+                    <include name="testBackNavigationFromFriends"/>
+                    
+                    <!-- Core Functionality -->
+                    <include name="testFriendsListDisplay"/>
+                    <include name="testFriendRequestsTab"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    
+    <!-- Messaging Tests with Real Data -->
+    <test name="Messaging Tests with Real Data" preserve-order="true">
+        <parameter name="testType" value="messaging"/>
+        <groups>
+            <run>
+                <include name="messaging"/>
+                <include name="regression"/>
+                <include name="smoke"/>
+                <include name="data"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.MessagingTests">
+                <methods>
+                    <!-- Real Data Tests -->
+                    <include name="testMessagesWithRealData"/>
+                    <include name="testConversationScenariosWithRealData"/>
+                    
+                    <!-- Navigation Tests -->
+                    <include name="testNavigateToMessages"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    
+    <!-- Camera Tests with Real Data -->
+    <test name="Camera Tests with Real Data" preserve-order="true">
+        <parameter name="testType" value="camera"/>
+        <groups>
+            <run>
+                <include name="camera"/>
+                <include name="regression"/>
+                <include name="smoke"/>
+                <include name="data"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.modis.tests.CameraTests">
+                <methods>
+                    <!-- Real Data Tests -->
+                    <include name="testPhotosWithRealData"/>
+                    <include name="testPhotoScenariosWithRealData"/>
+                    
+                    <!-- Navigation Tests -->
+                    <include name="testNavigateToCamera"/>
+                    <include name="testBackNavigationFromCamera"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    
+</suite>
