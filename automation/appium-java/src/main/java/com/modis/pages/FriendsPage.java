@@ -16,49 +16,49 @@ public class FriendsPage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_SCREEN)
+    @AndroidFindBy(id = TestIDs.FRIENDS_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SCREEN)
     private WebElement friendsScreen;
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_BACK_BUTTON)
+    @AndroidFindBy(id = TestIDs.FRIENDS_BACK_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_BACK_BUTTON)
     private WebElement backButton;
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_SCROLL)
+    @AndroidFindBy(id = TestIDs.FRIENDS_SCROLL)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SCROLL)
     private WebElement friendsScrollView;
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_SEARCH_INPUT)
+    @AndroidFindBy(id = TestIDs.FRIENDS_SEARCH_INPUT)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SEARCH_INPUT)
     private WebElement searchInput;
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_SEARCH_BUTTON)
+    @AndroidFindBy(id = TestIDs.FRIENDS_SEARCH_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SEARCH_BUTTON)
     private WebElement searchButton;
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_CLEAR_SEARCH)
+    @AndroidFindBy(id = TestIDs.FRIENDS_CLEAR_SEARCH)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_CLEAR_SEARCH)
     private WebElement clearSearchButton;
     
     // Tab elements
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_TAB_FRIENDS)
+    @AndroidFindBy(id = TestIDs.FRIENDS_TAB_FRIENDS)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_TAB_FRIENDS)
     private WebElement friendsTab;
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_TAB_REQUESTS)
+    @AndroidFindBy(id = TestIDs.FRIENDS_TAB_REQUESTS)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_TAB_REQUESTS)
     private WebElement requestsTab;
     
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_TAB_SENT)
+    @AndroidFindBy(id = TestIDs.FRIENDS_TAB_SENT)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_TAB_SENT)
     private WebElement sentRequestsTab;
     
     // Search results
-    @AndroidFindBy(accessibility = TestIDs.SEARCH_RESULTS_LIST)
+    @AndroidFindBy(id = TestIDs.SEARCH_RESULTS_LIST)
     @iOSXCUITFindBy(accessibility = TestIDs.SEARCH_RESULTS_LIST)
     private WebElement searchResultsList;
     
-    @AndroidFindBy(accessibility = TestIDs.SEARCH_EMPTY_STATE)
+    @AndroidFindBy(id = TestIDs.SEARCH_EMPTY_STATE)
     @iOSXCUITFindBy(accessibility = TestIDs.SEARCH_EMPTY_STATE)
     private WebElement searchEmptyState;
     

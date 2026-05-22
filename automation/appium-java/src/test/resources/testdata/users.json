@@ -21,13 +21,13 @@
       "status": "active"
     },
     {
-      "id": "test_admin",
-      "username": "testadmin",
-      "password": "adminpass123",
-      "email": "testadmin@example.com",
+      "id": "test_user",
+      "username": "testuser",
+      "password": "userpass123",
+      "email": "testuser@example.com",
       "phone": "1234567892",
-      "fullname": "Test Admin",
-      "role": "admin",
+      "fullname": "Test user",
+      "role": "user",
       "status": "active"
     },
     {

@@ -1,1200 +1,356 @@
-# Modis Mobile App Automation Framework - Appium Java
-> Framework automation testing cho ứng dụng mạng xã hội Modis sử dụng Appium + Java 11 + TestNG
+# 📱 Modis Social Mobile App Automation Testing Suite
+> Framework kiểm thử tự động toàn diện cho ứng dụng di động React Native Modis, sử dụng **Appium Java Client 9.x**, **Selenium 4.22.0**, **TestNG 7.8.0** và mô hình **Page Object Model (POM)**.
 
 ---
 
-## 🎯 Tổng quan Framework
+## 🏗️ Kiến trúc Framework & Tech Stack
 
-**Modis Automation Framework** là hệ thống kiểm thử tự động hoàn chỉnh cho ứng dụng mobile Modis, được thiết kế theo **Page Object Model** với **TestNG** framework và **Allure reporting**.
+Sự đồng bộ hoàn chỉnh giữa kịch bản kiểm thử tự động và môi trường runtime thực tế của hệ sinh thái **Modis App**:
 
-### 🏗️ **Kiến trúc thực tế:**
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                MODIS AUTOMATION ARCHITECTURE                │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  📱 Target App           🤖 Test Framework    📊 Reporting  │
-│  ┌─────────────────┐    ┌─────────────────┐   ┌──────────┐  │
-│  │ Modis App       │◄──►│ Appium Server   │──►│ TestNG   │  │
-│  │ React Native    │    │ UiAutomator2    │   │ Allure   │  │
-│  │ 0.81.4          │    │ Java 11         │   │ ExtentR  │  │
-│  │                 │    │ Maven 3.9.x     │   │          │  │
-│  │ Package:        │    │ TestNG 7.8.0    │   │ HTML     │  │
-│  │ com.modis.app   │    │ Appium 9.3.0    │   │ Reports  │  │
-│  └─────────────────┘    └─────────────────┘   └──────────┘  │
-│                                                             │
-│  🌐 Backend API: https://modis-backend.onrender.com        │
-│  📲 Platform: Android 11.0 (API 30)                       │
-│  🔧 Driver: UiAutomator2                                   │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        MODIS AUTOMATION ARCHITECTURE                   │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   📱 Target App               🤖 Automation Engine       📊 Reporting  │
+│  ┌──────────────────┐        ┌────────────────────┐     ┌───────────┐  │
+│  │ React Native App │◄──────►│ Appium Server 2.x  │────►│ TestNG    │  │
+│  │ Android:         │        │ UiAutomator2       │     │ Allure    │  │
+│  │ - Package:       │        │ Java 11/17         │     │ Extent    │  │
+│  │   com.modis      │        │ Maven 3.x          │     │ Reports   │  │
+│  │ - MainActivity   │        │ Appium Client 9.3  │     └───────────┘  │
+│  │ iOS (Experimental│        │ Selenium 4.22.0    │                    │
+│  │ - BundleId:      │        └────────────────────┘                    │
+│  │   com.modis.app  │                                                  │
+│  └──────────────────┘                                                  │
+│                                                                        │
+│  🌐 Backend API: http://10.0.150.148:8080/ (React Native dev proxy)   │
+│  📲 Emulator / Real Device: Android 11.0+ (API 30+)                     │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 🔧 **Tech Stack thực tế:**
-- **Java Version**: Java 11 (theo pom.xml)
-- **Appium Version**: 9.3.0 với UiAutomator2 driver
-- **Test Framework**: TestNG 7.8.0 với groups và parallel execution
-- **Build Tool**: Maven 3.9.x
-- **Reporting**: ExtentReports 5.1.1 + Allure 2.24.0
-- **Target Platform**: Android 11.0 (API 30)
-- **App Package**: `com.modis.app`
-- **App Activity**: `com.modis.MainActivity`
+### 🔧 Công nghệ sử dụng (Tech Stack thực tế):
+* **Language & Runtime**: Java 11 / 17 (Target 11)
+* **Build Tool**: Maven 3.x
+* **Core Drivers**: Appium Java Client `9.3.0` + Selenium `4.22.0` (Đã đồng bộ triệt để qua `<dependencyManagement>` tránh xung đột lớp `ContextAware`)
+* **Test Runner**: TestNG `7.8.0` (Hỗ trợ phân nhóm test suites, parameters, parallel execution)
+* **Reporting Engine**: ExtentReports `5.1.1` + Allure `2.24.0` (HTML Reports sống động & tự động đính kèm ảnh chụp màn hình khi test thất bại)
 
 ---
 
-## 📁 Cấu trúc thư mục thực tế
+## 📁 Cấu trúc Thư mục Kỹ thuật
 
-Framework được tổ chức theo **Page Object Model** với cấu trúc rõ ràng dựa trên source code thực tế:
+Dự án tuân thủ nghiêm ngặt mô hình thiết kế **Page Object Model (POM)**:
 
 ```text
 testing/automation/appium-java/
-├── src/                              # 📁 Source Code Directory
-│   ├── main/java/com/modis/          # 🏗️ Framework Infrastructure
-│   │   ├── base/                     # Base classes
-│   │   │   └── BasePage.java         # Common page functionality (waits, gestures)
-│   │   ├── constants/                # Constants và test data
-│   │   │   ├── AppConstants.java     # App-wide constants (timeouts, URLs)
-│   │   │   └── TestIDs.java          # UI element test IDs
-│   │   ├── drivers/                  # Driver management
-│   │   │   └── DriverManager.java    # Appium driver lifecycle management
-│   │   ├── listeners/                # TestNG listeners
-│   │   │   └── TestListener.java     # Test execution listeners cho reporting
-│   │   ├── pages/                    # 📱 Page Object Model Classes (10+ pages)
-│   │   │   ├── LoginPage.java        # Login screen interactions
-│   │   │   ├── SignupPage.java       # User registration functionality
-│   │   │   ├── HomePage.java         # Main feed và bottom navigation
-│   │   │   ├── ProfilePage.java      # User profile management
-│   │   │   ├── MessagePage.java      # Chat messaging interface
-│   │   │   ├── ConversationPage.java # Individual chat conversations
-│   │   │   ├── FriendsPage.java      # Friends list và friend requests
-│   │   │   ├── TakePage.java         # Camera capture functionality
-│   │   │   ├── SendPhotoPage.java    # Photo sharing workflow
-│   │   │   ├── AllImagesPage.java    # Gallery và image browsing
-│   │   │   └── LoadingPage.java      # Loading states và splash screens
-│   │   └── utils/                    # 🛠️ Utility Classes
-│   │       ├── ConfigReader.java     # Configuration file reader
-│   │       ├── WaitUtils.java        # Explicit wait strategies
-│   │       ├── GestureUtils.java     # Touch gestures (swipe, tap, pinch)
-│   │       ├── ScreenshotUtils.java  # Screenshot capture on failures
-│   │       ├── DeviceUtils.java      # Device-specific operations
-│   │       ├── ApiUtils.java         # API helper methods
-│   │       ├── TestDataManager.java  # Test data management
-│   │       └── LoggerUtil.java       # Logging utilities
-│   └── test/                         # 🧪 Test Implementation
-│       ├── java/com/modis/           # Test classes
-│       │   ├── base/                 # Test infrastructure
-│       │   │   └── BaseTest.java     # Test setup/teardown, driver initialization
-│       │   └── tests/                # 🎯 Actual Test Classes (6 test classes)
-│       │       ├── AuthenticationTests.java # Login, logout, registration tests
-│       │       ├── NavigationTests.java     # App navigation, menu tests
-│       │       ├── CameraTests.java         # Photo capture, gallery tests
-│       │       ├── MessagingTests.java      # Chat, messaging functionality tests
-│       │       ├── FriendsTests.java        # Friend requests, management tests
-│       │       └── ProfileTests.java        # Profile management tests
-│       └── resources/                # 📋 Test Configuration & Data
-│           ├── config/               # Environment configurations
-│           │   ├── test.properties   # Main test configuration
-│           │   ├── android.properties # Android-specific settings (detailed)
-│           │   └── ios.properties    # iOS-specific settings (future)
-│           ├── testdata/             # Test data files (JSON format)
-│           └── logback-test.xml      # Logging configuration
-├── target/                           # 🎯 Maven Build Output (generated)
-│   ├── classes/                      # Compiled main classes
-│   ├── test-classes/                 # Compiled test classes
-│   ├── surefire-reports/             # 📊 TestNG execution reports
-│   │   ├── index.html               # Main TestNG report
-│   │   ├── testng-results.xml       # Detailed XML results
-│   │   └── emailable-report.html    # Email-friendly report
-│   ├── allure-results/               # 📈 Allure raw results
-│   ├── allure-report/                # 📈 Generated Allure report
-│   └── screenshots/                  # 📸 Failure screenshots với timestamp
-├── screenshots/                      # Screenshot directory (runtime)
-├── logs/                            # Log files directory (runtime)
-├── reports/                         # Generated reports directory (runtime)
-├── pom.xml                          # 🔧 Maven Configuration (Java 11, dependencies)
-├── testng.xml                       # 🎯 TestNG Suite Configuration với groups
-├── run-tests.bat                    # 🚀 Windows execution script với parameters
-├── run-tests.sh                     # 🐧 Linux/Mac execution script
-├── CHANGELOG.md                     # Version history
-└── README.md                        # 📚 Framework documentation
+├── src/
+│   ├── main/java/com/modis/
+│   │   ├── base/                     # Các lớp cơ sở quản lý tương tác và cử chỉ
+│   │   │   └── BasePage.java         # Chứa cơ chế Explicit Wait & Touch Gestures
+│   │   ├── constants/                # Lưu trữ hằng số dùng chung toàn suite
+│   │   │   ├── AppConstants.java     # Package name thực tế (com.modis) & Timeouts
+│   │   │   └── TestIDs.java          # Danh sách Accessibility IDs đồng bộ với React Native
+│   │   ├── drivers/                  # Quản lý driver tự động hóa
+│   │   │   └── DriverManager.java    # Khởi tạo Appium Driver qua UiAutomator2Options/XCUITestOptions
+│   │   ├── listeners/                # Bộ lắng nghe sự kiện thực thi kiểm thử
+│   │   │   └── TestListener.java     # Chụp ảnh màn hình khi fail & ghi log ExtentReports
+│   │   ├── pages/                    # 📱 Các Page Object thực tế (10+ màn hình)
+│   │   │   ├── LoginPage.java        # Xử lý đăng nhập
+│   │   │   ├── SignupPage.java       # Đăng ký tài khoản mới
+│   │   │   ├── HomePage.java         # Bảng tin chính & Navigation Bottom
+│   │   │   ├── ProfilePage.java      # Trang cá nhân & cập nhật thông tin
+│   │   │   ├── MessagePage.java      # Danh sách cuộc hội thoại chat
+│   │   │   ├── ConversationPage.java # Giao diện nhắn tin chi tiết
+│   │   │   ├── FriendsPage.java      # Danh sách bạn bè & xử lý kết bạn
+│   │   │   ├── TakePage.java         # Trình chụp ảnh từ Camera
+│   │   │   ├── SendPhotoPage.java    # Gửi ảnh chụp tới bạn bè
+│   │   │   ├── AllImagesPage.java    # Màn hình chọn ảnh thư viện
+│   │   │   └── LoadingPage.java      # Xử lý màn hình chào & chờ tải
+│   │   └── utils/                    # 🛠️ Bộ công cụ tiện ích bổ trợ
+│   │       ├── ConfigReader.java     # Đọc cấu hình properties linh hoạt
+│   │       └── GestureUtils.java     # Thực hiện các thao tác vuốt (swipe), chạm (tap) W3C
+│   └── test/
+│       ├── java/com/modis/
+│       │   ├── base/
+│       │   │   └── BaseTest.java     # Setup/Teardown Appium Session trước & sau mỗi kịch bản
+│       │   └── tests/                # 🎯 Kịch bản kiểm thử thực tế (6 modules)
+│       │       ├── AuthenticationTests.java # Kiểm thử Đăng nhập, Đăng ký, Đăng xuất
+│       │       ├── NavigationTests.java     # Điều hướng giữa các Tab chức năng
+│       │       ├── CameraTests.java         # Chụp hình & truy cập Album ảnh
+│       │       ├── MessagingTests.java      # Gửi tin nhắn văn bản, emoji, hình ảnh
+│       │       ├── FriendsTests.java        # Gửi/Nhận yêu cầu kết bạn
+│       │       └── ProfileTests.java        # Cập nhật thông tin cá nhân & Đổi mật khẩu
+│       └── resources/
+│           ├── config/
+│           │   ├── test.properties   # Cấu hình chung cho suite
+│           │   ├── android.properties # Cấu hình chi tiết cho hệ điều hành Android
+│           │   └── ios.properties    # Cấu hình dự phòng cho iOS
+│           ├── testdata/             # Bộ dữ liệu test định dạng JSON
+│           └── logback-test.xml      # Cấu hình log đầu ra
+├── pom.xml                          # Quản lý Maven Dependencies
+└── testng.xml                       # Định nghĩa luồng chạy Suite & phân nhóm (smoke/regression)
 ```
 
-### 📋 Giải thích chức năng từng component:
-
-#### 🏗️ **Framework Infrastructure** (`src/main/java/`)
-- **`base/BasePage.java`**: Common functionality cho tất cả page objects
-- **`constants/`**: App constants và test IDs từ React Native app
-- **`drivers/DriverManager.java`**: Quản lý Appium driver lifecycle
-- **`listeners/TestListener.java`**: TestNG listeners cho custom reporting
-- **`pages/`**: 10+ page object classes cho các màn hình chính của app
-- **`utils/`**: 8 utility classes cho waits, gestures, screenshots, config
-
-#### 🧪 **Test Implementation** (`src/test/java/`)
-- **`base/BaseTest.java`**: Setup/teardown, driver initialization cho mỗi test
-- **`tests/`**: 6 test classes organized theo chức năng app
-- **`resources/config/`**: 3 configuration files cho different environments
-- **`resources/testdata/`**: JSON test data files
-
-#### 🎯 **Build & Execution**
-- **`pom.xml`**: Maven config với Java 11, Appium 9.3.0, TestNG 7.8.0
-- **`testng.xml`**: Test suite config với groups (smoke, regression, etc.)
-- **`run-tests.bat`**: Windows script với command-line parameters
-
-## 🚀 Hướng dẫn chạy đầy đủ
-
-### 1. 🛠️ Setup môi trường
-
-#### 1.1 Cài đặt Java 17
-```bash
-# Kiểm tra Java version hiện tại
-java -version
-
-# Nếu chưa có Java 17:
-# Tải từ: https://adoptium.net/temurin/releases/
-# Chọn: OpenJDK 17 LTS > Windows > x64 > .msi
-
-# Thiết lập biến môi trường:
-# JAVA_HOME = C:\Program Files\Eclipse Adoptium\jdk-17.0.x.x-hotspot
-# Thêm %JAVA_HOME%\bin vào System PATH
-
-# Verify installation
-java -version
-javac -version
-```
-
-#### 1.2 Cài đặt Maven
-```bash
-# Tải Maven từ: https://maven.apache.org/download.cgi
-# Chọn: Binary zip archive (apache-maven-3.9.x-bin.zip)
-# Giải nén vào: C:\apache-maven-3.9.x
-
-# Thiết lập biến môi trường:
-# MAVEN_HOME = C:\apache-maven-3.9.x
-# Thêm %MAVEN_HOME%\bin vào System PATH
-
-# Verify installation
-mvn -version
-```
-
-#### 1.3 Cài đặt Android Studio + Android SDK
-```bash
-# Tải Android Studio từ: https://developer.android.com/studio
-# Cài đặt với default settings
-
-# Sau khi cài đặt, mở Android Studio:
-# Tools > SDK Manager > SDK Platforms
-# ✅ Chọn: Android 13.0 (API 33) hoặc Android 14.0 (API 34)
-
-# SDK Tools tab:
-# ✅ Android SDK Command-line Tools (latest)
-# ✅ Android Emulator
-# ✅ Android SDK Platform-Tools
-
-# Thiết lập biến môi trường:
-# ANDROID_HOME = C:\Users\%USERNAME%\AppData\Local\Android\Sdk
-# Thêm vào System PATH:
-# %ANDROID_HOME%\platform-tools
-# %ANDROID_HOME%\emulator  
-# %ANDROID_HOME%\cmdline-tools\latest\bin
-
-# Verify installation
-adb --version
-emulator -list-avds
-```
-
-#### 1.4 Cài đặt Node.js và Appium
-```bash
-# Tải Node.js LTS từ: https://nodejs.org/
-# Chọn: LTS version (v18.x.x hoặc v20.x.x)
-# Cài đặt với default settings
-
-# Verify Node.js installation
-node -v
-npm -v
-
-# Cài Appium global
-npm install -g appium
-
-# Cài UiAutomator2 driver cho Android
-appium driver install uiautomator2
-
-# Verify Appium installation
-appium -v
-appium driver list
-```
-
-### 2. 🏃‍♂️ Hướng dẫn chạy Backend trước khi test
-
-**⚠️ QUAN TRỌNG**: Backend phải chạy trước khi thực hiện automation testing!
-
-```bash
-# Điều hướng đến thư mục backend
-cd ..\..\..\Modis_BE_TL
-
-# Chạy backend với Maven
-mvn spring-boot:run
-
-# Hoặc nếu đã build JAR file:
-java -jar target\modis-backend-1.0.0.jar
-```
-
-**Kiểm tra backend đã chạy thành công:**
-```bash
-# Log thành công sẽ hiển thị:
-# Tomcat started on port(s): 8080 (http) with context path ''
-# Started PlantShopApplication in X.XXX seconds (JVM running for Y.YYY)
-
-# Verify backend hoạt động:
-curl http://localhost:8080/actuator/health
-# Hoặc mở browser: http://localhost:8080
-```
-
-### 3. 📱 Hướng dẫn chạy Automation Testing (Appium)
-
-#### Bước 1: Chuẩn bị thiết bị Android
-
-**Cách 1: Sử dụng Android Emulator (Khuyến nghị)**
-```bash
-# Mở Android Studio
-# Tools > Device Manager (hoặc AVD Manager)
-# Create Device > Chọn Pixel 7 > API 33/34 > Finish
-# Click nút ▶️ để start emulator
-
-# Verify emulator đã chạy
-adb devices
-# Kết quả: emulator-5554    device
-```
-
-**Cách 2: Sử dụng thiết bị thật**
-```bash
-# Trên điện thoại Android:
-# Settings > About phone > Tap "Build number" 7 lần
-# Settings > Developer options > Enable "USB debugging"
-# Cắm cáp USB vào máy tính
-
-# Verify thiết bị đã kết nối
-adb devices
-# Kết quả: XXXXXXXXXX    device
-```
-
-#### Bước 2: Khởi động Appium Server
-```bash
-# Mở terminal/PowerShell riêng biệt (giữ mở suốt quá trình test)
-appium --allow-insecure chromedriver_autodownload
-
-# Log thành công sẽ hiển thị:
-# [Appium] Welcome to Appium v2.x.x
-# [Appium] Appium REST http interface listener started on 0.0.0.0:4723
-# [Appium] Available drivers:
-# [Appium]   - uiautomator2@x.x.x (automationName 'UiAutomator2')
-```
-
-#### Bước 3: Cấu hình Test Environment
-```bash
-# Điều hướng đến thư mục automation
-cd testing\automation\appium-java
-
-# Kiểm tra file cấu hình
-type src\test\resources\config\config.properties
-
-# Đảm bảo các settings sau:
-# platform.name=Android
-# automation.name=UiAutomator2
-# app.package=com.modis.app
-# app.activity=com.modis.MainActivity
-# device.name=emulator-5554 (hoặc device ID thực tế)
-```
-
-#### Bước 4: Build Dependencies
-```bash
-# Build và tải dependencies (chỉ chạy lần đầu hoặc khi có thay đổi)
-mvn clean install -DskipTests
-
-# Verify build thành công:
-# [INFO] BUILD SUCCESS
-# [INFO] Total time: XX.XXX s
-```
-
-#### Bước 5: Chạy Automation Tests
-
-**5.1 Chạy toàn bộ test suite:**
-```bash
-mvn test
-
-# Hoặc chạy theo TestNG configuration:
-mvn test -DsuiteXmlFile=testng.xml
-```
-
-**5.2 Chạy specific test class:**
-```bash
-# Authentication tests (Login, Logout, Registration)
-mvn test -Dtest=AuthenticationTests
-
-# Camera tests (Photo capture, Gallery)
-mvn test -Dtest=CameraTests
-
-# Friends tests (Friend requests, Management)
-mvn test -Dtest=FriendsTests
-
-# Messaging tests (Chat, Send messages)
-mvn test -Dtest=MessagingTests
-
-# Navigation tests (Menu, Tabs)
-mvn test -Dtest=NavigationTests
-
-# Profile tests (Profile management)
-mvn test -Dtest=ProfileTests
-
-# Smoke tests (Critical path)
-mvn test -Dtest=SmokeTests
-```
-
-**5.3 Chạy với custom parameters:**
-```bash
-# Chạy trên device cụ thể
-mvn test -Ddevice.name="Pixel_7_API_33"
-
-# Chạy với platform khác
-mvn test -Dplatform.name=Android -Dplatform.version=13
-
-# Chạy với app package khác
-mvn test -Dapp.package=com.modis.staging
-
-# Chạy parallel tests
-mvn test -Dparallel=methods -DthreadCount=2
-```
-
-**5.4 Chạy test groups:**
-```bash
-# Chỉ chạy smoke tests
-mvn test -Dgroups=smoke
-
-# Chỉ chạy regression tests
-mvn test -Dgroups=regression
-
-# Exclude flaky tests
-mvn test -DexcludedGroups=flaky
-```
-
-#### Bước 6: Xem kết quả Automation
-
-**6.1 TestNG Reports:**
-```bash
-# Mở main report
-start target\surefire-reports\index.html
-
-# Xem detailed XML results
-type target\surefire-reports\testng-results.xml
-
-# Email-friendly report
-start target\surefire-reports\emailable-report.html
-```
-
-**6.2 Screenshots (khi test fail):**
-```bash
-# Xem screenshots folder
-dir target\screenshots\
-
-# Mở screenshot cụ thể
-start target\screenshots\failed_test_20241216_143022.png
-```
-
-**6.3 Logs:**
-```bash
-# Xem Appium logs
-type target\logs\appium.log
-
-# Xem test execution logs
-type target\logs\test-execution.log
-```
-
-### 4. 🔄 Flow hoạt động Automation Framework
-
+---
+
+## 🎯 Danh sách Chức năng được Kiểm thử (Tested Features)
+
+Các kịch bản kiểm thử được thiết kế bám sát theo luồng nghiệp vụ thực tế của sản phẩm Modis:
+1. **Authentication (Xác thực)**: Luồng Đăng nhập hợp lệ/không hợp lệ, Đăng ký người dùng mới với xác thực định dạng dữ liệu đầu vào (email, phone, password), Đăng xuất an toàn.
+2. **Navigation (Điều hướng)**: Khả năng di chuyển mượt mà giữa các Tab chính (Home, Friends, Messaging, Camera, Profile) mà không làm mất trạng thái ứng dụng.
+3. **Camera & Sharing (Máy ảnh)**: Yêu cầu cấp quyền hệ thống, kích hoạt camera ảo hoặc camera vật lý, chụp ảnh thực tế, chọn ảnh từ thư viện, và gửi ảnh chia sẻ.
+4. **Friends Management (Bạn bè)**: Tìm kiếm bạn bè bằng username, gửi lời mời kết bạn, kiểm tra danh sách lời mời chờ duyệt, đồng ý/từ chối kết bạn.
+5. **Messaging (Nhắn tin)**: Tạo cuộc trò chuyện mới, nhắn tin thời gian thực với backend API, gửi tin nhắn chứa văn bản dài, ký tự đặc biệt, emoji và hình ảnh.
+6. **Profile (Cá nhân)**: Thay đổi ảnh đại diện (avatar), chỉnh sửa họ tên, thay đổi mật khẩu và lưu cấu hình giao diện Sáng/Tối (Light/Dark mode).
+
+---
+
+## 🛠️ Hướng dẫn Setup Môi trường Android Chi tiết (Windows)
+
+Để đảm bảo Appium có thể khởi chạy và giao tiếp thành công với thiết bị Android Emulator hoặc Real Device, vui lòng thực hiện tuần tự các bước thiết lập dưới đây.
+
+### Bước 1: Cài đặt các công cụ nền tảng
+1. **Java Development Kit (JDK 17)**:
+   * Tải bản cài đặt `.msi` cho Windows từ [Eclipse Adoptium Temurin](https://adoptium.net/temurin/releases/?version=17).
+   * Cài đặt vào thư mục mặc định (ví dụ: `C:\Program Files\Eclipse Adoptium\jdk-17.x.x`).
+2. **Apache Maven**:
+   * Tải bản Binary zip từ [Apache Maven Download](https://maven.apache.org/download.cgi).
+   * Giải nén vào thư mục `C:\apache-maven-3.9.x`.
+3. **Android Studio & Android SDK**:
+   * Tải và cài đặt [Android Studio](https://developer.android.com/studio).
+   * Mở Android Studio, vào **SDK Manager** > tải **Android SDK Platform-Tools**, **Android SDK Command-line Tools (Latest)**, và **Android Emulator**.
+4. **Node.js**:
+   * Tải phiên bản LTS mới nhất từ [NodeJS](https://nodejs.org/).
+
+### Bước 2: Thiết lập Biến môi trường (Environment Variables)
+Bấm phím Windows, tìm kiếm **"Edit the system environment variables"**, thêm mới các biến hệ thống sau:
+
+| Biến (Variable) | Giá trị (Value) |
+| :--- | :--- |
+| `JAVA_HOME` | `C:\Program Files\Eclipse Adoptium\jdk-17.x.x` |
+| `MAVEN_HOME` | `C:\apache-maven-3.9.x` |
+| `ANDROID_HOME` | `C:\Users\<Tên_User_Của_Bạn>\AppData\Local\Android\Sdk` |
+
+Tiếp tục chỉnh sửa biến **`Path`** trong System Variables và thêm vào 5 dòng sau:
 ```text
-1. TestNG Suite Initialization
-   ├── Read testng.xml configuration
-   ├── Load test classes và methods
-   └── Setup parallel execution (nếu có)
-
-2. BaseTest Setup (@BeforeMethod)
-   ├── Read configuration từ config.properties
-   ├── Initialize DriverManager
-   ├── Create AndroidDriver với capabilities
-   ├── Setup implicit waits
-   └── Navigate to app home screen
-
-3. Test Execution
-   ├── Page Object initialization
-   ├── UI interactions (tap, swipe, type)
-   ├── Data input từ JSON/CSV files
-   ├── Assertions và verifications
-   └── Screenshot capture (nếu fail)
-
-4. Test Cleanup (@AfterMethod)
-   ├── Capture final screenshot
-   ├── Close app session
-   ├── Quit driver
-   └── Clean up resources
-
-5. Report Generation
-   ├── TestNG HTML reports
-   ├── Allure results (nếu enabled)
-   ├── Screenshots organization
-   └── Log file consolidation
+%JAVA_HOME%\bin
+%MAVEN_HOME%\bin
+%ANDROID_HOME%\platform-tools
+%ANDROID_HOME%\emulator
+%ANDROID_HOME%\cmdline-tools\latest\bin
 ```
+> ⚠️ **LƯU Ý QUAN TRỌNG**: Sau khi lưu các biến môi trường, hãy khởi động lại toàn bộ IDE (IntelliJ/VSCode) hoặc Terminal (PowerShell/CMD) để hệ thống nhận diện các lệnh mới.
 
-### 5. 📊 Reports & Kết quả
+### Bước 3: Khởi tạo Máy ảo Android (Emulator) hoặc Thiết bị thật
+* **Máy ảo (Emulator)**: Mở Android Studio > **Device Manager** > Tạo thiết bị ảo mới (Khuyến nghị: **Pixel 7**, Hệ điều hành **Android 11.0 (API 30)** hoặc cao hơn). Bấm nút Play (▶️) để khởi chạy máy ảo.
+* **Thiết bị thật (Real Device)**:
+  * Trên điện thoại Android, vào **Settings** > **About Phone** > Chạm vào **Build Number** 7 lần liên tục để mở chế độ Nhà phát triển (Developer Options).
+  * Vào **Developer Options** > kích hoạt **USB Debugging** và **Install via USB**.
+  * Kết nối điện thoại với máy tính qua cáp truyền dữ liệu chất lượng cao.
+* **Xác thực kết nối**: Mở CMD/PowerShell và chạy lệnh:
+  ```bash
+  adb devices
+  ```
+  *Danh sách thiết bị phải hiển thị mã thiết bị kèm theo chữ `device`. Nếu hiển thị `unauthorized`, hãy kiểm tra màn hình điện thoại và chọn "Cho phép gỡ lỗi USB".*
 
-#### 5.1 TestNG Reports
-- **Main Report**: `target/surefire-reports/index.html`
-  - Test suite overview
-  - Pass/Fail statistics
-  - Execution timeline
-  - Failed test details với stack traces
-
-- **Emailable Report**: `target/surefire-reports/emailable-report.html`
-  - Compact format cho email sharing
-  - Summary statistics
-  - Failed test highlights
-
-#### 5.2 Screenshots
-- **Location**: `target/screenshots/`
-- **Naming**: `{testMethodName}_{timestamp}.png`
-- **Captured**: Automatically khi test fail
-- **Format**: PNG với full screen capture
-
-#### 5.3 Logs
-- **Appium Logs**: `target/logs/appium.log`
-  - Driver commands và responses
-  - Element location details
-  - Performance metrics
-
-- **Test Logs**: `target/logs/test-execution.log`
-  - Test method execution flow
-  - Custom log messages
-  - Error details và stack traces
-
-### 6. 🚨 Troubleshooting cực kỳ chi tiết
-
-#### 6.1 Environment Issues
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `mvn is not recognized` | Maven chưa trong PATH | Add `%MAVEN_HOME%\bin` vào System PATH, restart terminal |
-| `java is not recognized` | Java chưa cài hoặc PATH sai | Install Java 17, set JAVA_HOME, add `%JAVA_HOME%\bin` to PATH |
-| `JAVA_HOME is set to an invalid directory` | JAVA_HOME path incorrect | Set JAVA_HOME = `C:\Program Files\Eclipse Adoptium\jdk-17.x.x` |
-| `adb is not recognized` | Android SDK PATH missing | Add `%ANDROID_HOME%\platform-tools` to PATH |
-
-#### 6.2 Appium Connection Issues
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `Connection refused (Connection refused)` | Appium server chưa start | Run `appium` trong terminal riêng |
-| `Could not find a connected Android device` | Device chưa connect hoặc ADB issue | `adb kill-server && adb start-server`, check `adb devices` |
-| `Unable to create driver session` | Capabilities sai hoặc app không found | Verify appPackage/appActivity trong config |
-| `Session creation timeout` | Device quá chậm hoặc overloaded | Increase timeout trong capabilities, restart device |
-
-#### 6.3 Element Location Issues  
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `NoSuchElementException` | Element không tìm thấy | Use Appium Inspector để verify locator, add explicit wait |
-| `StaleElementReferenceException` | Element đã thay đổi sau khi locate | Re-find element trước khi interact |
-| `ElementNotInteractableException` | Element không thể click/type | Check element visibility, scroll to element |
-| `TimeoutException` | Element không appear trong timeout | Increase wait time, check app loading state |
-
-#### 6.4 App-Specific Issues
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `App crashes on launch` | App build issue hoặc device incompatible | Check app logs, verify APK compatibility |
-| `Permission dialogs block test` | System permissions chưa granted | Handle permission popups trong test code |
-| `Keyboard covers elements` | Soft keyboard interference | Hide keyboard sau input: `driver.hideKeyboard()` |
-| `Network requests fail` | Backend không available | Verify backend running, check network connectivity |
-
-### 7. 💡 Best Practices
-
-#### 7.1 Test Design
-- ✅ **Sử dụng Page Object Model** để tái sử dụng code
-- ✅ **Implement explicit waits** thay vì `Thread.sleep()`
-- ✅ **Use testID/accessibilityId** làm locator chính
-- ✅ **Capture screenshots** khi test fail
-- ✅ **Implement retry mechanism** cho flaky tests
-- ❌ **Không hardcode test data** trong test methods
-- ❌ **Không dùng XPath phức tạp** khi có alternative
-
-#### 7.2 Test Execution
-- ✅ **Clean app state** trước mỗi test
-- ✅ **Run tests independently** (không phụ thuộc lẫn nhau)
-- ✅ **Use test groups** để organize tests
-- ✅ **Monitor test execution** qua logs
-- ❌ **Không interact với device** khi test đang chạy
-- ❌ **Không chạy quá nhiều tests parallel** trên 1 device
-
-#### 7.3 Maintenance
-- ✅ **Update locators** khi UI thay đổi
-- ✅ **Review failed tests** thường xuyên
-- ✅ **Keep test data updated** với app changes
-- ✅ **Document test scenarios** rõ ràng
-- ❌ **Không ignore flaky tests** mà không investigate
-- ❌ **Không commit** với failing tests
-
-### 8. 📋 Commands Cheatsheet
-
-#### 8.1 Maven Commands
+### Bước 4: Cài đặt Appium & Drivers
+Mở Terminal/CMD dưới quyền **Administrator** và chạy:
 ```bash
-# Build project
-mvn clean compile
-
-# Install dependencies
-mvn clean install -DskipTests
-
-# Run all tests
-mvn test
-
-# Run specific test class
-mvn test -Dtest=AuthenticationTests
-
-# Run with TestNG suite
-mvn test -DsuiteXmlFile=testng.xml
-
-# Run with system properties
-mvn test -Ddevice.name=emulator-5554
-
-# Skip tests during build
-mvn install -DskipTests
-
-# Clean target directory
-mvn clean
-```
-
-#### 8.2 ADB Commands
-```bash
-# List connected devices
-adb devices
-
-# Install APK
-adb install -r path\to\app.apk
-
-# Uninstall app
-adb uninstall com.modis.app
-
-# Clear app data
-adb shell pm clear com.modis.app
-
-# Start app
-adb shell am start -n com.modis.app/.MainActivity
-
-# View device logs
-adb logcat
-
-# Clear device logs
-adb logcat -c
-
-# Restart ADB server
-adb kill-server && adb start-server
-
-# Take screenshot
-adb shell screencap /sdcard/screenshot.png
-adb pull /sdcard/screenshot.png
-```
-
-#### 8.3 Appium Commands
-```bash
-# Start Appium server
-appium
-
-# Start với custom port
-appium -p 4724
-
-# Start với log level
-appium --log-level debug
-
-# List installed drivers
-appium driver list
-
-# Install UiAutomator2 driver
-appium driver install uiautomator2
-
-# Update driver
-appium driver update uiautomator2
-
-# Uninstall driver
-appium driver uninstall uiautomator2
-```
-
-#### 8.4 Test Execution Scripts
-```bash
-# Windows batch scripts
-run-tests.bat                    # Run all tests
-run-tests.bat smoke             # Run smoke tests only
-run-tests.bat AuthenticationTests # Run specific test class
-
-# PowerShell commands
-.\run-tests.bat -TestClass AuthenticationTests -Device emulator-5554
-```
-
-#### 8.5 Report & Log Commands
-```bash
-# Open TestNG report
-start target\surefire-reports\index.html
-
-# View screenshots
-explorer target\screenshots\
-
-# View logs
-type target\logs\appium.log
-type target\logs\test-execution.log
-
-# Clean reports
-rmdir /s /q target\surefire-reports
-rmdir /s /q target\screenshots
-rmdir /s /q target\logs
-
-# Archive results
-powershell Compress-Archive -Path target\surefire-reports -DestinationPath test-results-%date%.zip
-```
-
-Quy trình thiết lập cực kỳ nghiêm ngặt trên **Windows**. Bất kỳ sai sót nào trong Environment Variables đều khiến Appium không thể khởi chạy.
-
-### Bước 1: Setup Java & Maven
-1.  Đảm bảo `JAVA_HOME` trỏ đúng vào thư mục cài đặt JDK 17.
-2.  Đảm bảo `MAVEN_HOME` trỏ vào thư mục cài Apache Maven.
-3.  Add `%JAVA_HOME%\bin` và `%MAVEN_HOME%\bin` vào `PATH` của System.
-
-### Bước 2: Setup Android SDK (Bộ não của Mobile Testing)
-1.  Cài đặt Android Studio.
-2.  Vào SDK Manager, tải `Android SDK Platform` (API 33+) và `Android SDK Command-line Tools`.
-3.  Cấu hình `ANDROID_HOME` trỏ tới `C:\Users\<Tên_Bạn>\AppData\Local\Android\Sdk`.
-4.  Cập nhật `PATH` bằng 3 biến cực kỳ quan trọng sau:
-    *   `%ANDROID_HOME%\platform-tools` (Để dùng lệnh ADB).
-    *   `%ANDROID_HOME%\emulator` (Để bật máy ảo từ Terminal).
-    *   `%ANDROID_HOME%\cmdline-tools\latest\bin`
-
-### Bước 3: Setup NodeJS & Appium Server
-Appium 2.x là một hệ sinh thái được quản lý qua NPM.
-1.  Cài đặt NodeJS (LTS).
-2.  Mở CMD (Admin) và cài core của Appium:
-    ```bash
-    npm install -g appium
-    ```
-3.  Cài đặt Driver chuyên dụng cho Android (UiAutomator2):
-    ```bash
-    appium driver install uiautomator2
-    ```
-4.  *Gợi ý:* Cài thêm Appium Inspector (Phần mềm giao diện) từ Github để dễ dàng soi cấu trúc (DOM) của Mobile App.
-
----
-
-## 3. Quy Trình Vận Hành (Execution Workflow)
-
-### Bước 1: Chuẩn bị Device (Thiết bị)
-*   **Máy ảo (Emulator):** Mở Android Studio -> Device Manager -> Nhấn chạy máy ảo.
-*   **Máy thật:** Cắm cáp, bật Developer Options -> Bật USB Debugging.
-*   **Xác nhận:** Mở CMD, gõ `adb devices`. Nếu hiển thị chữ `device` bên cạnh số Serial, bạn đã thành công. Nếu báo `unauthorized`, hãy nhìn vào màn hình điện thoại và bấm "Cho phép".
-
-### Bước 2: Kích hoạt Máy Chủ Appium
-Mở một cửa sổ PowerShell hoặc CMD **riêng biệt**. Bạn không được tắt nó trong quá trình chạy code.
-```bash
-appium --allow-insecure chromedriver_autodownload
-```
-*(Tham số allow-insecure giúp tự động tải Webdriver nếu App của bạn có chứa WebView).*
-
-### Bước 3: Cấu hình Capabilities
-Trước khi chạy lệnh Maven, hãy kiểm tra file config (Ví dụ: `src/main/resources/config.properties` hoặc file XML). Bạn cần đảm bảo:
-*   `platformName` = `Android`
-*   `automationName` = `UiAutomator2`
-*   `app` = Đường dẫn tuyệt đối trỏ tới file `.apk` (nếu có cài tự động), hoặc dùng `appPackage` + `appActivity` nếu App đã cài sẵn trên máy ảo.
-
-### Bước 4: Chạy Tự Động (Automation Execution)
-Mở một cửa sổ Terminal mới, điều hướng tới `testing\automation\appium-java`.
-
-**Tải viện thư viện (Lần đầu):**
-```bash
-mvn clean install -DskipTests
-```
-
-**1. Chạy TOÀN BỘ kịch bản test (Regression Suite):**
-```bash
-mvn test
-```
-
-**2. Chạy thông qua file cấu hình Suite (Thực thi theo luồng testng.xml):**
-```bash
-mvn test -DsuiteXmlFile=testng.xml
-```
-
-**3. Chạy MỘT test class cụ thể (Tùy chọn 1 trong các Class dưới đây):**
-```bash
-mvn test -Dtest=AuthenticationTests
-mvn test -Dtest=CameraTests
-mvn test -Dtest=FriendsTests
-mvn test -Dtest=MessagingTests
-mvn test -Dtest=NavigationTests
-mvn test -Dtest=ProfileTests
-```
-
----
-
-## 4. Các Vấn Đề Kinh Điển (Troubleshooting Arsenal)
-
-Chạy Automation trên Mobile là một "nghệ thuật" xử lý sự cố. Dưới đây là cách giải quyết các lỗi kinh điển:
-
-| Mã Lỗi / Hiện Tượng | Nguyên Nhân Cốt Lõi | Cách Khắc Phục Tận Gốc |
-| :--- | :--- | :--- |
-| `Original error: Could not find 'adb' in PATH` | Biến `ANDROID_HOME` bị sai hoặc bạn quên Add `platform-tools` vào System `PATH`. | Mở Environment Variables, kiểm tra lại biến `ANDROID_HOME`. Tắt hẳn IDE (IntelliJ/VSCode) và mở lại. |
-| `Connection refused: connect` | Code Java không thể liên lạc với Appium. | Mở CMD, chạy lại lệnh `appium`. Đảm bảo Port `4723` không bị phần mềm khác chiếm dụng. |
-| `NoSuchElementException` | Appium không tìm thấy nút bấm/text. | 1. Điện thoại load chậm -> Hãy dùng Explicit Wait (`WebDriverWait`) thay vì Sleep.<br>2. Locator (XPath/ID) đã bị Dev đổi tên. Hãy dùng Appium Inspector để lấy ID mới. |
-| `StaleElementReferenceException` | Element có tồn tại, nhưng cấu trúc DOM (Màn hình) vừa bị refresh. | Catch exception này và thực hiện lệnh `findElement` lại một lần nữa trước khi Click. |
-| App tự động Crash ngay khi mở | Bản build `.apk` bị lỗi, hoặc UiAutomator2 không tương thích với version Android. | Check lại file APK. Thử cài thủ công bằng lệnh `adb install <file.apk>`. |
-
----
-
-## 5. Tiêu Chuẩn Viết Code (Best Practices)
-
-1.  **Chỉ định Locator theo thứ tự ưu tiên:** Luôn giục team React Native đặt biến `testID`. Bên Automation sẽ dùng `MobileBy.AccessibilityId("tên_testID")`. Đây là cách truy xuất nhanh nhất và không bao giờ bị gãy (flaky) khi Dev đổi giao diện. Chỉ dùng `XPath` khi không còn cách nào khác.
-2.  **Tuyệt đối không dùng `Thread.sleep()`:**
-    *   *Sai lầm:* `Thread.sleep(5000)` (Bắt hệ thống đứng yên 5 giây dù App đã load xong ở giây thứ 1).
-    *   *Chuẩn mực:* Sử dụng `WebDriverWait(driver, Duration.ofSeconds(10)).until(ExpectedConditions.visibilityOf(element));` (Nếu element xuất hiện ở giây 1, nó sẽ chạy tiếp ngay lập tức, tiết kiệm 4 giây).
-3.  **Quy tắc "Bàn tay sạch" (Clean State):** Mỗi một bài Test (Method) không được phụ thuộc vào trạng thái của bài test trước. Hãy viết hàm `@BeforeMethod` để đưa App về trạng thái Home/Login cơ bản nhất. Đừng để Test B thất bại chỉ vì Test A vô tình tắt nhầm màn hình.
-4.  **Tách biệt Dữ liệu (Data-Driven):** Đừng hardcode Username/Password vào thẳng file Code. Hãy đọc chúng từ file `.properties` hoặc `.json`. Tương lai có đổi môi trường (Staging -> Prod) thì chỉ cần sửa 1 file cấu hình.
-## 🚀 Hướng dẫn chạy đầy đủ
-
-### 1. 🛠️ Setup môi trường
-
-#### 1.1 Cài đặt Java 11 (Bắt buộc)
-```bash
-# Tải Java 11 từ: https://adoptium.net/temurin/releases/
-# Chọn: OpenJDK 11 LTS > Windows > x64 > .msi
-
-# Thiết lập biến môi trường:
-# JAVA_HOME = C:\Program Files\Eclipse Adoptium\jdk-11.0.x.x-hotspot
-# Thêm %JAVA_HOME%\bin vào System PATH
-
-# Verify installation (PHẢI là Java 11)
-java -version
-# Expected: openjdk version "11.0.x"
-javac -version
-```
-
-#### 1.2 Cài đặt Maven
-```bash
-# Tải Maven từ: https://maven.apache.org/download.cgi
-# Chọn: Binary zip archive (apache-maven-3.9.x-bin.zip)
-# Giải nén vào: C:\apache-maven-3.9.x
-
-# Thiết lập biến môi trường:
-# MAVEN_HOME = C:\apache-maven-3.9.x
-# Thêm %MAVEN_HOME%\bin vào System PATH
-
-# Verify installation
-mvn -version
-```
-
-#### 1.3 Cài đặt Android Studio + Android SDK
-```bash
-# Tải Android Studio từ: https://developer.android.com/studio
-# Cài đặt với default settings
-
-# Sau khi cài đặt, mở Android Studio:
-# Tools > SDK Manager > SDK Platforms
-# ✅ Chọn: Android 11.0 (API 30) - theo config thực tế
-
-# SDK Tools tab:
-# ✅ Android SDK Command-line Tools (latest)
-# ✅ Android Emulator
-# ✅ Android SDK Platform-Tools
-
-# Thiết lập biến môi trường:
-# ANDROID_HOME = C:\Users\%USERNAME%\AppData\Local\Android\Sdk
-# Thêm vào System PATH:
-# %ANDROID_HOME%\platform-tools
-# %ANDROID_HOME%\emulator  
-# %ANDROID_HOME%\cmdline-tools\latest\bin
-
-# Verify installation
-adb --version
-```
-
-#### 1.4 Cài đặt Node.js và Appium
-```bash
-# Tải Node.js LTS từ: https://nodejs.org/
-# Chọn: LTS version (v18.x.x hoặc v20.x.x)
-
-# Verify Node.js installation
-node -v
-npm -v
-
-# Cài Appium global
+# Cài đặt Appium Server toàn hệ thống
 npm install -g appium
 
-# Cài UiAutomator2 driver (theo config thực tế)
+# Cài đặt Driver UiAutomator2 cho thiết bị Android
 appium driver install uiautomator2
 
-# Verify Appium installation
-appium -v
-appium driver list
+# Verify các drivers đã được cài đặt thành công
+appium driver list --installed
 ```
 
-### 2. 🌐 Kiểm tra Backend API
+### Bước 5: Khởi động Appium Server
+**⚠️ QUAN TRỌNG**: Bạn PHẢI khởi động Appium Server trước khi chạy test!
 
-**⚠️ QUAN TRỌNG**: Framework test với deployed backend, KHÔNG cần local backend!
-
+**Cách 1: Sử dụng script tự động (Khuyến nghị)**
 ```bash
-# Backend API đang chạy tại:
-# https://modis-backend.onrender.com
-
-# Kiểm tra API health:
-curl https://modis-backend.onrender.com/actuator/health
-# Expected response: {"status":"UP"}
-
-# Note: Render free tier có cold start delay ~30-90s
+# Chạy script khởi động tự động
+start-appium-server.bat
 ```
 
-### 3. 📱 Chuẩn bị thiết bị Android
-
-#### Cách 1: Android Emulator (Khuyến nghị)
+**Cách 2: Khởi động thủ công**
+Chạy lệnh sau trên một cửa sổ Terminal riêng biệt và giữ nguyên cửa sổ này trong suốt thời gian thực hiện kiểm thử:
 ```bash
-# Mở Android Studio
-# Tools > Device Manager (hoặc AVD Manager)
-# Create Device > Chọn Pixel 4 > API 30 (Android 11.0) > Finish
-# Click nút ▶️ để start emulator
-
-# Verify emulator đã chạy
-adb devices
-# Expected: emulator-5554    device
-```
-
-#### Cách 2: Thiết bị thật
-```bash
-# Trên điện thoại Android:
-# Settings > About phone > Tap "Build number" 7 lần
-# Settings > Developer options > Enable "USB debugging"
-# Cắm cáp USB vào máy tính
-
-# Verify thiết bị đã kết nối
-adb devices
-# Expected: XXXXXXXXXX    device
-```
-
-### 4. 🚀 Chạy Automation Tests
-
-#### Bước 1: Khởi động Appium Server
-```bash
-# Mở terminal/PowerShell riêng biệt (giữ mở suốt quá trình test)
+# Khởi động Appium server
 appium
 
-# Log thành công sẽ hiển thị:
-# [Appium] Welcome to Appium v2.x.x
-# [Appium] Appium REST http interface listener started on 0.0.0.0:4723
-# [Appium] Available drivers:
-# [Appium]   - uiautomator2@x.x.x (automationName 'UiAutomator2')
+# HOẶC với cấu hình chi tiết
+appium server --port 4723 --address 127.0.0.1 --allow-insecure chromedriver_autodownload
 ```
 
-#### Bước 2: Build Dependencies
+**Kiểm tra server đã chạy:**
 ```bash
-# Điều hướng đến thư mục automation
-cd testing\automation\appium-java
-
-# Đảm bảo JAVA_HOME trỏ đến Java 11
-echo %JAVA_HOME%
-java -version
-
-# Build và tải dependencies (chỉ chạy lần đầu hoặc khi có thay đổi)
-mvn clean install -DskipTests
-
-# Verify build thành công:
-# [INFO] BUILD SUCCESS
-# [INFO] Total time: XX.XXX s
+# Kiểm tra server status
+curl http://127.0.0.1:4723/status
 ```
-
-#### Bước 3: Chạy Tests
-
-**3.1 Sử dụng execution script (Khuyến nghị):**
-```bash
-# Chạy smoke tests (critical path)
-run-tests.bat --suite smoke
-
-# Chạy regression tests (full functionality)
-run-tests.bat --suite regression
-
-# Chạy specific test class
-run-tests.bat --suite authentication
-run-tests.bat --suite navigation
-run-tests.bat --suite camera
-run-tests.bat --suite messaging
-run-tests.bat --suite friends
-run-tests.bat --suite profile
-
-# Chạy với custom device
-run-tests.bat --device "Pixel 4" --suite smoke
-
-# Xem help và available options
-run-tests.bat --help
-```
-
-**3.2 Chạy trực tiếp với Maven:**
-```bash
-# Chạy theo TestNG groups (theo testng.xml thực tế)
-mvn test -Dgroups=smoke
-mvn test -Dgroups=regression
-mvn test -Dgroups=authentication
-
-# Chạy specific test class
-mvn test -Dtest=AuthenticationTests
-mvn test -Dtest=NavigationTests
-mvn test -Dtest=CameraTests
-mvn test -Dtest=MessagingTests
-mvn test -Dtest=FriendsTests
-mvn test -Dtest=ProfileTests
-
-# Chạy với custom parameters
-mvn test -Dplatform=android -DdeviceName="Android Emulator" -DplatformVersion=11.0
-```
-
-**3.3 Chạy với Maven profiles:**
-```bash
-# Android profile (default)
-mvn test -Pandroid
-
-# Smoke tests profile
-mvn test -Psmoke
-
-# Regression tests profile
-mvn test -Pregression
-
-# Parallel execution profile
-mvn test -Pparallel
-```
-
-### 5. 📊 Xem kết quả Tests
-
-#### 5.1 TestNG Reports
-```bash
-# Mở main TestNG report
-start target\surefire-reports\index.html
-
-# Xem detailed XML results
-type target\surefire-reports\testng-results.xml
-
-# Email-friendly report
-start target\surefire-reports\emailable-report.html
-```
-
-#### 5.2 Allure Reports
-```bash
-# Generate Allure report
-mvn allure:report
-
-# Serve Allure report (opens in browser)
-mvn allure:serve
-
-# Mở generated Allure report
-start target\allure-report\index.html
-```
-
-#### 5.3 Screenshots và Logs
-```bash
-# Xem screenshots (khi test fail)
-dir target\screenshots\
-start target\screenshots\
-
-# Xem execution logs
-type logs\test-execution.log
-
-# Xem Appium logs (nếu có)
-type logs\appium.log
-```
-
-### 6. 🔄 Test Configuration thực tế
-
-#### 6.1 Main Configuration (test.properties)
-```properties
-# Platform settings (theo config thực tế)
-platform=android
-deviceName=Android Emulator
-platformVersion=11.0
-automationName=UiAutomator2
-
-# Appium server
-appium.serverUrl=http://127.0.0.1:4723
-
-# App settings
-android.appPackage=com.modis.app
-android.appActivity=com.modis.MainActivity
-
-# Timeouts
-implicit.wait=10
-explicit.wait=20
-element.wait.timeout=15
-```
-
-#### 6.2 Android Configuration (android.properties)
-```properties
-# Device capabilities (detailed config)
-android.deviceName=Android Emulator
-android.platformVersion=11.0
-android.automationName=UiAutomator2
-android.appPackage=com.modis.app
-android.appActivity=com.modis.MainActivity
-
-# Permissions
-android.autoGrantPermissions=true
-android.autoAcceptAlerts=true
-android.autoDismissAlerts=true
-
-# Performance
-android.newCommandTimeout=300
-android.androidInstallTimeout=90000
-```
-
-#### 6.3 TestNG Configuration (testng.xml)
-```xml
-<!-- Test suites với groups -->
-<suite name="Modis Mobile App Test Suite">
-    <!-- Smoke Tests -->
-    <test name="Smoke Tests">
-        <groups>
-            <run><include name="smoke"/></run>
-        </groups>
-    </test>
-    
-    <!-- Regression Tests -->
-    <test name="Regression Tests">
-        <groups>
-            <run><include name="regression"/></run>
-        </groups>
-    </test>
-</suite>
-```
-
-### 7. 🚨 Troubleshooting theo Project thực tế
-
-#### 7.1 Environment Issues
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `Wrong Java version` | Cần Java 11, không phải Java 17 | Set JAVA_HOME đến Java 11 installation |
-| `mvn is not recognized` | Maven chưa trong PATH | Add `%MAVEN_HOME%\bin` to System PATH |
-| `adb is not recognized` | Android SDK PATH missing | Add `%ANDROID_HOME%\platform-tools` to PATH |
-| `Build failure` | Dependencies issue | Run `mvn clean install -DskipTests` |
-
-#### 7.2 Appium Connection Issues
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `Connection refused` | Appium server chưa start | Run `appium` trong terminal riêng |
-| `No connected devices` | Device chưa connect | Check `adb devices`, restart ADB |
-| `Unable to create session` | App package/activity sai | Verify `com.modis.app` và `com.modis.MainActivity` |
-| `UiAutomator2 not found` | Driver chưa install | Run `appium driver install uiautomator2` |
-
-#### 7.3 Test Execution Issues
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `Element not found` | Locator sai hoặc timing issue | Use explicit waits, check element IDs |
-| `App crashes` | App build issue | Check app logs với `adb logcat` |
-| `Test timeout` | Network/API slow | Increase timeouts trong config |
-| `Screenshot failure` | Permissions issue | Check screenshot directory permissions |
-
-### 8. 💡 Best Practices theo Framework thực tế
-
-#### 8.1 Test Design
-- ✅ **Sử dụng TestNG groups** để organize tests (smoke, regression, authentication)
-- ✅ **Page Object Model** với 10+ page classes cho maintainability
-- ✅ **Explicit waits** với WaitUtils.java thay vì Thread.sleep()
-- ✅ **Screenshots on failure** với ScreenshotUtils.java
-- ✅ **Config-driven testing** với .properties files
-- ❌ **Không hardcode app package/activity** trong test code
-- ❌ **Không assume local backend** - framework dùng deployed API
-
-#### 8.2 Test Execution
-- ✅ **Clean app state** trước mỗi test với BaseTest.java
-- ✅ **Independent tests** không phụ thuộc lẫn nhau
-- ✅ **Use test groups** để run specific test types
-- ✅ **Monitor test execution** qua logs và reports
-- ❌ **Không interact với device** khi test đang chạy
-- ❌ **Không chạy parallel** trên single device
-
-#### 8.3 Maintenance
-- ✅ **Update locators** khi UI thay đổi trong TestIDs.java
-- ✅ **Review failed tests** thường xuyên
-- ✅ **Keep test data updated** trong testdata/ directory
-- ✅ **Document test scenarios** rõ ràng
-- ❌ **Không ignore flaky tests** mà không investigate
-- ❌ **Không commit** với failing tests
-
-### 9. 📋 Commands Cheatsheet
-
-#### 9.1 Environment Commands
-```bash
-# Java version check
-java -version
-echo %JAVA_HOME%
-
-# Maven commands
-mvn -version
-mvn clean install -DskipTests
-mvn clean compile
-
-# Android commands
-adb devices
-adb logcat
-adb kill-server && adb start-server
-```
-
-#### 9.2 Test Execution Commands
-```bash
-# Build project
-mvn clean install -DskipTests
-
-# Run tests by groups
-mvn test -Dgroups=smoke
-mvn test -Dgroups=regression
-mvn test -Dgroups=authentication
-
-# Run specific test classes
-mvn test -Dtest=AuthenticationTests
-mvn test -Dtest=NavigationTests
-
-# Run with profiles
-mvn test -Pandroid -Psmoke
-mvn test -Pregression
-```
-
-#### 9.3 Reporting Commands
-```bash
-# Open TestNG reports
-start target\surefire-reports\index.html
-
-# Generate Allure reports
-mvn allure:report
-mvn allure:serve
-
-# View screenshots
-start target\screenshots\
-
-# View logs
-type logs\test-execution.log
-```
-
-#### 9.4 Appium Commands
-```bash
-# Start Appium server
-appium
-
-# Install drivers
-appium driver install uiautomator2
-appium driver list
-
-# Check Appium version
-appium -v
-```
+*(Nếu server chạy thành công, bạn sẽ thấy JSON response chứa thông tin server)*
 
 ---
 
-## 🎯 Kết luận
+## 🍏 Hướng dẫn Setup Môi trường iOS (Experimental)
 
-**Modis Automation Framework** là một framework production-ready với:
+> 💡 **TRẠNG THÁI HỖ TRỢ**: Hiện tại, framework đã tích hợp sẵn Driver class dành cho iOS (`XCUITestOptions`) và cơ chế quản lý đa nền tảng trong `DriverManager.java`. Tuy nhiên, do ràng buộc hệ sinh thái, việc chạy thử nghiệm trên iOS là **thử nghiệm (experimental)** và yêu cầu một máy tính chạy hệ điều hành macOS.
 
-- **Java 11** + **Appium 9.3.0** + **TestNG 7.8.0**
-- **Page Object Model** với 10+ page classes
-- **TestNG groups** cho flexible test execution
-- **Multiple reporting** (TestNG + Allure + ExtentReports)
-- **Config-driven** testing với .properties files
-- **Production backend** integration (Render.com)
-- **Comprehensive utilities** cho waits, gestures, screenshots
+### Yêu cầu tiên quyết trên macOS:
+1. **Xcode**: Cài đặt phiên bản Xcode mới nhất từ App Store cùng với iOS Simulators tương ứng.
+2. **CocoaPods**: Cài đặt trình quản lý thư viện thông qua lệnh `sudo gem install cocoapods`.
+3. **Appium XCUITest Driver**:
+   ```bash
+   appium driver install xcuitest
+   ```
+4. **Cấu hình WebDriverAgent**:
+   * Truy cập thư mục cài đặt driver XCUITest trong hệ thống (thường nằm ở `~/.appium/node_modules/appium-xcuitest-driver/node_modules/appium-webdriveragent`).
+   * Mở dự án `WebDriverAgent.xcodeproj` bằng Xcode, thiết lập Signing & Capabilities với tài khoản Apple Developer của bạn để build thành công lên thiết bị thật hoặc máy ảo Simulator.
 
-Framework này có thể sử dụng ngay để test Modis mobile app và dễ dàng mở rộng cho các features mới.
+---
+
+## 🚀 Thực thi Kiểm thử (Run Tests)
+
+**⚠️ TRƯỚC KHI CHẠY TEST**: Đảm bảo Appium server đã được khởi động!
+
+Di chuyển Terminal của bạn tới thư mục gốc của automation project trước khi chạy lệnh:
+```bash
+cd C:\DATLTN\testing\automation\appium-java
+```
+
+### Checklist trước khi chạy test:
+1. ✅ **Appium server đang chạy**: `curl http://127.0.0.1:4723/status`
+2. ✅ **Device/emulator kết nối**: `adb devices`
+3. ✅ **App đã cài đặt**: Modis app có trên device
+4. ✅ **APK file tồn tại**: `C:\DATLTN\Modis_FE_TL_ANDROID\android\app\build\outputs\apk\release\app-release.apk`
+
+### 1. Biên dịch Dự án (Compilation)
+```bash
+# Clean target folder và biên dịch mã nguồn test
+mvn clean compile
+
+# Biên dịch riêng kịch bản test để kiểm tra lỗi cú pháp
+mvn test-compile
+```
+
+### 2. Kiểm thử Toàn bộ Suite (testng.xml)
+Lệnh này sẽ thực thi tất cả các kịch bản test được định nghĩa trong file `testng.xml` bám sát các luồng hoạt động thực tế:
+```bash
+mvn test -DsuiteXmlFile=testng.xml
+```
+
+### 3. Thực thi theo từng Module Test Class riêng biệt
+Nếu bạn chỉ muốn kiểm tra một chức năng cụ thể mà không muốn chạy toàn bộ suite, hãy sử dụng các lệnh dưới đây:
+
+* **Authentication (Đăng ký/Đăng nhập/Đăng xuất)**:
+  ```bash
+  mvn test -Dtest=AuthenticationTests
+  ```
+* **Navigation (Luồng đi lại giữa các Tab)**:
+  ```bash
+  mvn test -Dtest=NavigationTests
+  ```
+* **Camera (Chụp ảnh/Cấp quyền chụp ảnh)**:
+  ```bash
+  mvn test -Dtest=CameraTests
+  ```
+* **Messaging (Chat văn bản & hình ảnh)**:
+  ```bash
+  mvn test -Dtest=MessagingTests
+  ```
+* **Friends (Gửi kết bạn/Đồng ý kết bạn)**:
+  ```bash
+  mvn test -Dtest=FriendsTests
+  ```
+* **Profile (Đổi thông tin cá nhân/Avatar/Theme Sáng Tối)**:
+  ```bash
+  mvn test -Dtest=ProfileTests
+  ```
+
+---
+
+## 📊 Xem Báo cáo & Phân tích Kết quả
+
+Sau khi kịch bản kiểm thử kết thúc, các tệp báo cáo sẽ tự động được sinh ra trong thư mục `target/`:
+
+1. **Báo cáo Giao diện Web (ExtentReports)**:
+   * Đường dẫn: `C:\DATLTN\testing\automation\appium-java\target\surefire-reports\index.html` hoặc `reports\ModisAutomationReport.html`.
+   * Mở trực tiếp bằng bất kỳ trình duyệt nào để xem tỷ lệ Pass/Fail trực quan, thời gian chạy chi tiết của từng method.
+2. **Ảnh chụp khi kiểm thử thất bại (Screenshots)**:
+   * Thư mục lưu trữ: `C:\DATLTN\testing\automation\appium-java\target\screenshots\`
+   * Định dạng tệp: `{testMethodName}_{timestamp}.png`
+   * *Mỗi khi kịch bản phát hiện assertion fail, hệ thống sẽ tự động chụp màn hình thiết bị tại thời điểm đó và chèn trực tiếp đường dẫn ảnh vào báo cáo HTML giúp debug cực kỳ nhanh chóng.*
+3. **Mã nguồn nhật ký hoạt động (Logs)**:
+   * File log tổng hợp: `logs\automation.log`
+   * Appium Server command logs: Được ghi nhận trực tiếp tại cửa sổ khởi động Appium Server giúp kiểm tra chính xác các lệnh API được truyền tải từ client.
+
+---
+
+## 🚨 Sổ tay Khắc phục Sự cố Thực tế (Troubleshooting Arsenal)
+
+Dưới đây là tổng hợp các lỗi kinh điển trong quá trình cài đặt tự động hóa di động và giải pháp khắc phục triệt để:
+
+### Lỗi 1: `java.net.ConnectException` - Không kết nối được Appium server
+* **Nguyên nhân**: Appium server chưa được khởi động hoặc không chạy trên port 4723.
+* **Cách sửa**: 
+  1. Khởi động Appium server: `start-appium-server.bat` hoặc `appium`
+  2. Kiểm tra server: `curl http://127.0.0.1:4723/status`
+  3. Nếu port 4723 bị chiếm: `netstat -an | findstr :4723`
+
+### Lỗi 2: `NoClassDefFoundError: org/openqa/selenium/ContextAware`
+* **Nguyên nhân**: Phiên bản Appium Java Client 9.3.x kéo theo các thành phần phụ thuộc Selenium transitive quá mới (Selenium 4.35+ đã loại bỏ interface `ContextAware`), dẫn đến xung đột Class Loader khi khởi tạo driver.
+* **Cách sửa (Đã áp dụng)**: Thêm khối cấu hình `<dependencyManagement>` vào `pom.xml` sử dụng `selenium-bom` ở phiên bản tương thích `${selenium.version}` (`4.22.0`). Maven sẽ tự động khóa và đồng bộ toàn bộ các package `selenium-*` về cùng phiên bản 4.22.0.
+
+### Lỗi 2: `Original error: Could not find 'adb' in PATH` hoặc Appium không kết nối được device
+* **Nguyên nhân**: Hệ thống chưa nhận diện được đường dẫn SDK do thiếu biến môi trường hoặc chưa khởi động lại Terminal/IDE.
+* **Cách sửa**: 
+  1. Kiểm tra biến `ANDROID_HOME` có trỏ đúng vào thư mục Sdk hay không.
+  2. Mở cmd, chạy lệnh `where adb` để đảm bảo hệ thống tìm thấy tệp thi hành adb.
+  3. Đảm bảo đã đóng toàn bộ cửa sổ terminal cũ và khởi động lại.
+
+### Lỗi 3: Appium Inspector quay mãi không load hoặc không tạo được session
+* **Nguyên nhân**: Mismatch cổng kết nối (Port) hoặc thiếu cấu hình namespace driver.
+* **Cách sửa**: 
+  1. Đảm bảo Appium Server đang chạy trên cổng `4723`.
+  2. Trong Appium Inspector, hãy điền Remote Path là `/` hoặc `/wd/hub` tùy theo cách bạn chạy driver (Lớp DriverManager tự động xử lý ghép nối đường dẫn linh hoạt).
+  3. Điền đầy đủ các thông tin capabilities theo định dạng chuẩn W3C (Ví dụ: `appium:automationName` thay vì `automationName`).
+
+### Lỗi 4: Lỗi phiên bản Chromedriver không tương thích (`SessionNotCreatedException`)
+* **Nguyên nhân**: Phiên bản trình duyệt Chrome được cài đặt sẵn trên thiết bị máy ảo/máy thật của bạn mới hơn/cũ hơn phiên bản Chromedriver mà Appium đang dùng.
+* **Cách sửa**: Sử dụng tham số tự động tải khi kích hoạt Appium Server:
+  ```bash
+  appium --allow-insecure=uiautomator2:chromedriver_autodownload
+  ```
+  *Appium sẽ tự phân tích phiên bản Chrome trên thiết bị và tự động tải phiên bản Chromedriver tương thích từ Internet về máy của bạn.*
+
+### Lỗi 5: Thiết bị thật báo trạng thái `unauthorized` khi chạy `adb devices`
+* **Nguyên nhân**: Bạn chưa xác nhận quyền tin cậy máy tính trên điện thoại Android.
+* **Cách sửa**: Rút cáp kết nối ra cắm lại, nhìn vào màn hình điện thoại, đánh dấu chọn "Luôn cho phép từ máy tính này" và bấm **OK**.
+
+### Lỗi 6: Ngoại lệ `UnsupportedCommandException: Not implemented yet for pageLoad`
+* **Nguyên nhân**: Thiết lập `pageLoadTimeout` qua driver không được Appium/UiAutomator2 hỗ trợ cho các ứng dụng Native di động, dẫn đến crash khi tạo session driver.
+* **Cách sửa (Đã áp dụng)**: Loại bỏ hoàn toàn cuộc gọi `pageLoadTimeout` trong `BaseTest.java` và `DriverManager.java`. Chỉ cấu hình `implicitlyWait` để phục vụ tìm kiếm phần tử di động.
+
+### Lỗi 7: Lỗi timeout ADB hoặc mất kết nối giữa chừng trên Android 15 (Đặc biệt dòng máy OPPO/ColorOS)
+* **Nguyên nhân**: Cơ chế quản lý tài nguyên của Android 15/OPPO ngắt kết nối USB hoặc làm chậm phản hồi của tiến trình ADB, vượt quá giới hạn thời gian chờ mặc định của Appium (20 giây).
+* **Cách sửa (Đã áp dụng)**: 
+  1. Thiết lập các tham số thời gian chờ chuyên sâu thông qua DesiredCapabilities/UiAutomator2Options nhằm tăng cường độ bền vững:
+     - `appium:adbExecTimeout` = `120000` (Tăng lên 120 giây)
+     - `appium:uiautomator2ServerLaunchTimeout` = `90000` (90 giây)
+     - `appium:uiautomator2ServerInstallTimeout` = `60000` (60 giây)
+     - `appium:androidInstallTimeout` = `90000` (90 giây)
+  2. Trên điện thoại OPPO, bắt buộc phải bật thêm cấu hình **"Disable Permission Monitoring"** và **"Install via USB"** trong Developer Options để tự động cấp quyền không chặn kịch bản chạy.
+
+---
+
+## 💡 Tiêu chuẩn và Chỉ dẫn Phát triển (Best Practices)
+1. **Định locator bằng `testID` (Accessibility ID)**: Luôn ưu tiên dùng `MobileBy.AccessibilityId()` vì đây là locator nhanh nhất trên cả Android/iOS và không bao giờ bị thay đổi khi designer thay đổi cấu trúc giao diện hoặc đổi CSS/Styling. Hãy thống nhất với team phát triển React Native đặt thuộc tính `testID` cho mọi phần tử tương tác quan trọng.
+2. **Không lạm dụng `Thread.sleep()`**: Sử dụng Explicit Wait thông qua lớp `WebDriverWait` để chờ phần tử hiển thị hoặc có thể click. Việc này giúp giảm thiểu tối đa thời gian chạy suite kiểm thử (Nếu phần tử hiển thị trong 0.5s, code sẽ chạy tiếp ngay lập tức thay vì bắt buộc phải dừng 5-10s lãng phí).
+3. **Quy tắc cô lập trạng thái (State Isolation)**: Mỗi một kịch bản test phải hoạt động độc lập và tự dọn dẹp dữ liệu/trạng thái sau khi hoàn thành. Sử dụng `@BeforeMethod` để đảm bảo ứng dụng luôn bắt đầu ở trạng thái đăng nhập hoặc trang Home ổn định nhất.
+4. **Data Driven Testing**: Đọc toàn bộ tài khoản thử nghiệm từ file JSON trong thư mục `src/test/resources/testdata/` thay vì hardcode trực tiếp vào mã nguồn Java.
+
+---
+*Chúc các bạn có những trải nghiệm tự động hóa tuyệt vời và duy trì chất lượng ứng dụng tốt nhất cùng với Modis Mobile App Automation Testing Suite!*

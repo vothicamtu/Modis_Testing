@@ -16,40 +16,40 @@ public class SendPhotoPage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
     
-    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_SCREEN)
+    @AndroidFindBy(id = TestIDs.SEND_PHOTO_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_SCREEN)
     private WebElement sendPhotoScreen;
     
-    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_PREVIEW_IMAGE)
+    @AndroidFindBy(id = TestIDs.SEND_PHOTO_PREVIEW_IMAGE)
     @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_PREVIEW_IMAGE)
     private WebElement previewImage;
     
-    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_CAPTION_INPUT)
+    @AndroidFindBy(id = TestIDs.SEND_PHOTO_CAPTION_INPUT)
     @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_CAPTION_INPUT)
     private WebElement captionInput;
     
-    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_SEND_BUTTON)
+    @AndroidFindBy(id = TestIDs.SEND_PHOTO_SEND_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_SEND_BUTTON)
     private WebElement sendButton;
     
-    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_CLOSE_BUTTON)
+    @AndroidFindBy(id = TestIDs.SEND_PHOTO_CLOSE_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_CLOSE_BUTTON)
     private WebElement closeButton;
     
-    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_SELECT_ALL)
+    @AndroidFindBy(id = TestIDs.SEND_PHOTO_SELECT_ALL)
     @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_SELECT_ALL)
     private WebElement selectAllButton;
     
-    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_FRIENDS_LIST)
+    @AndroidFindBy(id = TestIDs.SEND_PHOTO_FRIENDS_LIST)
     @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_FRIENDS_LIST)
     private WebElement friendsList;
     
     // Loading and status elements
-    @AndroidFindBy(accessibility = TestIDs.LOADING_SPINNER)
+    @AndroidFindBy(id = TestIDs.LOADING_SPINNER)
     @iOSXCUITFindBy(accessibility = TestIDs.LOADING_SPINNER)
     private WebElement loadingSpinner;
     
-    @AndroidFindBy(accessibility = TestIDs.TOAST_CONTAINER)
+    @AndroidFindBy(id = TestIDs.TOAST_CONTAINER)
     @iOSXCUITFindBy(accessibility = TestIDs.TOAST_CONTAINER)
     private WebElement toastMessage;
     

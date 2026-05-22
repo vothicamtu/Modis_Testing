@@ -15,44 +15,44 @@ public class TakePage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
     
-    @AndroidFindBy(accessibility = TestIDs.TAKE_SCREEN)
+    @AndroidFindBy(id = TestIDs.TAKE_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.TAKE_SCREEN)
     private WebElement takeScreen;
     
-    @AndroidFindBy(accessibility = TestIDs.TAKE_CAMERA_AREA)
+    @AndroidFindBy(id = TestIDs.TAKE_CAMERA_AREA)
     @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAMERA_AREA)
     private WebElement cameraArea;
     
-    @AndroidFindBy(accessibility = TestIDs.TAKE_CAPTURE_BUTTON)
+    @AndroidFindBy(id = TestIDs.TAKE_CAPTURE_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAPTURE_BUTTON)
     private WebElement captureButton;
     
-    @AndroidFindBy(accessibility = TestIDs.TAKE_FLASH_BUTTON)
+    @AndroidFindBy(id = TestIDs.TAKE_FLASH_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.TAKE_FLASH_BUTTON)
     private WebElement flashButton;
     
-    @AndroidFindBy(accessibility = TestIDs.TAKE_TOGGLE_CAMERA_BUTTON)
+    @AndroidFindBy(id = TestIDs.TAKE_TOGGLE_CAMERA_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.TAKE_TOGGLE_CAMERA_BUTTON)
     private WebElement toggleCameraButton;
     
-    @AndroidFindBy(accessibility = TestIDs.TAKE_HISTORY)
+    @AndroidFindBy(id = TestIDs.TAKE_HISTORY)
     @iOSXCUITFindBy(accessibility = TestIDs.TAKE_HISTORY)
     private WebElement historyButton;
     
-    @AndroidFindBy(accessibility = TestIDs.TAKE_CAMERA_PREVIEW)
+    @AndroidFindBy(id = TestIDs.TAKE_CAMERA_PREVIEW)
     @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAMERA_PREVIEW)
     private WebElement cameraPreview;
     
     // Permission elements
-    @AndroidFindBy(accessibility = TestIDs.CAMERA_PERMISSION_DIALOG)
+    @AndroidFindBy(id = TestIDs.CAMERA_PERMISSION_DIALOG)
     @iOSXCUITFindBy(accessibility = TestIDs.CAMERA_PERMISSION_DIALOG)
     private WebElement cameraPermissionDialog;
     
-    @AndroidFindBy(accessibility = TestIDs.PERMISSION_ALLOW_BUTTON)
+    @AndroidFindBy(id = TestIDs.PERMISSION_ALLOW_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.PERMISSION_ALLOW_BUTTON)
     private WebElement allowPermissionButton;
     
-    @AndroidFindBy(accessibility = TestIDs.PERMISSION_DENY_BUTTON)
+    @AndroidFindBy(id = TestIDs.PERMISSION_DENY_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.PERMISSION_DENY_BUTTON)
     private WebElement denyPermissionButton;
     
@@ -377,7 +377,8 @@ public class TakePage extends BasePage {
         
         if (isCameraErrorDisplayed()) {
             // Try to dismiss error and reinitialize camera
-            tapAtCoordinates(screenSize.width / 2, screenSize.height / 2);
+            var size = getScreenSize();
+            tapAtCoordinates(size.width / 2, size.height / 2);
             waitForAnimation();
             
             // Navigate back and return to camera

@@ -1,6 +1,7 @@
 package com.modis.utils;
 
 import com.modis.constants.AppConstants;
+import com.modis.drivers.DriverManager;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.TouchAction;
@@ -26,7 +27,7 @@ public class GestureUtils {
     
     private static final Logger logger = LoggerUtil.getLogger(GestureUtils.class);
     private final AppiumDriver driver;
-    private final Dimension screenSize;
+    private volatile Dimension cachedScreenSize;
     
     // Gesture constants
     private static final double SWIPE_START_PERCENTAGE = 0.8;
@@ -39,8 +40,67 @@ public class GestureUtils {
     
     public GestureUtils(AppiumDriver driver) {
         this.driver = driver;
-        this.screenSize = driver.manage().window().getSize();
-        logger.debug("Screen size: {}x{}", screenSize.width, screenSize.height);
+        // IMPORTANT:
+        // Do NOT call driver.manage().window().getSize() in constructor.
+        // On some real devices / UiAutomator2 states, this command can hang / "socket hang up",
+        // causing PageObject construction to freeze the whole test.
+    }
+
+    /**
+     * Get screen size with a SAFE strategy:
+     * 1) Prefer capabilities (deviceScreenSize / viewportRect) - zero extra Appium calls
+     * 2) Fallback to driver.manage().window().getSize() only if needed
+     */
+    public Dimension getScreenSize() {
+        if (cachedScreenSize != null) {
+            return cachedScreenSize;
+        }
+
+        // 1) Try capabilities first (fast, stable)
+        try {
+            Object cap = driver.getCapabilities().getCapability("appium:deviceScreenSize");
+            if (cap == null) cap = driver.getCapabilities().getCapability("deviceScreenSize");
+            if (cap instanceof String) {
+                String s = (String) cap;
+                String trimmed = s.trim();
+                if (trimmed.matches("\\d+x\\d+")) {
+                    String[] parts = trimmed.split("x");
+                    cachedScreenSize = new Dimension(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+                    logger.debug("Screen size from capabilities deviceScreenSize: {}x{}", cachedScreenSize.width, cachedScreenSize.height);
+                    return cachedScreenSize;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not parse deviceScreenSize capability", e);
+        }
+
+        // 2) Try viewportRect (width/height) next
+        try {
+            Object viewportRect = driver.getCapabilities().getCapability("appium:viewportRect");
+            if (viewportRect instanceof java.util.Map) {
+                java.util.Map map = (java.util.Map) viewportRect;
+                Object w = map.get("width");
+                Object h = map.get("height");
+                if (w != null && h != null) {
+                    cachedScreenSize = new Dimension(Integer.parseInt(w.toString()), Integer.parseInt(h.toString()));
+                    logger.debug("Screen size from capabilities viewportRect: {}x{}", cachedScreenSize.width, cachedScreenSize.height);
+                    return cachedScreenSize;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not parse viewportRect capability", e);
+        }
+
+        // 3) LAST resort - call Appium (can hang in some conditions, so keep as final fallback)
+        try {
+            cachedScreenSize = driver.manage().window().getSize();
+            logger.debug("Screen size from driver.manage().window().getSize(): {}x{}", cachedScreenSize.width, cachedScreenSize.height);
+            return cachedScreenSize;
+        } catch (Exception e) {
+            logger.warn("Failed to get screen size, using safe default 1080x1920", e);
+            cachedScreenSize = new Dimension(1080, 1920);
+            return cachedScreenSize;
+        }
     }
     
     // ==================== BASIC GESTURES ====================
@@ -141,6 +201,7 @@ public class GestureUtils {
      * Swipe left on screen
      */
     public void swipeLeft() {
+        Dimension screenSize = getScreenSize();
         int startX = (int) (screenSize.width * SWIPE_START_PERCENTAGE);
         int endX = (int) (screenSize.width * SWIPE_END_PERCENTAGE);
         int y = (int) (screenSize.height * SWIPE_ANCHOR_PERCENTAGE);
@@ -153,6 +214,7 @@ public class GestureUtils {
      * Swipe right on screen
      */
     public void swipeRight() {
+        Dimension screenSize = getScreenSize();
         int startX = (int) (screenSize.width * SWIPE_END_PERCENTAGE);
         int endX = (int) (screenSize.width * SWIPE_START_PERCENTAGE);
         int y = (int) (screenSize.height * SWIPE_ANCHOR_PERCENTAGE);
@@ -165,6 +227,7 @@ public class GestureUtils {
      * Swipe up on screen
      */
     public void swipeUp() {
+        Dimension screenSize = getScreenSize();
         int x = (int) (screenSize.width * SWIPE_ANCHOR_PERCENTAGE);
         int startY = (int) (screenSize.height * SWIPE_START_PERCENTAGE);
         int endY = (int) (screenSize.height * SWIPE_END_PERCENTAGE);
@@ -177,6 +240,7 @@ public class GestureUtils {
      * Swipe down on screen
      */
     public void swipeDown() {
+        Dimension screenSize = getScreenSize();
         int x = (int) (screenSize.width * SWIPE_ANCHOR_PERCENTAGE);
         int startY = (int) (screenSize.height * SWIPE_END_PERCENTAGE);
         int endY = (int) (screenSize.height * SWIPE_START_PERCENTAGE);
@@ -294,19 +358,29 @@ public class GestureUtils {
         
         for (int attempt = 0; attempt < MAX_SCROLL_ATTEMPTS; attempt++) {
             try {
-                WebElement element = driver.findElement(AppiumBy.accessibilityId(accessibilityId));
-                if (element.isDisplayed()) {
-                    logger.info("Found element with accessibility ID '{}' after {} scroll attempts", accessibilityId, attempt);
+                WebElement element = null;
+                try {
+                    element = driver.findElement(AppiumBy.accessibilityId(accessibilityId));
+                } catch (Exception e) {
+                    if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
+                        logger.debug("Accessibility ID '{}' not found, trying native ID (resource-id)", accessibilityId);
+                        element = driver.findElement(AppiumBy.id(accessibilityId));
+                    } else {
+                        throw e;
+                    }
+                }
+                if (element != null && element.isDisplayed()) {
+                    logger.info("Found element with ID/Accessibility ID '{}' after {} scroll attempts", accessibilityId, attempt);
                     return element;
                 }
             } catch (Exception e) {
-                logger.debug("Element with accessibility ID '{}' not found, attempt {}", accessibilityId, attempt + 1);
+                logger.debug("Element with ID/Accessibility ID '{}' not found, attempt {}", accessibilityId, attempt + 1);
             }
             
             scrollDown();
         }
         
-        logger.warn("Element with accessibility ID '{}' not found after {} scroll attempts", accessibilityId, MAX_SCROLL_ATTEMPTS);
+        logger.warn("Element with ID/Accessibility ID '{}' not found after {} scroll attempts", accessibilityId, MAX_SCROLL_ATTEMPTS);
         return null;
     }
     
@@ -314,6 +388,7 @@ public class GestureUtils {
      * Scroll down on screen
      */
     public void scrollDown() {
+        Dimension screenSize = getScreenSize();
         int x = screenSize.width / 2;
         int startY = (int) (screenSize.height * 0.7);
         int endY = (int) (screenSize.height * 0.3);
@@ -326,6 +401,7 @@ public class GestureUtils {
      * Scroll up on screen
      */
     public void scrollUp() {
+        Dimension screenSize = getScreenSize();
         int x = screenSize.width / 2;
         int startY = (int) (screenSize.height * 0.3);
         int endY = (int) (screenSize.height * 0.7);
@@ -385,6 +461,7 @@ public class GestureUtils {
      */
     public void pullToRefresh() {
         logger.info("Performing pull to refresh");
+        Dimension screenSize = getScreenSize();
         int x = screenSize.width / 2;
         int startY = (int) (screenSize.height * 0.2);
         int endY = (int) (screenSize.height * 0.6);
@@ -559,6 +636,7 @@ public class GestureUtils {
      * @return Point representing screen center
      */
     public Point getScreenCenter() {
+        Dimension screenSize = getScreenSize();
         return new Point(screenSize.width / 2, screenSize.height / 2);
     }
     
@@ -580,6 +658,7 @@ public class GestureUtils {
      * @return true if within bounds, false otherwise
      */
     public boolean isWithinScreenBounds(int x, int y) {
+        Dimension screenSize = getScreenSize();
         return x >= 0 && x <= screenSize.width && y >= 0 && y <= screenSize.height;
     }
     

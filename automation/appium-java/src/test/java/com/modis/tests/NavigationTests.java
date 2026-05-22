@@ -16,20 +16,51 @@ public class NavigationTests extends BaseTest {
     
     private HomePage homePage;
     
-    @BeforeMethod
+    @BeforeMethod(alwaysRun = true)
     public void loginBeforeEachTest() {
         logger.info("Logging in before navigation test");
-        
-        LoadingPage loadingPage = new LoadingPage();
-        LoginPage loginPage = loadingPage.clickLoginButton();
-        homePage = (HomePage) loginPage.loginWithTestUser();
-        
+
+        // Nếu app đã login sẵn (do noReset=true), chỉ cần init HomePage và chạy tiếp
+        try {
+            HomePage currentHome = new HomePage();
+            if (currentHome.isDisplayed()) {
+                logger.info("Already on Home screen - skipping login flow");
+                homePage = currentHome;
+                return;
+            }
+        } catch (Exception ignore) {
+            // ignore - sẽ thử theo luồng login bên dưới
+        }
+
+        // Nếu đang ở Login screen thì login luôn, nếu không thì đi từ Loading screen
+        LoginPage loginPage;
+        try {
+            LoginPage currentLogin = new LoginPage();
+            if (currentLogin.isDisplayed()) {
+                logger.info("Detected Login screen - proceeding to login");
+                loginPage = currentLogin;
+            } else {
+                LoadingPage loadingPage = new LoadingPage();
+                logger.info("Detected Loading/initial screen - navigating to Login screen");
+                loginPage = loadingPage.clickLoginButton();
+            }
+        } catch (Exception e) {
+            logger.warn("Could not detect current screen reliably, fallback to LoadingPage -> LoginPage. Reason: {}", e.getMessage());
+            LoadingPage loadingPage = new LoadingPage();
+            loginPage = loadingPage.clickLoginButton();
+        }
+
+        BasePage afterLogin = loginPage.loginWithTestUser();
+        Assert.assertTrue(afterLogin instanceof HomePage,
+                "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
+
+        homePage = (HomePage) afterLogin;
         Assert.assertTrue(homePage.isDisplayed(), "Should be on home page before navigation tests");
     }
     
     // ==================== BASIC NAVIGATION TESTS ====================
     
-    @Test(priority = 1, description = "Verify navigation to Profile screen")
+    @Test(priority = 1, groups = {"navigation", "regression", "smoke"}, description = "Verify navigation to Profile screen")
     public void testNavigateToProfile() {
         logger.info("Starting navigate to profile test");
         
@@ -42,7 +73,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Navigate to profile test completed successfully");
     }
     
-    @Test(priority = 2, description = "Verify navigation to Friends screen")
+    @Test(priority = 2, groups = {"navigation", "regression"}, description = "Verify navigation to Friends screen")
     public void testNavigateToFriends() {
         logger.info("Starting navigate to friends test");
         
@@ -55,7 +86,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Navigate to friends test completed successfully");
     }
     
-    @Test(priority = 3, description = "Verify navigation to Messages screen")
+    @Test(priority = 3, groups = {"navigation", "regression"}, description = "Verify navigation to Messages screen")
     public void testNavigateToMessages() {
         logger.info("Starting navigate to messages test");
         
@@ -67,7 +98,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Navigate to messages test completed successfully");
     }
     
-    @Test(priority = 4, description = "Verify navigation to Camera screen using gesture")
+    @Test(priority = 4, groups = {"navigation", "regression", "smoke"}, description = "Verify navigation to Camera screen using gesture")
     public void testNavigateToCamera() {
         logger.info("Starting navigate to camera test");
         
@@ -82,7 +113,7 @@ public class NavigationTests extends BaseTest {
     
     // ==================== BACK NAVIGATION TESTS ====================
     
-    @Test(priority = 5, description = "Verify back navigation from Profile")
+    @Test(priority = 5, groups = {"navigation", "regression"}, description = "Verify back navigation from Profile")
     public void testBackNavigationFromProfile() {
         logger.info("Starting back navigation from profile test");
         
@@ -95,7 +126,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Back navigation from profile test completed successfully");
     }
     
-    @Test(priority = 6, description = "Verify back navigation from Friends")
+    @Test(priority = 6, groups = {"navigation", "regression"}, description = "Verify back navigation from Friends")
     public void testBackNavigationFromFriends() {
         logger.info("Starting back navigation from friends test");
         
@@ -108,7 +139,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Back navigation from friends test completed successfully");
     }
     
-    @Test(priority = 7, description = "Verify back navigation from Messages")
+    @Test(priority = 7, groups = {"navigation", "regression"}, description = "Verify back navigation from Messages")
     public void testBackNavigationFromMessages() {
         logger.info("Starting back navigation from messages test");
         
@@ -121,7 +152,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Back navigation from messages test completed successfully");
     }
     
-    @Test(priority = 8, description = "Verify back navigation from Camera")
+    @Test(priority = 8, groups = {"navigation", "regression"}, description = "Verify back navigation from Camera")
     public void testBackNavigationFromCamera() {
         logger.info("Starting back navigation from camera test");
         
@@ -136,7 +167,7 @@ public class NavigationTests extends BaseTest {
     
     // ==================== DEEP NAVIGATION TESTS ====================
     
-    @Test(priority = 9, description = "Verify navigation to conversation from messages")
+    @Test(priority = 9, groups = {"navigation", "regression"}, description = "Verify navigation to conversation from messages")
     public void testNavigateToConversation() {
         logger.info("Starting navigate to conversation test");
         
@@ -155,7 +186,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Navigate to conversation test completed successfully");
     }
     
-    @Test(priority = 10, description = "Verify navigation to all images from camera")
+    @Test(priority = 10, groups = {"navigation", "regression"}, description = "Verify navigation to all images from camera")
     public void testNavigateToAllImages() {
         logger.info("Starting navigate to all images test");
         
@@ -170,7 +201,7 @@ public class NavigationTests extends BaseTest {
     
     // ==================== GESTURE NAVIGATION TESTS ====================
     
-    @Test(priority = 11, description = "Verify swipe gestures on home screen")
+    @Test(priority = 11, groups = {"navigation", "regression"}, description = "Verify swipe gestures on home screen")
     public void testSwipeGestures() {
         logger.info("Starting swipe gestures test");
         
@@ -187,7 +218,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Swipe gestures test completed successfully");
     }
     
-    @Test(priority = 12, description = "Verify tap gestures")
+    @Test(priority = 12, groups = {"navigation", "regression"}, description = "Verify tap gestures")
     public void testTapGestures() {
         logger.info("Starting tap gestures test");
         
@@ -202,7 +233,7 @@ public class NavigationTests extends BaseTest {
     
     // ==================== NAVIGATION FLOW TESTS ====================
     
-    @Test(priority = 13, description = "Verify complete camera flow navigation")
+    @Test(priority = 13, groups = {"navigation", "regression"}, description = "Verify complete camera flow navigation")
     public void testCompleteCameraFlow() {
         logger.info("Starting complete camera flow test");
         
@@ -225,7 +256,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Complete camera flow test completed successfully");
     }
     
-    @Test(priority = 14, description = "Verify complete messaging flow navigation")
+    @Test(priority = 14, groups = {"navigation", "regression"}, description = "Verify complete messaging flow navigation")
     public void testCompleteMessagingFlow() {
         logger.info("Starting complete messaging flow test");
         
@@ -250,7 +281,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Complete messaging flow test completed successfully");
     }
     
-    @Test(priority = 15, description = "Verify complete friends flow navigation")
+    @Test(priority = 15, groups = {"navigation", "regression"}, description = "Verify complete friends flow navigation")
     public void testCompleteFriendsFlow() {
         logger.info("Starting complete friends flow test");
         
@@ -277,7 +308,7 @@ public class NavigationTests extends BaseTest {
     
     // ==================== NAVIGATION STATE TESTS ====================
     
-    @Test(priority = 16, description = "Verify navigation state persistence")
+    @Test(priority = 16, groups = {"navigation", "regression"}, description = "Verify navigation state persistence")
     public void testNavigationStatePersistence() {
         logger.info("Starting navigation state persistence test");
         
@@ -296,7 +327,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Navigation state persistence test completed successfully");
     }
     
-    @Test(priority = 17, description = "Verify rapid navigation handling")
+    @Test(priority = 17, groups = {"navigation", "regression"}, description = "Verify rapid navigation handling")
     public void testRapidNavigation() {
         logger.info("Starting rapid navigation test");
         
@@ -314,7 +345,7 @@ public class NavigationTests extends BaseTest {
     
     // ==================== ERROR HANDLING TESTS ====================
     
-    @Test(priority = 18, description = "Verify navigation error recovery")
+    @Test(priority = 18, groups = {"navigation", "regression"}, description = "Verify navigation error recovery")
     public void testNavigationErrorRecovery() {
         logger.info("Starting navigation error recovery test");
         
@@ -332,7 +363,7 @@ public class NavigationTests extends BaseTest {
     
     // ==================== ACCESSIBILITY NAVIGATION TESTS ====================
     
-    @Test(priority = 19, description = "Verify accessibility navigation")
+    @Test(priority = 19, groups = {"navigation", "regression"}, description = "Verify accessibility navigation")
     public void testAccessibilityNavigation() {
         logger.info("Starting accessibility navigation test");
         
@@ -344,7 +375,7 @@ public class NavigationTests extends BaseTest {
         logger.info("Accessibility navigation test completed successfully");
     }
     
-    @Test(priority = 20, description = "Verify navigation performance")
+    @Test(priority = 20, groups = {"navigation", "regression"}, description = "Verify navigation performance")
     public void testNavigationPerformance() {
         logger.info("Starting navigation performance test");
         

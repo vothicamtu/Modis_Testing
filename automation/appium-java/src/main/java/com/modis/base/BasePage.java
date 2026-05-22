@@ -5,12 +5,13 @@ import com.modis.drivers.DriverManager;
 import com.modis.utils.GestureUtils;
 import com.modis.utils.LoggerUtil;
 import com.modis.utils.ScreenshotUtils;
+import com.modis.utils.UiDebugUtils;
 import com.modis.utils.WaitUtils;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AppiumFieldDecorator;
+import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
@@ -29,27 +30,77 @@ public abstract class BasePage {
     protected final AppiumDriver driver;
     protected final WaitUtils waitUtils;
     protected final GestureUtils gestureUtils;
-    protected final Dimension screenSize;
     
     public BasePage() {
         this.driver = DriverManager.getDriver();
         this.waitUtils = new WaitUtils(driver);
         this.gestureUtils = new GestureUtils(driver);
-        this.screenSize = driver.manage().window().getSize();
+        // IMPORTANT:
+        // Do NOT call driver.manage().window().getSize() here.
+        // On some real devices / UiAutomator2 states this can hang and break the test run.
         PageFactory.initElements(new AppiumFieldDecorator(driver, Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT)), this);
         logger.info("Initialized page: {}", this.getClass().getSimpleName());
+    }
+
+    /**
+     * Screen size accessor (lazy + capability-first via GestureUtils)
+     */
+    protected org.openqa.selenium.Dimension getScreenSize() {
+        return gestureUtils.getScreenSize();
     }
     
     // ==================== ELEMENT FINDING METHODS ====================
     
     /**
-     * Find element by accessibility ID (preferred method)
-     * @param accessibilityId The accessibility ID
+     * Find element by accessibility ID with React Native testID fallback
+     * @param accessibilityId The accessibility ID or testID
      * @return WebElement
      */
     protected WebElement findByAccessibilityId(String accessibilityId) {
         logger.debug("Finding element by accessibility ID: {}", accessibilityId);
-        return waitUtils.waitForElementToBeVisible(AppiumBy.accessibilityId(accessibilityId));
+
+        // Overall cap to avoid "hang forever" when locator is wrong or accessibility is inconsistent.
+        final long deadlineNs = System.nanoTime() + Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT).toNanos();
+
+        // Strategy 1: accessibility id (Android -> content-desc). Preferred.
+        WebElement element = tryWaitVisible(AppiumBy.accessibilityId(accessibilityId), deadlineNs, 5);
+        if (element != null) return element;
+
+        // Strategy 2: Android resource-id direct (some RN components expose testID as resource-id).
+        element = tryWaitVisible(AppiumBy.id(accessibilityId), deadlineNs, 3);
+        if (element != null) return element;
+
+        // Strategy 3: UiAutomator resourceIdMatches (match package prefix)
+        String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
+        element = tryWaitVisible(AppiumBy.androidUIAutomator(uiSelector), deadlineNs, 3);
+        if (element != null) return element;
+
+        // Strategy 4: XPath resource-id contains (last resort)
+        element = tryWaitVisible(By.xpath(String.format("//*[contains(@resource-id,'%s')]", accessibilityId)), deadlineNs, 2);
+        if (element != null) return element;
+
+        // Strategy 5: XPath content-desc exact (last resort)
+        element = tryWaitVisible(By.xpath(String.format("//*[@content-desc='%s']", accessibilityId)), deadlineNs, 2);
+        if (element != null) return element;
+
+        logger.error("Element '{}' not found with any strategy (timeout {}s)", accessibilityId, AppConstants.ELEMENT_WAIT_TIMEOUT);
+        UiDebugUtils.dumpOnFailure(driver, "element_not_found_" + accessibilityId);
+        throw new RuntimeException("Element not found: " + accessibilityId);
+    }
+
+    private WebElement tryWaitVisible(By locator, long deadlineNs, int maxPerStrategySeconds) {
+        long remainingNs = deadlineNs - System.nanoTime();
+        if (remainingNs <= 0) return null;
+
+        int remainingSec = (int) Math.ceil(remainingNs / 1_000_000_000.0);
+        int timeoutSec = Math.max(1, Math.min(maxPerStrategySeconds, remainingSec));
+
+        try {
+            return waitUtils.waitForElementToBeVisible(locator, timeoutSec);
+        } catch (Exception e) {
+            logger.debug("Locator not visible within {}s: {} ({})", timeoutSec, locator, e.getMessage());
+            return null;
+        }
     }
     
     /**
@@ -59,7 +110,15 @@ public abstract class BasePage {
      */
     protected List<WebElement> findElementsByAccessibilityId(String accessibilityId) {
         logger.debug("Finding elements by accessibility ID: {}", accessibilityId);
-        return waitUtils.waitForElementsToBeVisible(AppiumBy.accessibilityId(accessibilityId));
+        try {
+            return waitUtils.waitForElementsToBeVisible(AppiumBy.accessibilityId(accessibilityId));
+        } catch (Exception e) {
+            if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
+                logger.debug("Finding elements by accessibility ID failed, trying native ID (resource-id): {}", accessibilityId);
+                return waitUtils.waitForElementsToBeVisible(AppiumBy.id(accessibilityId));
+            }
+            throw e;
+        }
     }
     
     /**
@@ -212,17 +271,41 @@ public abstract class BasePage {
     }
     
     /**
-     * Check if element exists by accessibility ID
-     * @param accessibilityId The accessibility ID
+     * Check if element exists by accessibility ID with React Native testID fallback
+     * @param accessibilityId The accessibility ID or testID
      * @return true if exists, false otherwise
      */
     protected boolean isElementDisplayedByAccessibilityId(String accessibilityId) {
         try {
-            WebElement element = waitUtils.waitForElementToBePresent(AppiumBy.accessibilityId(accessibilityId), 5);
+            // Strategy 1: Try accessibility ID
+            WebElement element = waitUtils.waitForElementToBePresent(AppiumBy.accessibilityId(accessibilityId), 2);
             return isElementDisplayed(element);
-        } catch (Exception e) {
-            logger.debug("Element with accessibility ID '{}' not displayed", accessibilityId);
-            return false;
+        } catch (Exception e1) {
+            try {
+                // Strategy 2: Try resource-id (React Native Android)
+                logger.debug("Accessibility ID '{}' not displayed, trying resource-id", accessibilityId);
+                WebElement element = waitUtils.waitForElementToBePresent(AppiumBy.id(accessibilityId), 2);
+                return isElementDisplayed(element);
+            } catch (Exception e2) {
+                try {
+                    // Strategy 3: Try UiAutomator resourceIdMatches (match được prefix package)
+                    logger.debug("resource-id '{}' not displayed, trying UiAutomator resourceIdMatches", accessibilityId);
+                    String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
+                    WebElement element = waitUtils.waitForElementToBePresent(AppiumBy.androidUIAutomator(uiSelector), 2);
+                    return isElementDisplayed(element);
+                } catch (Exception e3) {
+                    try {
+                        // Strategy 4: XPath contains(@resource-id, ...) (fallback)
+                        logger.debug("UiAutomator resourceIdMatches '{}' not displayed, trying XPath resource-id contains", accessibilityId);
+                        String xpath = String.format("//*[contains(@resource-id,'%s')]", accessibilityId);
+                        WebElement element = waitUtils.waitForElementToBePresent(By.xpath(xpath), 2);
+                        return isElementDisplayed(element);
+                    } catch (Exception e4) {
+                        logger.debug("Element '{}' not displayed with any strategy", accessibilityId);
+                        return false;
+                    }
+                }
+            }
         }
     }
     
@@ -412,7 +495,7 @@ public abstract class BasePage {
      * @return WebElement
      */
     protected WebElement waitForElementVisible(String accessibilityId) {
-        return waitUtils.waitForElementToBeVisible(AppiumBy.accessibilityId(accessibilityId));
+        return findByAccessibilityId(accessibilityId);
     }
     
     /**
@@ -421,7 +504,33 @@ public abstract class BasePage {
      * @return WebElement
      */
     protected WebElement waitForElementClickable(String accessibilityId) {
-        return waitUtils.waitForElementToBeClickable(AppiumBy.accessibilityId(accessibilityId));
+        // For clickability we still use multi-strategy, but keep bounded overall.
+        final long deadlineNs = System.nanoTime() + Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT).toNanos();
+        WebElement element = tryWaitClickable(AppiumBy.accessibilityId(accessibilityId), deadlineNs, 5);
+        if (element != null) return element;
+        element = tryWaitClickable(AppiumBy.id(accessibilityId), deadlineNs, 3);
+        if (element != null) return element;
+        String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
+        element = tryWaitClickable(AppiumBy.androidUIAutomator(uiSelector), deadlineNs, 3);
+        if (element != null) return element;
+        element = tryWaitClickable(By.xpath(String.format("//*[contains(@resource-id,'%s')]", accessibilityId)), deadlineNs, 2);
+        if (element != null) return element;
+        element = tryWaitClickable(By.xpath(String.format("//*[@content-desc='%s']", accessibilityId)), deadlineNs, 2);
+        if (element != null) return element;
+        throw new RuntimeException("Element not clickable: " + accessibilityId);
+    }
+
+    private WebElement tryWaitClickable(By locator, long deadlineNs, int maxPerStrategySeconds) {
+        long remainingNs = deadlineNs - System.nanoTime();
+        if (remainingNs <= 0) return null;
+        int remainingSec = (int) Math.ceil(remainingNs / 1_000_000_000.0);
+        int timeoutSec = Math.max(1, Math.min(maxPerStrategySeconds, remainingSec));
+        try {
+            return waitUtils.waitForElementToBeClickable(locator, timeoutSec);
+        } catch (Exception e) {
+            logger.debug("Locator not clickable within {}s: {} ({})", timeoutSec, locator, e.getMessage());
+            return null;
+        }
     }
     
     /**
@@ -430,6 +539,9 @@ public abstract class BasePage {
      */
     protected void waitForElementToDisappear(String accessibilityId) {
         waitUtils.waitForElementToDisappear(AppiumBy.accessibilityId(accessibilityId));
+        if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
+            waitUtils.waitForElementToDisappear(AppiumBy.id(accessibilityId));
+        }
     }
     
     /**
@@ -438,7 +550,16 @@ public abstract class BasePage {
      * @param text The expected text
      */
     protected void waitForTextInElement(String accessibilityId, String text) {
-        waitUtils.waitForTextToBePresentInElement(AppiumBy.accessibilityId(accessibilityId), text);
+        try {
+            waitUtils.waitForTextToBePresentInElement(AppiumBy.accessibilityId(accessibilityId), text);
+        } catch (Exception e) {
+            if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
+                logger.debug("Wait for text in accessibility ID failed, trying native ID (resource-id): {}", accessibilityId);
+                waitUtils.waitForTextToBePresentInElement(AppiumBy.id(accessibilityId), text);
+            } else {
+                throw e;
+            }
+        }
     }
     
     // ==================== UTILITY METHODS ====================
@@ -487,13 +608,32 @@ public abstract class BasePage {
     }
     
     /**
+     * Get current package (Android only)
+     * @return Current package name or empty string
+     */
+    protected String getCurrentPackage() {
+        try {
+            if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
+                if (driver instanceof AndroidDriver) {
+                    return ((AndroidDriver) driver).getCurrentPackage();
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to get current package", e);
+        }
+        return "";
+    }
+
+    /**
      * Get current activity (Android only)
-     * @return Current activity name
+     * @return Current activity name or empty string
      */
     protected String getCurrentActivity() {
         try {
             if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
-                return (String) driver.executeScript("mobile: getCurrentPackage");
+                if (driver instanceof AndroidDriver) {
+                    return ((AndroidDriver) driver).currentActivity();
+                }
             }
         } catch (Exception e) {
             logger.debug("Failed to get current activity", e);

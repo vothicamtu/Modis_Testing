@@ -34,30 +34,61 @@ public class ScreenshotUtils {
      * @return Path to the screenshot file
      */
     public static String takeScreenshot(String screenshotName) {
+        AppiumDriver driver = null;
+
         try {
-            AppiumDriver driver = DriverManager.getDriver();
+            driver = DriverManager.getDriver();
+
+            //  Validate driver exists
             if (driver == null) {
                 logger.warn("Driver is null, cannot take screenshot");
                 return null;
             }
-            
+
+            //  Validate UiAutomator2 health BEFORE proceeding
+            if (!DriverManager.isUiAutomator2Healthy()) {
+                logger.warn(" UiAutomator2 not healthy, skipping screenshot to avoid crash");
+                return null;
+            }
+
             // Clean screenshot name
             String cleanName = cleanFileName(screenshotName);
             String timestamp = DATE_FORMAT.format(new Date());
             String fileName = String.format("%s_%s%s", cleanName, timestamp, SCREENSHOT_FORMAT);
-            
-            // Take screenshot
-            File sourceFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-            File destFile = new File(SCREENSHOT_DIR, fileName);
-            
-            FileUtils.copyFile(sourceFile, destFile);
-            
-            String absolutePath = destFile.getAbsolutePath();
-            logger.info("Screenshot saved: {}", absolutePath);
-            return absolutePath;
-            
+
+            // Take screenshot with error handling
+            try {
+                File sourceFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+
+                if (sourceFile == null || !sourceFile.exists()) {
+                    logger.warn("Screenshot file creation failed or file doesn't exist");
+                    return null;
+                }
+
+                //  Copy file safely
+                File destFile = new File(SCREENSHOT_DIR, fileName);
+                FileUtils.copyFile(sourceFile, destFile);
+
+                String absolutePath = destFile.getAbsolutePath();
+                logger.info("✓ Screenshot saved: {}", absolutePath);
+                return absolutePath;
+
+            } catch (IOException ioe) {
+                logger.error("IO error while saving screenshot: {}", ioe.getMessage());
+                return null;
+            }
+
         } catch (Exception e) {
-            logger.error("Failed to take screenshot: {}", screenshotName, e);
+            logger.error("Failed to take screenshot '{}': {}", screenshotName, e.getMessage());
+
+            //  Detect and handle UiAutomator2 crash
+            String errorMsg = e.getMessage();
+            if (errorMsg != null && (errorMsg.contains("instrumentation") ||
+                    errorMsg.contains("no longer running"))) {
+                logger.error(" UiAutomator2 crash detected during screenshot - attempting recovery");
+                // Don't call recovery here to avoid recursion, just log it
+            }
+
             return null;
         }
     }

@@ -58,12 +58,14 @@ public class TestIDs {
     public static final String SEND_PHOTO_FRIENDS_LIST = "send_photo_friends_list";
     
     // ==================== FEED SCREEN (React Emoji Comment) ====================
-    public static final String FEED_SCREEN = "feed_screen";
+    // React Native hiện tại dùng id root cho feed là "home_feed_screen"
+    public static final String FEED_SCREEN = "home_feed_screen";
     public static final String FEED_POST_ITEM_PREFIX = "feed_post_item_"; // + postId
     public static final String FEED_POST_IMAGE_PREFIX = "feed_post_image_"; // + postId
     public static final String FEED_COMMENT_BUTTON_PREFIX = "feed_comment_button_"; // + postId
     public static final String FEED_EMOJI_PREFIX = "feed_emoji_"; // + emoji + _ + postId
-    public static final String FEED_SCROLL_VIEW = "feed_scroll_view";
+    // Feed UI dùng FlatList với testID="feed_flatlist"
+    public static final String FEED_SCROLL_VIEW = "feed_flatlist";
     public static final String FEED_REFRESH_CONTROL = "feed_refresh_control";
     public static final String FEED_LOADING_INDICATOR = "feed_loading_indicator";
     

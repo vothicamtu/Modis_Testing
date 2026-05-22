@@ -3,6 +3,7 @@ package com.modis.pages;
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
+import com.modis.utils.UiDebugUtils;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
@@ -43,9 +44,30 @@ public class LoadingPage extends BasePage {
      */
     public LoginPage clickLoginButton() {
         logger.info("Clicking login button from loading screen");
-        waitForElementClickable(TestIDs.LOADING_LOGIN_BUTTON);
-        clickElement(loginButton);
-        return new LoginPage();
+
+        // Ensure Loading screen has rendered at least one navigation button
+        waitForLoadingScreenReady();
+        clickByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
+        logger.info("Successfully clicked login button");
+
+        // IMPORTANT: synchronize after navigation (RN render + navigation transition)
+        try {
+            LoginPage loginPage = new LoginPage();
+            loginPage.waitForPageToLoad();
+            return loginPage;
+        } catch (Exception firstWaitEx) {
+            // In case the first tap didn't register (e.g. animation/overlay), do one controlled retry.
+            logger.warn("Login screen not ready after first tap, retrying click once...");
+            try {
+                clickByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
+                LoginPage loginPage = new LoginPage();
+                loginPage.waitForPageToLoad();
+                return loginPage;
+            } catch (Exception retryEx) {
+                logger.error("Login navigation retry failed", retryEx);
+                throw firstWaitEx;
+            }
+        }
     }
     
     /**
@@ -54,8 +76,8 @@ public class LoadingPage extends BasePage {
      */
     public SignupPage clickSignupButton() {
         logger.info("Clicking signup button from loading screen");
-        waitForElementClickable(TestIDs.LOADING_SIGNUP_BUTTON);
-        clickElement(signupButton);
+        waitForLoadingScreenReady();
+        clickByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON);
         return new SignupPage();
     }
     
@@ -65,21 +87,43 @@ public class LoadingPage extends BasePage {
      */
     public BasePage waitForAutoNavigation() {
         logger.info("Waiting for automatic navigation from loading screen");
-        
-        // Wait for loading to complete
-        waitForLoadingToComplete();
-        
-        // Check which screen we navigated to
-        if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN)) {
-            logger.info("Auto-navigated to home screen (user already logged in)");
-            return new HomePage();
-        } else if (isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SCREEN)) {
-            logger.info("Auto-navigated to login screen");
-            return new LoginPage();
-        } else {
-            logger.info("Still on loading screen - manual navigation required");
-            return this;
+
+        // ROOT CAUSE FIX:
+        // RN screens were setting `accessible={true}` on the root container (Loading/Login/Signup/Home),
+        // which groups children and makes leaf nodes (buttons/inputs) NOT discoverable by Appium.
+        // We removed that in RN code; now we should detect the current screen by leaf testIDs,
+        // WITHOUT waiting for a non-existent "loading_spinner".
+
+        final long deadlineNs = System.nanoTime() + java.time.Duration.ofSeconds(AppConstants.RN_APP_LAUNCH_TIMEOUT).toNanos();
+        while (System.nanoTime() < deadlineNs) {
+            // If already logged in -> Home stack
+            if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN) ||
+                isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON) ||
+                isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN) ||
+                isElementDisplayedByAccessibilityId(TestIDs.FEED_SCREEN)) {
+                logger.info("Detected Home flow (user already logged in)");
+                return new HomePage();
+            }
+
+            // Login screen
+            if (isElementDisplayedByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT) ||
+                isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON)) {
+                logger.info("Detected Login screen");
+                return new LoginPage();
+            }
+
+            // Still on Loading screen (buttons visible)
+            if (isElementDisplayedByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON) ||
+                isElementDisplayedByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON)) {
+                logger.info("Detected Loading screen (manual navigation available)");
+                return this;
+            }
         }
+
+        logger.warn("Could not classify current screen after {}s. Assuming still on LoadingPage.",
+                AppConstants.RN_APP_LAUNCH_TIMEOUT);
+        UiDebugUtils.dumpOnFailure(driver, "unclassified_after_launch");
+        return this;
     }
     
     /**
@@ -88,15 +132,18 @@ public class LoadingPage extends BasePage {
      */
     public LoadingPage waitForLoadingScreenReady() {
         logger.info("Waiting for loading screen to be ready");
-        waitForElementVisible(TestIDs.LOADING_SCREEN);
-        
-        // Wait for either buttons to appear or auto-navigation to occur
+        // Tránh rely vào root container (có thể không accessible để tránh merge children).
+        // Điều kiện ready: ít nhất 1 trong 2 nút (login/signup) xuất hiện.
         try {
             waitForElementVisible(TestIDs.LOADING_LOGIN_BUTTON);
-            waitForElementVisible(TestIDs.LOADING_SIGNUP_BUTTON);
-            logger.info("Loading screen buttons are ready");
-        } catch (Exception e) {
-            logger.debug("Loading screen buttons not found - may auto-navigate", e);
+            logger.info("Loading screen ready - login button is visible");
+        } catch (Exception e1) {
+            try {
+                waitForElementVisible(TestIDs.LOADING_SIGNUP_BUTTON);
+                logger.info("Loading screen ready - signup button is visible");
+            } catch (Exception e2) {
+                logger.debug("Loading screen buttons not found - may auto-navigate", e2);
+            }
         }
         
         return this;
@@ -158,7 +205,8 @@ public class LoadingPage extends BasePage {
     @Override
     public boolean isDisplayed() {
         try {
-            return isElementDisplayedByAccessibilityId(TestIDs.LOADING_SCREEN);
+            // Không rely vào root container (có thể không accessible để tránh merge children).
+            return isLoginButtonDisplayed() || isSignupButtonDisplayed();
         } catch (Exception e) {
             logger.debug("Loading screen not displayed", e);
             return false;
@@ -176,14 +224,22 @@ public class LoadingPage extends BasePage {
      */
     public LoadingPage waitForPageToLoad() {
         logger.info("Waiting for loading page to load");
-        waitForElementVisible(TestIDs.LOADING_SCREEN);
-        
-        // Wait for app launch to complete
+
+        // React Native loading can either:
+        // - render loading buttons (login/signup), OR
+        // - auto-navigate quickly (already authenticated) to Home/Login.
+        // So we wait for "any-of" signals instead of sleeping a fixed 20s.
         try {
-            Thread.sleep(AppConstants.MAX_APP_LAUNCH_TIME_MS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("App launch wait interrupted", e);
+            waitUtils.waitForCondition(d -> {
+                // Use BasePage helpers to keep locator fallback bounded
+                try { findByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON); return true; } catch (Exception ignored) {}
+                try { findByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON); return true; } catch (Exception ignored) {}
+                try { findByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT); return true; } catch (Exception ignored) {}
+                try { findByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON); return true; } catch (Exception ignored) {}
+                return false;
+            }, AppConstants.RN_APP_LAUNCH_TIMEOUT);
+        } catch (Exception e) {
+            logger.warn("Loading page readiness timeout ({}s) - continuing anyway", AppConstants.RN_APP_LAUNCH_TIMEOUT);
         }
         
         logger.info("Loading page loaded successfully");
@@ -197,7 +253,7 @@ public class LoadingPage extends BasePage {
     public boolean verifyPageElements() {
         logger.info("Verifying loading page elements");
         
-        boolean screenPresent = isElementDisplayedByAccessibilityId(TestIDs.LOADING_SCREEN);
+        boolean screenPresent = isDisplayed();
         boolean logoPresent = isElementDisplayedByAccessibilityId(TestIDs.LOADING_LOGO);
         
         // Buttons may not be present if auto-navigation occurs

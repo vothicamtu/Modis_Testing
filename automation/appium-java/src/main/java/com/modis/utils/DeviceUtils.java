@@ -30,15 +30,65 @@ public class DeviceUtils {
      * @return Dimension object with width and height
      */
     public static Dimension getScreenSize() {
+        AppiumDriver driver = DriverManager.getDriver();
+        return getScreenSize(driver);
+    }
+
+    /**
+     * Safer overload (capability-first, avoids hanging getCurrentWindowSize calls).
+     */
+    public static Dimension getScreenSize(AppiumDriver driver) {
+        // 1) Capability-first: deviceScreenSize (e.g. "720x1604")
         try {
-            AppiumDriver driver = DriverManager.getDriver();
-            Dimension size = driver.manage().window().getSize();
-            logger.debug("Screen size: {}x{}", size.width, size.height);
-            return size;
+            if (driver != null && driver.getCapabilities() != null) {
+                Object cap = driver.getCapabilities().getCapability("appium:deviceScreenSize");
+                if (cap == null) cap = driver.getCapabilities().getCapability("deviceScreenSize");
+                if (cap instanceof String) {
+                    String s = (String) cap;
+                    String trimmed = s.trim();
+                    if (trimmed.matches("\\d+x\\d+")) {
+                        String[] parts = trimmed.split("x");
+                        Dimension size = new Dimension(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+                        logger.debug("Screen size from capabilities deviceScreenSize: {}x{}", size.width, size.height);
+                        return size;
+                    }
+                }
+            }
         } catch (Exception e) {
-            logger.error("Failed to get screen size", e);
-            return new Dimension(1080, 1920); // Default size
+            logger.debug("Could not parse deviceScreenSize capability", e);
         }
+
+        // 2) viewportRect (width/height)
+        try {
+            if (driver != null && driver.getCapabilities() != null) {
+                Object viewportRect = driver.getCapabilities().getCapability("appium:viewportRect");
+                if (viewportRect instanceof Map) {
+                    Map map = (Map) viewportRect;
+                    Object w = map.get("width");
+                    Object h = map.get("height");
+                    if (w != null && h != null) {
+                        Dimension size = new Dimension(Integer.parseInt(w.toString()), Integer.parseInt(h.toString()));
+                        logger.debug("Screen size from capabilities viewportRect: {}x{}", size.width, size.height);
+                        return size;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not parse viewportRect capability", e);
+        }
+
+        // 3) Last resort: driver command (can hang in bad states, so keep as fallback)
+        try {
+            if (driver != null) {
+                Dimension size = driver.manage().window().getSize();
+                logger.debug("Screen size from driver.manage().window().getSize(): {}x{}", size.width, size.height);
+                return size;
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to get screen size from Appium, using safe default 1080x1920", e);
+        }
+
+        return new Dimension(1080, 1920);
     }
     
     /**

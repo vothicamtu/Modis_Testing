@@ -16,19 +16,19 @@ public class AllImagesPage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
     
-    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_SCREEN)
+    @AndroidFindBy(id = TestIDs.ALL_IMAGES_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_SCREEN)
     private WebElement allImagesScreen;
     
-    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_BACK_BUTTON)
+    @AndroidFindBy(id = TestIDs.ALL_IMAGES_BACK_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_BACK_BUTTON)
     private WebElement backButton;
     
-    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_GRID)
+    @AndroidFindBy(id = TestIDs.ALL_IMAGES_GRID)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_GRID)
     private WebElement imagesGrid;
     
-    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_EMPTY_STATE)
+    @AndroidFindBy(id = TestIDs.ALL_IMAGES_EMPTY_STATE)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_EMPTY_STATE)
     private WebElement emptyState;
     

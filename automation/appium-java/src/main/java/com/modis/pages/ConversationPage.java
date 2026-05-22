@@ -16,27 +16,27 @@ public class ConversationPage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
     
-    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_SCREEN)
+    @AndroidFindBy(id = TestIDs.CONVERSATION_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_SCREEN)
     private WebElement conversationScreen;
     
-    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_BACK_BUTTON)
+    @AndroidFindBy(id = TestIDs.CONVERSATION_BACK_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_BACK_BUTTON)
     private WebElement backButton;
     
-    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_HEADER)
+    @AndroidFindBy(id = TestIDs.CONVERSATION_HEADER)
     @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_HEADER)
     private WebElement conversationHeader;
     
-    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_MESSAGES_LIST)
+    @AndroidFindBy(id = TestIDs.CONVERSATION_MESSAGES_LIST)
     @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_MESSAGES_LIST)
     private WebElement messagesList;
     
-    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_INPUT)
+    @AndroidFindBy(id = TestIDs.CONVERSATION_INPUT)
     @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_INPUT)
     private WebElement messageInput;
     
-    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_SEND_BUTTON)
+    @AndroidFindBy(id = TestIDs.CONVERSATION_SEND_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_SEND_BUTTON)
     private WebElement sendButton;
     

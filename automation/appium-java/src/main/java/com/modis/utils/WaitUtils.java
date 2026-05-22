@@ -3,6 +3,7 @@ package com.modis.utils;
 import com.modis.constants.AppConstants;
 import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -26,9 +27,17 @@ public class WaitUtils {
     
     public WaitUtils(AppiumDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(AppConstants.EXPLICIT_WAIT));
-        this.shortWait = new WebDriverWait(driver, Duration.ofSeconds(AppConstants.SHORT_WAIT));
-        this.longWait = new WebDriverWait(driver, Duration.ofSeconds(AppConstants.LONG_WAIT));
+        this.wait = buildWait(Duration.ofSeconds(AppConstants.EXPLICIT_WAIT));
+        this.shortWait = buildWait(Duration.ofSeconds(AppConstants.SHORT_WAIT));
+        this.longWait = buildWait(Duration.ofSeconds(AppConstants.LONG_WAIT));
+    }
+
+    private WebDriverWait buildWait(Duration timeout) {
+        WebDriverWait w = new WebDriverWait(driver, timeout);
+        // React Native often re-renders and can trigger StaleElementReferenceException mid-wait.
+        // Ignoring it keeps the wait resilient without increasing overall timeout.
+        w.ignoring(StaleElementReferenceException.class);
+        return w;
     }
     
     // ==================== ELEMENT PRESENCE WAITS ====================
@@ -86,13 +95,22 @@ public class WaitUtils {
      * @return WebElement
      */
     public WebElement waitForElementToBeVisible(By locator) {
+        return waitForElementToBeVisible(locator, AppConstants.EXPLICIT_WAIT);
+    }
+
+    /**
+     * Wait for element to be visible with custom timeout (seconds).
+     * Use this for multi-strategy locators to keep overall time bounded.
+     */
+    public WebElement waitForElementToBeVisible(By locator, int timeoutSeconds) {
         try {
-            logger.debug("Waiting for element to be visible: {}", locator);
-            WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+            logger.debug("Waiting for element to be visible ({}s): {}", timeoutSeconds, locator);
+            WebDriverWait customWait = buildWait(Duration.ofSeconds(timeoutSeconds));
+            WebElement element = customWait.until(ExpectedConditions.visibilityOfElementLocated(locator));
             logger.debug("Element is visible: {}", locator);
             return element;
         } catch (TimeoutException e) {
-            logger.error("Element not visible: {}", locator);
+            logger.error("Element not visible within {} seconds: {}", timeoutSeconds, locator);
             throw new TimeoutException("Element not visible: " + locator, e);
         }
     }
@@ -167,13 +185,18 @@ public class WaitUtils {
      * @return WebElement
      */
     public WebElement waitForElementToBeClickable(By locator) {
+        return waitForElementToBeClickable(locator, AppConstants.EXPLICIT_WAIT);
+    }
+
+    public WebElement waitForElementToBeClickable(By locator, int timeoutSeconds) {
         try {
-            logger.debug("Waiting for element to be clickable: {}", locator);
-            WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
+            logger.debug("Waiting for element to be clickable ({}s): {}", timeoutSeconds, locator);
+            WebDriverWait customWait = buildWait(Duration.ofSeconds(timeoutSeconds));
+            WebElement element = customWait.until(ExpectedConditions.elementToBeClickable(locator));
             logger.debug("Element is clickable: {}", locator);
             return element;
         } catch (TimeoutException e) {
-            logger.error("Element not clickable: {}", locator);
+            logger.error("Element not clickable within {} seconds: {}", timeoutSeconds, locator);
             throw new TimeoutException("Element not clickable: " + locator, e);
         }
     }
@@ -392,27 +415,29 @@ public class WaitUtils {
      * Wait for network request to complete (mobile specific)
      */
     public void waitForNetworkIdle() {
-        try {
-            logger.debug("Waiting for network idle");
-            Thread.sleep(AppConstants.NETWORK_WAIT * 1000L);
-            logger.debug("Network idle wait completed");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("Network idle wait interrupted", e);
-        }
+        // Prefer explicit waits for UI signals.
+        // This is a last-resort tiny backoff (configurable) to avoid flakiness on slow RN devices.
+        int seconds = ConfigReader.getIntProperty("network.wait", 0);
+        if (seconds <= 0) return;
+        safeSleepSeconds(seconds, "network idle");
     }
     
     /**
      * Wait for animation to complete
      */
     public void waitForAnimation() {
+        int seconds = ConfigReader.getIntProperty("animation.wait", 0);
+        if (seconds <= 0) return;
+        safeSleepSeconds(seconds, "animation");
+    }
+
+    private void safeSleepSeconds(int seconds, String reason) {
         try {
-            logger.debug("Waiting for animation to complete");
-            Thread.sleep(AppConstants.ANIMATION_WAIT * 1000L);
-            logger.debug("Animation wait completed");
+            logger.debug("Sleeping {}s for {}", seconds, reason);
+            Thread.sleep(seconds * 1000L);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.warn("Animation wait interrupted", e);
+            logger.warn("Sleep interrupted ({})", reason, e);
         }
     }
     

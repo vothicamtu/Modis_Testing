@@ -91,6 +91,13 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
         </dependency>
+        
+        <!-- Janino for Logback conditional processing -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+            <version>3.1.10</version>
+        </dependency>
 
         <!-- Apache Commons for Utilities -->
         <dependency>

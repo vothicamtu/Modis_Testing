@@ -16,19 +16,19 @@ public class MessagePage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
     
-    @AndroidFindBy(accessibility = TestIDs.MESSAGE_SCREEN)
+    @AndroidFindBy(id = TestIDs.MESSAGE_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.MESSAGE_SCREEN)
     private WebElement messageScreen;
     
-    @AndroidFindBy(accessibility = TestIDs.MESSAGE_BACK_BUTTON)
+    @AndroidFindBy(id = TestIDs.MESSAGE_BACK_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.MESSAGE_BACK_BUTTON)
     private WebElement backButton;
     
-    @AndroidFindBy(accessibility = TestIDs.MESSAGE_CONVERSATION_LIST)
+    @AndroidFindBy(id = TestIDs.MESSAGE_CONVERSATION_LIST)
     @iOSXCUITFindBy(accessibility = TestIDs.MESSAGE_CONVERSATION_LIST)
     private WebElement conversationList;
     
-    @AndroidFindBy(accessibility = TestIDs.MESSAGE_EMPTY_STATE)
+    @AndroidFindBy(id = TestIDs.MESSAGE_EMPTY_STATE)
     @iOSXCUITFindBy(accessibility = TestIDs.MESSAGE_EMPTY_STATE)
     private WebElement emptyState;
     

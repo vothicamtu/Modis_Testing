@@ -3,9 +3,13 @@ package com.modis.pages;
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
+import com.modis.utils.TestDataManager;
+import com.modis.utils.UiDebugUtils;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
+
+import java.util.Map;
 
 /**
  * Page Object for Login Screen
@@ -14,10 +18,11 @@ import org.openqa.selenium.WebElement;
 public class LoginPage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
-    
-    @AndroidFindBy(accessibility = TestIDs.LOGIN_SCREEN)
-    @iOSXCUITFindBy(accessibility = TestIDs.LOGIN_SCREEN)
-    private WebElement loginScreen;
+    // NOTE:
+    // Do not rely on the root container testID/accessibilityId (login_screen) for React Native.
+    // In the current RN code, the root LinearGradient sets testID/accessibilityLabel but does NOT set accessible={true},
+    // so it may not be exposed as an accessibility node on Android -> AppiumBy.accessibilityId("login_screen") can fail.
+    // Use stable, interactive child elements as the screen "ready" signal instead (inputs / buttons).
     
     @AndroidFindBy(accessibility = TestIDs.LOGIN_TITLE_TEXT)
     @iOSXCUITFindBy(accessibility = TestIDs.LOGIN_TITLE_TEXT)
@@ -61,8 +66,8 @@ public class LoginPage extends BasePage {
      */
     public LoginPage enterUsername(String username) {
         logger.info("Entering username: {}", username);
-        waitForElementVisible(TestIDs.LOGIN_USERNAME_INPUT);
-        enterText(usernameInput, username);
+        // Dùng helper theo accessibilityId/testID để tránh phụ thuộc @AndroidFindBy(id=...) (RN có thể không map vào resource-id)
+        enterTextByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT, username);
         return this;
     }
     
@@ -73,8 +78,7 @@ public class LoginPage extends BasePage {
      */
     public LoginPage enterPassword(String password) {
         logger.info("Entering password");
-        waitForElementVisible(TestIDs.LOGIN_PASSWORD_INPUT);
-        enterText(passwordInput, password);
+        enterTextByAccessibilityId(TestIDs.LOGIN_PASSWORD_INPUT, password);
         return this;
     }
     
@@ -85,25 +89,44 @@ public class LoginPage extends BasePage {
     public BasePage clickLoginButton() {
         logger.info("Clicking login button");
         waitForElementClickable(TestIDs.LOGIN_SUBMIT_BUTTON);
-        clickElement(loginButton);
-        
-        // Wait for either success (home screen) or error message
+        clickByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
+
+        // Wait until:
+        // - Home screen appears (login OK), OR
+        // - login button becomes enabled again (request finished but still on login -> invalid creds)
         try {
-            // Wait for loading to complete
-            waitForLoadingToComplete();
-            
-            // Check if we're on home screen (successful login)
-            if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN)) {
-                logger.info("Login successful - navigated to home screen");
-                return new HomePage();
-            } else {
-                logger.warn("Login failed - still on login screen");
-                return this;
-            }
+            waitUtils.waitForCondition(d -> {
+                // Success signals
+                if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN) ||
+                    isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON) ||
+                    isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN) ||
+                    isElementDisplayedByAccessibilityId(TestIDs.FEED_SCREEN)) {
+                    return true;
+                }
+
+                // Failure/finished signal: login button enabled again
+                try {
+                    WebElement btn = findByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
+                    return btn.isEnabled();
+                } catch (Exception ignored) {
+                    return false;
+                }
+            }, AppConstants.PAGE_LOAD_TIMEOUT);
         } catch (Exception e) {
-            logger.error("Error during login process", e);
-            return this;
+            UiDebugUtils.dumpOnFailure(driver, "login_outcome_timeout");
+            throw e;
         }
+
+        if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN) ||
+            isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON) ||
+            isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN) ||
+            isElementDisplayedByAccessibilityId(TestIDs.FEED_SCREEN)) {
+            logger.info("Login successful - navigated to home flow");
+            return new HomePage();
+        }
+
+        logger.warn("Login finished but still on login screen (likely invalid credentials)");
+        return this;
     }
     
     /**
@@ -112,8 +135,7 @@ public class LoginPage extends BasePage {
      */
     public SignupPage clickSignupLink() {
         logger.info("Clicking signup link");
-        waitForElementClickable(TestIDs.LOGIN_SIGNUP_LINK);
-        clickElement(signupLink);
+        clickByAccessibilityId(TestIDs.LOGIN_SIGNUP_LINK);
         return new SignupPage();
     }
     
@@ -123,8 +145,7 @@ public class LoginPage extends BasePage {
      */
     public LoginPage clickForgotPasswordLink() {
         logger.info("Clicking forgot password link");
-        waitForElementClickable(TestIDs.LOGIN_FORGOT_PASSWORD);
-        clickElement(forgotPasswordLink);
+        clickByAccessibilityId(TestIDs.LOGIN_FORGOT_PASSWORD);
         return this;
     }
     
@@ -147,7 +168,8 @@ public class LoginPage extends BasePage {
      * @return HomePage if successful, LoginPage if failed
      */
     public BasePage loginWithTestUser() {
-        return login(AppConstants.TEST_USER_USERNAME, AppConstants.TEST_USER_PASSWORD);
+        Map<String, String> user = TestDataManager.getRealLoginUser();
+        return login(user.get("username"), user.get("password"));
     }
     
     /**
@@ -165,7 +187,7 @@ public class LoginPage extends BasePage {
      * @return Username field value
      */
     public String getUsernameValue() {
-        waitForElementVisible(TestIDs.LOGIN_USERNAME_INPUT);
+        waitUtils.waitForElementToBeVisible(usernameInput);
         return usernameInput.getAttribute("text");
     }
     
@@ -174,7 +196,7 @@ public class LoginPage extends BasePage {
      * @return Password field value (masked)
      */
     public String getPasswordValue() {
-        waitForElementVisible(TestIDs.LOGIN_PASSWORD_INPUT);
+        waitUtils.waitForElementToBeVisible(passwordInput);
         return passwordInput.getAttribute("text");
     }
     
@@ -201,7 +223,7 @@ public class LoginPage extends BasePage {
      * @return true if enabled, false otherwise
      */
     public boolean isLoginButtonEnabled() {
-        waitForElementVisible(TestIDs.LOGIN_SUBMIT_BUTTON);
+        waitUtils.waitForElementToBeVisible(loginButton);
         return isElementEnabled(loginButton);
     }
     
@@ -246,7 +268,7 @@ public class LoginPage extends BasePage {
      * @return Page title text
      */
     public String getTitleText() {
-        waitForElementVisible(TestIDs.LOGIN_TITLE_TEXT);
+        waitUtils.waitForElementToBeVisible(titleText);
         return getText(titleText);
     }
     
@@ -274,7 +296,7 @@ public class LoginPage extends BasePage {
      */
     public LoginPage clearUsername() {
         logger.debug("Clearing username field");
-        waitForElementVisible(TestIDs.LOGIN_USERNAME_INPUT);
+        waitUtils.waitForElementToBeVisible(usernameInput);
         usernameInput.clear();
         return this;
     }
@@ -285,7 +307,7 @@ public class LoginPage extends BasePage {
      */
     public LoginPage clearPassword() {
         logger.debug("Clearing password field");
-        waitForElementVisible(TestIDs.LOGIN_PASSWORD_INPUT);
+        waitUtils.waitForElementToBeVisible(passwordInput);
         passwordInput.clear();
         return this;
     }
@@ -305,7 +327,7 @@ public class LoginPage extends BasePage {
      * @return true if focused, false otherwise
      */
     public boolean isUsernameFocused() {
-        waitForElementVisible(TestIDs.LOGIN_USERNAME_INPUT);
+        waitUtils.waitForElementToBeVisible(usernameInput);
         return usernameInput.equals(driver.switchTo().activeElement());
     }
     
@@ -314,7 +336,7 @@ public class LoginPage extends BasePage {
      * @return true if focused, false otherwise
      */
     public boolean isPasswordFocused() {
-        waitForElementVisible(TestIDs.LOGIN_PASSWORD_INPUT);
+        waitUtils.waitForElementToBeVisible(passwordInput);
         return passwordInput.equals(driver.switchTo().activeElement());
     }
     
@@ -324,7 +346,7 @@ public class LoginPage extends BasePage {
      */
     public LoginPage focusUsernameField() {
         logger.debug("Focusing username field");
-        waitForElementClickable(TestIDs.LOGIN_USERNAME_INPUT);
+        waitUtils.waitForElementToBeClickable(usernameInput);
         clickElement(usernameInput);
         return this;
     }
@@ -335,7 +357,7 @@ public class LoginPage extends BasePage {
      */
     public LoginPage focusPasswordField() {
         logger.debug("Focusing password field");
-        waitForElementClickable(TestIDs.LOGIN_PASSWORD_INPUT);
+        waitUtils.waitForElementToBeClickable(passwordInput);
         clickElement(passwordInput);
         return this;
     }
@@ -395,7 +417,9 @@ public class LoginPage extends BasePage {
     @Override
     public boolean isDisplayed() {
         try {
-            return isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SCREEN);
+            // Prefer stable child elements; these are on TextInput/TouchableOpacity with accessible={true}
+            return isElementDisplayedByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT) ||
+                   isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
         } catch (Exception e) {
             logger.debug("Login screen not displayed", e);
             return false;
@@ -413,7 +437,7 @@ public class LoginPage extends BasePage {
      */
     public LoginPage waitForPageToLoad() {
         logger.info("Waiting for login page to load");
-        waitForElementVisible(TestIDs.LOGIN_SCREEN);
+        // Avoid waiting on login_screen root. Wait for critical interactive elements instead.
         waitForElementVisible(TestIDs.LOGIN_USERNAME_INPUT);
         waitForElementVisible(TestIDs.LOGIN_PASSWORD_INPUT);
         waitForElementVisible(TestIDs.LOGIN_SUBMIT_BUTTON);
@@ -429,7 +453,6 @@ public class LoginPage extends BasePage {
         logger.info("Verifying login page elements");
         
         boolean allElementsPresent = 
-            isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SCREEN) &&
             isElementDisplayedByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT) &&
             isElementDisplayedByAccessibilityId(TestIDs.LOGIN_PASSWORD_INPUT) &&
             isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON) &&
