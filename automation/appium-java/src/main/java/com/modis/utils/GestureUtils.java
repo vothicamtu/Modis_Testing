@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Utility class for handling gestures and touch actions
@@ -36,7 +37,7 @@ public class GestureUtils {
     private static final int SWIPE_DURATION_MS = 1000;
     private static final int TAP_DURATION_MS = 100;
     private static final int SCROLL_DURATION_MS = 800;
-    private static final int MAX_SCROLL_ATTEMPTS = 10;
+    private static final int MAX_SCROLL_ATTEMPTS = 15;
     
     public GestureUtils(AppiumDriver driver) {
         this.driver = driver;
@@ -329,12 +330,11 @@ public class GestureUtils {
         
         for (int attempt = 0; attempt < MAX_SCROLL_ATTEMPTS; attempt++) {
             try {
-                // Try to find element first
-                WebElement element = driver.findElement(AppiumBy.xpath(
-                    String.format("//*[@text='%s' or @content-desc='%s']", text, text)));
-                if (element.isDisplayed()) {
+                List<WebElement> elements = driver.findElements(AppiumBy.xpath(
+                        String.format("//*[@text='%s' or @content-desc='%s']", text, text)));
+                if (elements != null && !elements.isEmpty() && elements.get(0).isDisplayed()) {
                     logger.info("Found element with text '{}' after {} scroll attempts", text, attempt);
-                    return element;
+                    return elements.get(0);
                 }
             } catch (Exception e) {
                 logger.debug("Element with text '{}' not found, attempt {}", text, attempt + 1);
@@ -358,20 +358,28 @@ public class GestureUtils {
         
         for (int attempt = 0; attempt < MAX_SCROLL_ATTEMPTS; attempt++) {
             try {
-                WebElement element = null;
-                try {
-                    element = driver.findElement(AppiumBy.accessibilityId(accessibilityId));
-                } catch (Exception e) {
-                    if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
-                        logger.debug("Accessibility ID '{}' not found, trying native ID (resource-id)", accessibilityId);
-                        element = driver.findElement(AppiumBy.id(accessibilityId));
-                    } else {
-                        throw e;
-                    }
+                List<WebElement> elements = DriverManager.safelyFindElements(AppiumBy.accessibilityId(accessibilityId));
+
+                boolean isAndroid = DriverManager.getCurrentPlatform().equalsIgnoreCase("android");
+                if (isAndroid && (elements == null || elements.isEmpty())) {
+                    elements = DriverManager.safelyFindElements(AppiumBy.id(accessibilityId));
                 }
-                if (element != null && element.isDisplayed()) {
-                    logger.info("Found element with ID/Accessibility ID '{}' after {} scroll attempts", accessibilityId, attempt);
-                    return element;
+
+                if (isAndroid && (elements == null || elements.isEmpty())) {
+                    String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
+                    elements = DriverManager.safelyFindElements(AppiumBy.androidUIAutomator(uiSelector));
+                }
+
+                if (elements != null && !elements.isEmpty()) {
+                    for (WebElement el : elements) {
+                        try {
+                            if (el != null && el.isDisplayed()) {
+                                logger.info("Found element with ID/Accessibility ID '{}' after {} scroll attempts", accessibilityId, attempt);
+                                return el;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
                 }
             } catch (Exception e) {
                 logger.debug("Element with ID/Accessibility ID '{}' not found, attempt {}", accessibilityId, attempt + 1);

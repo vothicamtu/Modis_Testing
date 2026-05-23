@@ -522,6 +522,23 @@ public class HomePage extends BasePage {
         logger.info("Home page loaded successfully");
         return this;
     }
+
+    /**
+     * Wait ngắn sau login để đảm bảo UI Home đã render xong phần Topbar.
+     * - Dùng check nhanh (isElementDisplayedByAccessibilityId) để tránh timeout dài khi app chưa thật sự vào Home
+     * - Timeout ngắn giúp giảm tình trạng "đứng 60s" do Appium tìm sai locator khi login fail
+     */
+    public HomePage waitForTopbarReadyAfterLogin(int timeoutSeconds) {
+        try {
+            waitUtils.waitForCondition(d ->
+                    isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON) ||
+                            isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_CONTAINER),
+                    timeoutSeconds);
+        } catch (Exception e) {
+            logger.warn("Home topbar not ready within {}s (non-fatal): {}", timeoutSeconds, e.getMessage());
+        }
+        return this;
+    }
     
     /**
      * Verify all essential elements are present

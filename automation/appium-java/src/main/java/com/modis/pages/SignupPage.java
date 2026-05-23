@@ -77,8 +77,7 @@ public class SignupPage extends BasePage {
      */
     public SignupPage enterUsername(String username) {
         logger.info("Entering username: {}", username);
-        waitForElementVisible(TestIDs.SIGNUP_USERNAME_INPUT);
-        enterText(usernameInput, username);
+        enterTextByAccessibilityId(TestIDs.SIGNUP_USERNAME_INPUT, username);
         return this;
     }
     
@@ -89,8 +88,7 @@ public class SignupPage extends BasePage {
      */
     public SignupPage enterFullname(String fullname) {
         logger.info("Entering full name: {}", fullname);
-        waitForElementVisible(TestIDs.SIGNUP_FULLNAME_INPUT);
-        enterText(fullnameInput, fullname);
+        enterTextByAccessibilityId(TestIDs.SIGNUP_FULLNAME_INPUT, fullname);
         return this;
     }
     
@@ -101,8 +99,7 @@ public class SignupPage extends BasePage {
      */
     public SignupPage enterEmail(String email) {
         logger.info("Entering email: {}", email);
-        waitForElementVisible(TestIDs.SIGNUP_EMAIL_INPUT);
-        enterText(emailInput, email);
+        enterTextByAccessibilityId(TestIDs.SIGNUP_EMAIL_INPUT, email);
         return this;
     }
     
@@ -113,8 +110,7 @@ public class SignupPage extends BasePage {
      */
     public SignupPage enterPhone(String phone) {
         logger.info("Entering phone: {}", phone);
-        waitForElementVisible(TestIDs.SIGNUP_PHONE_INPUT);
-        enterText(phoneInput, phone);
+        enterTextByAccessibilityId(TestIDs.SIGNUP_PHONE_INPUT, phone);
         return this;
     }
     
@@ -125,8 +121,7 @@ public class SignupPage extends BasePage {
      */
     public SignupPage enterPassword(String password) {
         logger.info("Entering password");
-        waitForElementVisible(TestIDs.SIGNUP_PASSWORD_INPUT);
-        enterText(passwordInput, password);
+        enterTextByAccessibilityId(TestIDs.SIGNUP_PASSWORD_INPUT, password);
         return this;
     }
     
@@ -137,8 +132,7 @@ public class SignupPage extends BasePage {
      */
     public SignupPage enterConfirmPassword(String confirmPassword) {
         logger.info("Entering confirm password");
-        waitForElementVisible(TestIDs.SIGNUP_CONFIRM_PASSWORD_INPUT);
-        enterText(confirmPasswordInput, confirmPassword);
+        enterTextByAccessibilityId(TestIDs.SIGNUP_CONFIRM_PASSWORD_INPUT, confirmPassword);
         return this;
     }
     

@@ -1,6 +1,7 @@
 package com.modis.tests;
 
 import com.modis.base.BaseTest;
+import com.modis.base.BasePage;
 import com.modis.constants.AppConstants;
 import com.modis.pages.*;
 import com.modis.utils.TestDataReader;
@@ -69,7 +70,11 @@ public class MessagingTests extends BaseTest {
         
         LoadingPage loadingPage = new LoadingPage();
         LoginPage loginPage = loadingPage.clickLoginButton();
-        homePage = (HomePage) loginPage.login(username, password);
+        BasePage afterLogin = loginPage.login(username, password);
+        Assert.assertTrue(afterLogin instanceof HomePage,
+                "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
+        homePage = (HomePage) afterLogin;
+        homePage.waitForTopbarReadyAfterLogin(8);
         
         Assert.assertTrue(homePage.isDisplayed(), "Should be logged in before messaging tests");
         logger.info("Logged in successfully with user: " + username);

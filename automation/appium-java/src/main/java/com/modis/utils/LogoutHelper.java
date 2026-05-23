@@ -9,6 +9,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Helper logout theo chiến lược "không clear data" (Android 11 real device).
@@ -55,11 +56,21 @@ public final class LogoutHelper {
 
             // 2) Chờ nút logout xuất hiện (bounded)
             if (!isVisible(driver, AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON), 5)) {
-                logger.warn("Không thấy logout button trong Profile -> skip logout");
-                return;
+                try {
+                    GestureUtils gestureUtils = new GestureUtils(driver);
+                    WebElement logout = gestureUtils.scrollToElementByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON);
+                    if (logout == null || !logout.isDisplayed()) {
+                        logger.warn("Không thấy logout button trong Profile -> skip logout");
+                        return;
+                    }
+                    logout.click();
+                } catch (Exception e) {
+                    logger.warn("Không thể scroll tới logout button -> skip logout: {}", e.getMessage());
+                    return;
+                }
+            } else {
+                safeClick(driver, AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON));
             }
-
-            safeClick(driver, AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON));
 
             // 3) Nếu có modal confirm -> confirm
             if (isVisible(driver, AppiumBy.accessibilityId(TestIDs.MODAL_CONFIRM_BUTTON), 2)) {
@@ -81,24 +92,28 @@ public final class LogoutHelper {
     private static boolean isVisible(AppiumDriver driver, By locator, int timeoutSeconds) {
         try {
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
-            WebElement el = wait.until(d -> {
+            wait.pollingEvery(Duration.ofMillis(250));
+            Boolean visible = wait.until(d -> {
                 try {
-                    WebElement found = d.findElement(locator);
-                    return found != null && found.isDisplayed() ? found : null;
+                    List<WebElement> els = d.findElements(locator);
+                    if (els == null || els.isEmpty()) return false;
+                    WebElement el = els.get(0);
+                    return el != null && el.isDisplayed();
                 } catch (Exception ex) {
-                    return null;
+                    return false;
                 }
             });
-            return el != null;
-        } catch (Exception e) {
+            return visible != null && visible;
+        } catch (Exception ignored) {
             return false;
         }
     }
 
     private static void safeClick(AppiumDriver driver, By locator) {
         try {
-            WebElement el = driver.findElement(locator);
-            el.click();
+            List<WebElement> els = driver.findElements(locator);
+            if (els == null || els.isEmpty()) return;
+            els.get(0).click();
         } catch (Exception e) {
             // fallback tap by coordinates not necessary here; just best-effort
             logger.debug("safeClick failed for {}: {}", locator, e.getMessage());
@@ -109,10 +124,13 @@ public final class LogoutHelper {
     private static void waitForAny(AppiumDriver driver, int timeoutSeconds, By... locators) {
         try {
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+            wait.pollingEvery(Duration.ofMillis(250));
             wait.until(d -> {
                 for (By by : locators) {
                     try {
-                        WebElement el = d.findElement(by);
+                        List<WebElement> els = d.findElements(by);
+                        if (els == null || els.isEmpty()) continue;
+                        WebElement el = els.get(0);
                         if (el != null && el.isDisplayed()) return true;
                     } catch (Exception ignored) {
                     }

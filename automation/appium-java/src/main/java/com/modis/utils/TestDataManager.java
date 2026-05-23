@@ -7,10 +7,6 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -22,7 +18,7 @@ public class TestDataManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Faker faker = new Faker();
     private static final Map<String, JsonNode> testDataCache = new HashMap<>();
-    private static Map<String, String> realLoginUserCache;
+    private static Map<String, String> testDataLoginUserCache;
     
     // Private constructor to prevent instantiation
     private TestDataManager() {
@@ -108,57 +104,32 @@ public class TestDataManager {
         return userData;
     }
 
-    // ==================== REAL DATA (FROM C:\DATLTN EXPORTS) ====================
+    public static Map<String, String> getTestDataLoginUser() {
+        if (testDataLoginUserCache != null) return testDataLoginUserCache;
 
-    /**
-     * Load a real ACTIVE user (plain password) from Mongo export file in C:\DATLTN.
-     *
-     * Source file: C:\DATLTN\Modis.users.json
-     *
-     * Selection rules:
-     * - isActive == "ACTIVE"
-     * - password is NOT bcrypt (skip "$2a$..." hashes)
-     * - username/password are non-empty
-     *
-     * @return Map with keys: username, password
-     */
-    public static Map<String, String> getRealLoginUser() {
-        if (realLoginUserCache != null) return realLoginUserCache;
-
-        Path path = Paths.get("C:\\DATLTN\\Modis.users.json");
-        if (!Files.exists(path)) {
-            throw new IllegalStateException("Real users export not found: " + path);
+        JsonNode root = loadTestData("users");
+        JsonNode arr = root.path("loginTestData").path("validCredentials");
+        if (!arr.isArray()) {
+            throw new IllegalStateException("Invalid testdata/users.json format: loginTestData.validCredentials is not array");
         }
 
-        try {
-            String json = Files.readString(path, StandardCharsets.UTF_8);
-            JsonNode arr = objectMapper.readTree(json);
-            if (!arr.isArray()) {
-                throw new IllegalStateException("Invalid users export format (expected JSON array): " + path);
-            }
+        for (JsonNode u : arr) {
+            String expectedResult = u.path("expectedResult").asText("").trim();
+            if (!"success".equalsIgnoreCase(expectedResult)) continue;
 
-            for (JsonNode u : arr) {
-                String isActive = u.path("isActive").asText("");
-                String username = u.path("username").asText("").trim();
-                String password = u.path("password").asText("").trim();
+            String username = u.path("username").asText("").trim();
+            String password = u.path("password").asText("").trim();
+            if (username.isEmpty() || password.isEmpty()) continue;
 
-                if (!"ACTIVE".equalsIgnoreCase(isActive)) continue;
-                if (username.isEmpty() || password.isEmpty()) continue;
-                if (password.startsWith("$2a$")) continue; // skip bcrypt
-
-                Map<String, String> user = new HashMap<>();
-                user.put("username", username);
-                user.put("password", password);
-
-                realLoginUserCache = Collections.unmodifiableMap(user);
-                logger.info("Selected real login user from {}: {}", path.getFileName(), username);
-                return realLoginUserCache;
-            }
-
-            throw new IllegalStateException("No ACTIVE user with plain password found in: " + path);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read real users export: " + path, e);
+            Map<String, String> user = new HashMap<>();
+            user.put("username", username);
+            user.put("password", password);
+            testDataLoginUserCache = Collections.unmodifiableMap(user);
+            logger.info("Selected testdata login user from users.json: {}", username);
+            return testDataLoginUserCache;
         }
+
+        throw new IllegalStateException("No validCredentials (expectedResult=success) found in testdata/users.json");
     }
     
     /**

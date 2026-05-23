@@ -11,6 +11,7 @@ import io.appium.java_client.android.options.UiAutomator2Options;
 import io.appium.java_client.ios.IOSDriver;
 import io.appium.java_client.ios.options.XCUITestOptions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
 
@@ -90,17 +91,36 @@ public class DriverManager {
 
     private static AppiumDriver createWithUrlFallbackAndroid(List<URL> urls, UiAutomator2Options options) {
         Exception last = null;
+        boolean retriedWithNoReset = false;
         for (URL url : urls) {
             try {
                 logger.info("Attempting to create AndroidDriver at: {}", url);
                 return new AndroidDriver(url, options);
             } catch (Exception e) {
                 last = e;
+                if (!retriedWithNoReset && isPmClearPermissionError(e)) {
+                    retriedWithNoReset = true;
+                    try {
+                        logger.warn("Detected pm clear permission failure; retrying AndroidDriver creation with noReset=true");
+                        options.setNoReset(true);
+                        options.setFullReset(false);
+                        options.setCapability("fastReset", false);
+                        return new AndroidDriver(url, options);
+                    } catch (Exception retryException) {
+                        last = retryException;
+                        logger.warn("Retry with noReset=true failed at {}: {}: {}", url, retryException.getClass().getSimpleName(), retryException.getMessage());
+                    }
+                }
                 logger.warn("Failed to create AndroidDriver at {}: {}: {}", url, e.getClass().getSimpleName(), e.getMessage());
             }
         }
         logger.error("ANDROID SESSION CREATION FAILED. Tried URLs: {}", urls);
         throw new RuntimeException("AndroidDriver session creation failed. See root cause in suppressed exception/logs.", last);
+    }
+
+    private static boolean isPmClearPermissionError(Exception e) {
+        String msg = String.valueOf(e.getMessage());
+        return msg.contains("pm clear") && msg.contains("CLEAR_APP_USER_DATA");
     }
 
     private static AppiumDriver createWithUrlFallbackIOS(List<URL> urls, XCUITestOptions options) {
@@ -125,14 +145,20 @@ public class DriverManager {
     private static UiAutomator2Options getAndroidOptions() {
         UiAutomator2Options options = new UiAutomator2Options();
 
-        // Platform capabilities
+        // Platform capabilities - REMOVED hardcoded platformVersion
         options.setPlatformName("Android");
         options.setAutomationName("UiAutomator2");
         options.setDeviceName(ConfigReader.getProperty("android.deviceName", AppConstants.DEFAULT_DEVICE_NAME));
+        
+        // FIXED: Only set platformVersion if explicitly provided in config
         String platformVersion = ConfigReader.getProperty("android.platformVersion", "").trim();
         if (!platformVersion.isEmpty()) {
             options.setPlatformVersion(platformVersion);
+            logger.info("Using configured platformVersion: {}", platformVersion);
+        } else {
+            logger.info("No platformVersion specified - letting Appium auto-detect");
         }
+        
         String udid = ConfigReader.getProperty("android.udid", "").trim();
         if (!udid.isEmpty()) {
             options.setUdid(udid);
@@ -147,13 +173,14 @@ public class DriverManager {
             options.setAppActivity(ConfigReader.getProperty("android.appActivity", AppConstants.APP_ACTIVITY));
         }
 
-        // ==================== RESET / APP STATE (ANDROID 11+ REAL DEVICE SAFE DEFAULT) ====================
-        // Chiến lược theo yêu cầu:
-        // - noReset=true và fastReset=false để Appium KHÔNG gọi `adb shell pm clear <pkg>` khi tạo session
-        //   (pm clear thường bị chặn trên Android 11+ real device -> SecurityException).
-        // - Giữ nguyên các capability khác.
-        options.setNoReset(true);
-        options.setFullReset(ConfigReader.getBooleanProperty("android.fullReset", false));
+        // FIXED: App reset strategy for stability
+        // noReset=true prevents SecurityException on Android 11+ real devices
+        boolean noReset = ConfigReader.getBooleanProperty("android.noReset", true);
+        boolean fullReset = ConfigReader.getBooleanProperty("android.fullReset", false);
+        
+        logger.info("Setting app reset capabilities: noReset={}, fullReset={}", noReset, fullReset);
+        options.setNoReset(noReset);
+        options.setFullReset(fullReset);
         options.setCapability("fastReset", false);
 
         // Set other capabilities via generic setCapability to ensure maximum compatibility
@@ -165,27 +192,20 @@ public class DriverManager {
         options.setCapability("networkSpeed", ConfigReader.getProperty("android.networkSpeed", "full"));
         options.setCapability("gpsEnabled", ConfigReader.getBooleanProperty("android.gpsEnabled", true));
 
-        // Timeouts - Increased for React Native apps and UiAutomator2 stability
-        options.setNewCommandTimeout(Duration.ofSeconds(ConfigReader.getIntProperty("android.newCommandTimeout", 600))); // Increased to 10 minutes
+        // Timeouts - Optimized for stability
+        options.setNewCommandTimeout(Duration.ofSeconds(ConfigReader.getIntProperty("android.newCommandTimeout", 300))); // 5 minutes
         options.setCapability("androidInstallTimeout", ConfigReader.getIntProperty("android.androidInstallTimeout", 90000));
 
         // UiAutomator2 specific - Enhanced for stability
-        options.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerLaunchTimeout", 120000)); // 2 minutes
+        options.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerLaunchTimeout", 60000)); // 1 minute
         options.setCapability("uiautomator2ServerInstallTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerInstallTimeout", 60000)); // 1 minute
-        // uiautomator2ServerReadTimeout is in milliseconds.
-        // For RN apps, hierarchy dump / interaction can take longer under load (real devices, CI).
-        // Keep it high enough to avoid false "socket hang up", but still bounded.
-        options.setCapability("uiautomator2ServerReadTimeout", 120000); // 120s
-        options.setCapability("adbExecTimeout", ConfigReader.getIntProperty("android.adbExecTimeout", 120000));
+        options.setCapability("uiautomator2ServerReadTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerReadTimeout", 15000));
+        options.setCapability("adbExecTimeout", ConfigReader.getIntProperty("android.adbExecTimeout", 60000));
 
-        // Element finding timeouts - Critical for UiAutomator2 stability
-        // NOTE: These are milliseconds in UiAutomator2. Our config uses ms values.
-        // CRITICAL for React Native:
-        // RN often has continuous animations (reanimated/gesture-driven UI, spinners) => UIA2 "wait for idle" can block
-        // every /element command, leading to 30s proxy timeout and eventually instrumentation crash.
-        options.setCapability("waitForIdleTimeout", 0);
-        options.setCapability("waitForSelectorTimeout", ConfigReader.getIntProperty("android.waitForSelectorTimeout", 5000));
-        options.setCapability("actionAcknowledgmentTimeout", ConfigReader.getIntProperty("android.actionAcknowledgmentTimeout", 5000));
+        // Element finding timeouts - Optimized for React Native
+        options.setCapability("waitForIdleTimeout", 0); // Critical: disable idle wait for RN
+        options.setCapability("waitForSelectorTimeout", ConfigReader.getIntProperty("android.waitForSelectorTimeout", 3000)); // Reduced to 3s
+        options.setCapability("actionAcknowledgmentTimeout", ConfigReader.getIntProperty("android.actionAcknowledgmentTimeout", 3000)); // Reduced to 3s
         options.setCapability("scrollAcknowledgmentTimeout", ConfigReader.getIntProperty("android.scrollAcknowledgmentTimeout", 500));
 
         // Additional Android capabilities
@@ -193,10 +213,11 @@ public class DriverManager {
         options.setCapability("unlockType", ConfigReader.getProperty("android.unlockType", "pin"));
         options.setCapability("unlockKey", ConfigReader.getProperty("android.unlockKey", "1234"));
 
-        // UiAutomator2 stability improvements (React Native tuned)
-        options.setCapability("ignoreUnimportantViews", true);
+        // FIXED: UiAutomator2 stability improvements for debugging
+        // Turn OFF ignoreUnimportantViews when debugging accessibility issues
+        boolean debugMode = ConfigReader.getBooleanProperty("android.debugMode", false);
+        options.setCapability("ignoreUnimportantViews", !debugMode); // false when debugging
         options.setCapability("disableAndroidWatchers", true);
-        // Force re-install server to avoid "instrumentation process is not running" caused by stale/mismatched server apks.
         options.setCapability("skipServerInstallation", false);
 
         // Optional: disable Android window animations to reduce RN transition flakiness
@@ -206,7 +227,8 @@ public class DriverManager {
         // Logging
         options.setCapability("enablePerformanceLogging", ConfigReader.getBooleanProperty("android.enablePerformanceLogging", false));
 
-        logger.info("Android options configured with UiAutomator2 stability improvements: {}", options.asMap());
+        logger.info("Android options configured with stability improvements: debugMode={}, ignoreUnimportantViews={}", 
+                   debugMode, !debugMode);
         return options;
     }
 
@@ -264,8 +286,10 @@ public class DriverManager {
             try {
                 HasSettings settings = (HasSettings) appiumDriver;
                 settings.setSetting(Setting.WAIT_FOR_IDLE_TIMEOUT, 0);
-                settings.setSetting(Setting.IGNORE_UNIMPORTANT_VIEWS, true);
-                logger.info("Applied Android UiAutomator2 settings: waitForIdleTimeout=0, ignoreUnimportantViews=true");
+                boolean debugMode = ConfigReader.getBooleanProperty("android.debugMode", false);
+                boolean ignoreUnimportantViews = ConfigReader.getBooleanProperty("android.ignoreUnimportantViews", !debugMode);
+                settings.setSetting(Setting.IGNORE_UNIMPORTANT_VIEWS, ignoreUnimportantViews);
+                logger.info("Applied Android UiAutomator2 settings: waitForIdleTimeout=0, ignoreUnimportantViews={}", ignoreUnimportantViews);
             } catch (Exception e) {
                 logger.warn("Could not apply Android UiAutomator2 settings at runtime (non-fatal): {}", e.getMessage());
             }
@@ -548,6 +572,8 @@ public class DriverManager {
 
             return currentDriver.findElement(locator);
 
+        } catch (NoSuchElementException e) {
+            return null;
         } catch (Exception e) {
             String errorMessage = e.getMessage() != null ? e.getMessage() : "";
 
@@ -583,9 +609,59 @@ public class DriverManager {
                     return null;
                 }
             } else {
-                logger.error("Element finding failed: {}", locator, e);
+                logger.debug("Element finding failed: {} ({})", locator, errorMessage);
                 return null;
             }
+        }
+    }
+
+    public static List<WebElement> safelyFindElements(By locator) {
+        AppiumDriver currentDriver = getDriver();
+        if (currentDriver == null) {
+            logger.error("No driver available for safe elements finding");
+            return java.util.Collections.emptyList();
+        }
+
+        try {
+            if (!isUiAutomator2Healthy()) {
+                logger.warn("UiAutomator2 not healthy, attempting recovery...");
+                if (!recoverFromUiAutomator2Crash()) {
+                    logger.error("Failed to recover UiAutomator2, cannot find elements");
+                    return java.util.Collections.emptyList();
+                }
+                currentDriver = getDriver();
+            }
+
+            List<WebElement> elements = currentDriver.findElements(locator);
+            return elements != null ? elements : java.util.Collections.emptyList();
+
+        } catch (Exception e) {
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "";
+
+            boolean likelyUiA2Crash =
+                    errorMessage.contains("instrumentation process is not running") ||
+                            errorMessage.contains("Could not proxy command") ||
+                            errorMessage.contains("socket hang up") ||
+                            errorMessage.contains("timeout of") ||
+                            errorMessage.contains("ECONNRESET") ||
+                            errorMessage.contains("ECONNREFUSED");
+
+            if (likelyUiA2Crash) {
+                logger.error("UiAutomator2 likely crashed/unresponsive during elements finding: {} | error: {}", locator, errorMessage);
+                if (recoverFromUiAutomator2Crash()) {
+                    try {
+                        currentDriver = getDriver();
+                        List<WebElement> elements = currentDriver.findElements(locator);
+                        return elements != null ? elements : java.util.Collections.emptyList();
+                    } catch (Exception retryException) {
+                        logger.error("Elements finding failed even after UiAutomator2 recovery", retryException);
+                        return java.util.Collections.emptyList();
+                    }
+                }
+            }
+
+            logger.debug("Elements finding failed: {} ({})", locator, errorMessage);
+            return java.util.Collections.emptyList();
         }
     }
 
@@ -623,15 +699,116 @@ public class DriverManager {
             try {
                 if (currentDriver instanceof AndroidDriver) {
                     currentDriver.executeScript("mobile: terminateApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
+                    Thread.sleep(2000); // Wait for app to fully terminate
                     currentDriver.executeScript("mobile: activateApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
                 } else if (currentDriver instanceof IOSDriver) {
                     currentDriver.executeScript("mobile: terminateApp", java.util.Map.of("bundleId", AppConstants.APP_BUNDLE_ID));
+                    Thread.sleep(2000); // Wait for app to fully terminate
                     currentDriver.executeScript("mobile: activateApp", java.util.Map.of("bundleId", AppConstants.APP_BUNDLE_ID));
                 }
                 logger.info("App restarted successfully");
             } catch (Exception e) {
                 logger.warn("Failed to restart app", e);
             }
+        }
+    }
+
+    /**
+     * Clear app data and restart (for clean state)
+     */
+    public static void clearAppDataAndRestart() {
+        AppiumDriver currentDriver = getDriver();
+        if (currentDriver != null) {
+            logger.info("Clearing app data and restarting");
+            try {
+                if (currentDriver instanceof AndroidDriver) {
+                    // Terminate app first
+                    currentDriver.executeScript("mobile: terminateApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
+                    Thread.sleep(1000);
+                    
+                    // Clear app data
+                    currentDriver.executeScript("mobile: clearApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
+                    Thread.sleep(2000); // Wait for clear to complete
+                    
+                    // Restart app
+                    currentDriver.executeScript("mobile: activateApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
+                    logger.info("App data cleared and app restarted successfully");
+                } else {
+                    // For iOS, just restart (no clearApp equivalent)
+                    restartApp();
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to clear app data and restart: {}", e.getMessage());
+                // Fallback to simple restart
+                restartApp();
+            }
+        }
+    }
+
+    /**
+     * Check if app is stuck on splash/loading screen
+     */
+    public static boolean isAppStuckOnSplash() {
+        AppiumDriver currentDriver = getDriver();
+        if (currentDriver == null) {
+            return false;
+        }
+
+        try {
+            if (currentDriver instanceof AndroidDriver) {
+                AndroidDriver androidDriver = (AndroidDriver) currentDriver;
+                String currentActivity = androidDriver.getCurrentPackage();
+                String currentActivityName = androidDriver.currentActivity();
+                
+                // Check if stuck on splash activity or no activity detected
+                boolean stuckOnSplash = currentActivity == null || 
+                                      currentActivityName == null ||
+                                      currentActivityName.contains("SplashActivity") ||
+                                      currentActivityName.contains("LaunchActivity");
+                
+                if (stuckOnSplash) {
+                    logger.warn("App appears stuck on splash screen - activity: {}, package: {}", 
+                              currentActivityName, currentActivity);
+                }
+                
+                return stuckOnSplash;
+            }
+            return false;
+        } catch (Exception e) {
+            logger.debug("Could not check splash screen status: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Recover from app stuck on splash screen
+     */
+    public static boolean recoverFromSplashScreen() {
+        logger.warn("Attempting to recover from splash screen...");
+        
+        try {
+            // Try clearing app data and restarting
+            clearAppDataAndRestart();
+            
+            // Wait for app to load
+            Thread.sleep(5000);
+            
+            // Check if recovery was successful
+            if (!isAppStuckOnSplash()) {
+                logger.info("Successfully recovered from splash screen");
+                return true;
+            }
+            
+            // If still stuck, try force restart
+            logger.warn("Still stuck after clear data, trying force restart...");
+            restartApp();
+            Thread.sleep(5000);
+            
+            return !isAppStuckOnSplash();
+            
+        } catch (Exception e) {
+            logger.error("Failed to recover from splash screen", e);
+            return false;
         }
     }
 

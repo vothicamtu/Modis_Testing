@@ -56,18 +56,26 @@ public abstract class BaseTest {
         logger.info("--- Starting Test Method: {} ---", method.getName());
 
         String platform = System.getProperty("platform", "android");
+        AppiumDriver current = DriverManager.getDriver();
+        if (current != null) {
+            driver = current;
+        }
 
-        // Nếu driver null hoặc session chết -> tạo mới
+        // SIMPLIFIED: Chỉ tạo driver mới nếu null, không restart app mỗi test
         if (driver == null || !DriverManager.isSessionAlive()) {
-            logger.warn("Driver null hoặc session không còn sống -> tạo driver mới");
+            logger.info("Creating new driver for test method");
             driver = initializeDriver(platform);
         } else {
-            // Nếu driver đã có -> relaunch app (terminate + activate) để reset process, không clear data
+            logger.info("Reusing existing driver session");
             relaunchApp();
         }
 
-        // Logout nếu đang logged in (không crash nếu element không thấy)
-        LogoutHelper.logoutIfLoggedIn(driver);
+        // SIMPLIFIED: Chỉ logout nếu cần, không force restart
+        try {
+            LogoutHelper.logoutIfLoggedIn(driver);
+        } catch (Exception e) {
+            logger.warn("Logout helper failed (non-fatal): {}", e.getMessage());
+        }
     }
 
     @AfterMethod(alwaysRun = true)
@@ -79,6 +87,29 @@ public abstract class BaseTest {
             } catch (Exception e) {
                 logger.warn("Không thể chụp screenshot khi fail (non-fatal): {}", e.getMessage());
             }
+        } else if (result.getStatus() == ITestResult.SUCCESS) {
+            long durationMs = Math.max(0, result.getEndMillis() - result.getStartMillis());
+            String platform = System.getProperty("platform", "unknown");
+            String paramDeviceName = System.getProperty("deviceName", "unknown");
+
+            String capDeviceName = "unknown";
+            try {
+                AppiumDriver d = DriverManager.getDriver();
+                if (d != null && d.getCapabilities() != null) {
+                    Object cap = d.getCapabilities().getCapability("appium:deviceName");
+                    if (cap == null) cap = d.getCapabilities().getCapability("deviceName");
+                    if (cap != null) capDeviceName = String.valueOf(cap);
+                }
+            } catch (Exception ignored) {
+            }
+
+            String deviceName = String.format("param=%s,cap=%s", paramDeviceName, capDeviceName);
+            logger.info("PASS | {}ms | {} | {} | {}.{}",
+                    durationMs,
+                    platform,
+                    deviceName,
+                    result.getTestClass().getName(),
+                    result.getMethod().getMethodName());
         }
     }
 

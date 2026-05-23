@@ -3,11 +3,16 @@ package com.modis.tests;
 import com.modis.base.BaseTest;
 import com.modis.base.BasePage;
 import com.modis.constants.AppConstants;
+import com.modis.constants.TestIDs;
+import com.modis.drivers.DriverManager;
 import com.modis.pages.*;
 import com.modis.utils.TestDataReader;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
+import java.time.Duration;
 import java.util.Map;
 import java.util.List;
 
@@ -18,6 +23,15 @@ import java.util.List;
 public class AuthenticationTests extends BaseTest {
 
     private TestDataReader testDataReader = new TestDataReader();
+    private static final int P_LOGIN_EMPTY_FIELDS = 1;
+    private static final int P_LOGIN_USERNAME_ONLY = 2;
+    private static final int P_LOGIN_PASSWORD_ONLY = 3;
+    private static final int P_LOGIN_INVALID_REALDATA = 4;
+    private static final int P_LOGIN_INVALID_BASIC = 5;
+    private static final int P_LOGIN_DIALOG_OK = 6;
+    private static final int P_LOGIN_RETRY_FLOW = 50;
+    private static final int P_LOGIN_SUCCESS_REALDATA = 998;
+    private static final int P_LOGIN_SUCCESS_BASIC = 999;
 
     // ==================== DATA PROVIDERS ====================
 
@@ -75,7 +89,7 @@ public class AuthenticationTests extends BaseTest {
 
     // ==================== LOGIN TESTS WITH REAL DATA ====================
 
-    @Test(priority = 1, groups = {"authentication", "regression", "smoke"}, 
+    @Test(priority = P_LOGIN_SUCCESS_REALDATA, groups = {"authentication", "regression", "smoke"}, 
           dataProvider = "validLoginData", description = "Verify successful login with valid credentials from real data")
     public void testValidLoginWithRealData(String username, String password, String fullname, String expectedResult) {
         logger.info("Starting valid login test with real data - Username: " + username);
@@ -89,6 +103,7 @@ public class AuthenticationTests extends BaseTest {
 
         // Verify user is logged in by checking profile info
         HomePage homePage = (HomePage) result;
+        homePage.waitForTopbarReadyAfterLogin(8);
         ProfilePage profilePage = homePage.navigateToProfile();
         String displayedName = profilePage.getDisplayedUserName();
         Assert.assertTrue(displayedName.contains(fullname) || displayedName.contains(username),
@@ -97,7 +112,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Valid login test completed successfully for user: " + username);
     }
 
-    @Test(priority = 2, groups = {"authentication", "regression"}, 
+    @Test(priority = P_LOGIN_INVALID_REALDATA, groups = {"authentication", "regression"}, 
           dataProvider = "invalidLoginData", description = "Verify login failure with invalid credentials and error dialog handling")
     public void testInvalidLoginWithRealData(String username, String password, String expectedError, String description) {
         logger.info("Starting invalid login test with error dialog handling: " + description);
@@ -107,78 +122,40 @@ public class AuthenticationTests extends BaseTest {
         // Attempt login with invalid credentials
         loginPage.clearAndEnterUsername(username);
         loginPage.clearAndEnterPassword(password);
-        loginPage.clickLoginButton();
+        BasePage afterSubmit = loginPage.clickLoginButton();
 
-        // Wait for response (either error dialog or inline error)
-        try {
-            Thread.sleep(3000); // Wait 3 seconds for error dialog to appear
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        Assert.assertTrue(afterSubmit instanceof LoginPage,
+                "Invalid login should remain on LoginPage, but got: " +
+                        (afterSubmit != null ? afterSubmit.getClass().getSimpleName() : "null"));
 
-        // Check if error dialog appeared (Vietnamese dialog with "Thông báo" title)
-        if (loginPage.isLoginErrorDialogDisplayed()) {
-            logger.info("Vietnamese error dialog appeared for: " + description);
-            
-            // Get error message from dialog
-            String dialogErrorMessage = loginPage.getErrorDialogMessage();
-            logger.info("Dialog error message: '{}'", dialogErrorMessage);
-            
-            // Verify error message is in Vietnamese and meaningful
-            Assert.assertFalse(dialogErrorMessage.isEmpty(), "Error dialog message should not be empty");
-            
-            boolean isVietnamese = dialogErrorMessage.contains("không") || 
-                                 dialogErrorMessage.contains("mật khẩu") ||
-                                 dialogErrorMessage.contains("đăng nhập") ||
-                                 dialogErrorMessage.contains("thông tin") ||
-                                 dialogErrorMessage.contains("chính xác");
+        // LoginPage.clickLoginButton() sẽ auto dismiss dialog để tránh popup che màn hình
+        // Vì vậy Test đọc message lỗi thông qua lastLoginErrorDialogMessage
+        String dialogErrorMessage = loginPage.getLastLoginErrorDialogMessage();
+        if (!dialogErrorMessage.isEmpty()) {
+            logger.info("Captured dialog error message: '{}'", dialogErrorMessage);
+
+            boolean isVietnamese = dialogErrorMessage.contains("không") ||
+                    dialogErrorMessage.contains("mật khẩu") ||
+                    dialogErrorMessage.contains("đăng nhập") ||
+                    dialogErrorMessage.contains("thông tin") ||
+                    dialogErrorMessage.contains("chính xác") ||
+                    dialogErrorMessage.contains("tồn tại");
             Assert.assertTrue(isVietnamese, "Error message should be in Vietnamese: " + dialogErrorMessage);
-            
-            // Verify dialog has Vietnamese title "Thông báo"
-            Assert.assertTrue(loginPage.checkForErrorText("Thông báo"), 
-                "Error dialog should have Vietnamese title 'Thông báo'");
-            
-            // Verify OK button is present
-            Assert.assertTrue(loginPage.checkForErrorText("OK"), 
-                "Error dialog should have OK button");
-            
-            // Test that dialog cannot be dismissed by tapping outside
-            loginPage.tapAtCoordinates(50, 50);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
-                "Error dialog should still be visible after tapping outside (must click OK)");
-            
-            // Dismiss dialog by clicking OK button (required!)
-            loginPage.dismissLoginErrorDialog();
-            
-            // Verify dialog is dismissed
-            Assert.assertFalse(loginPage.isLoginErrorDialogDisplayed(), 
-                "Error dialog should be dismissed after clicking OK");
-            
-            logger.info("Successfully handled Vietnamese error dialog for: " + description);
-            
         } else {
-            // Fallback: check for inline error message (older behavior)
-            logger.info("No error dialog found, checking for inline error message");
-            
+            // Fallback: inline error message (nếu app không show dialog)
             Assert.assertTrue(loginPage.isDisplayed(), "Should remain on login page after invalid login");
-            
+
             if (loginPage.isErrorMessageDisplayed()) {
                 String inlineError = loginPage.getErrorMessage();
                 logger.info("Inline error message: '{}'", inlineError);
-                
-                Assert.assertTrue(inlineError.contains(expectedError) || 
-                               inlineError.toLowerCase().contains("sai") || 
-                               inlineError.toLowerCase().contains("không đúng") || 
-                               inlineError.toLowerCase().contains("không tồn tại"),
-                    "Error message should indicate login failure. Expected: " + expectedError + ", Actual: " + inlineError);
+
+                Assert.assertTrue(inlineError.contains(expectedError) ||
+                                inlineError.toLowerCase().contains("sai") ||
+                                inlineError.toLowerCase().contains("không đúng") ||
+                                inlineError.toLowerCase().contains("không tồn tại"),
+                        "Error message should indicate login failure. Expected: " + expectedError + ", Actual: " + inlineError);
             } else {
                 logger.warn("No error message found (neither dialog nor inline) for: " + description);
-                // Still verify we stayed on login page
                 Assert.assertTrue(loginPage.isDisplayed(), "Should remain on login page after invalid login");
             }
         }
@@ -192,7 +169,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Invalid login test with error dialog handling completed successfully: " + description);
     }
 
-    @Test(priority = 3, groups = {"authentication", "regression", "retry"}, 
+    @Test(priority = P_LOGIN_RETRY_FLOW, groups = {"authentication", "regression", "retry"}, 
           dataProvider = "retryLoginScenarios", description = "Verify login retry flow with multiple attempts")
     public void testLoginRetryFlow(String scenarioId, String description, List<Map<String, Object>> attempts) {
         logger.info("Starting login retry flow test: " + description);
@@ -223,12 +200,13 @@ public class AuthenticationTests extends BaseTest {
                         "Failed attempt " + attemptNumber + " should remain on LoginPage");
                 Assert.assertTrue(((LoginPage) currentPage).isErrorMessageDisplayed(),
                         "Error message should be displayed for failed attempt " + attemptNumber);
-                
-                // Wait a bit before next attempt to simulate real user behavior
+
                 try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    LoginPage loginPageRef = (LoginPage) currentPage;
+                    WebDriverWait readyForNextAttempt = new WebDriverWait(driver, Duration.ofSeconds(1));
+                    readyForNextAttempt.pollingEvery(Duration.ofMillis(250));
+                    readyForNextAttempt.until(d -> loginPageRef.isDisplayed());
+                } catch (Exception ignored) {
                 }
             }
         }
@@ -236,7 +214,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Login retry flow test completed: " + description);
     }
 
-    @Test(priority = 4, groups = {"authentication", "regression"}, description = "Verify login with empty credentials")
+    @Test(priority = P_LOGIN_EMPTY_FIELDS, groups = {"authentication", "regression"}, description = "Verify login with empty credentials")
     public void testEmptyCredentialsLogin() {
         logger.info("Starting empty credentials login test");
 
@@ -250,7 +228,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Empty credentials login test completed successfully");
     }
 
-    @Test(priority = 5, groups = {"authentication", "regression"}, description = "Verify login with username only")
+    @Test(priority = P_LOGIN_USERNAME_ONLY, groups = {"authentication", "regression"}, description = "Verify login with username only")
     public void testUsernameOnlyLogin() {
         logger.info("Starting username only login test");
 
@@ -264,7 +242,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Username only login test completed successfully");
     }
 
-    @Test(priority = 6, groups = {"authentication", "regression"}, description = "Verify login with password only")
+    @Test(priority = P_LOGIN_PASSWORD_ONLY, groups = {"authentication", "regression"}, description = "Verify login with password only")
     public void testPasswordOnlyLogin() {
         logger.info("Starting password only login test");
 
@@ -280,7 +258,7 @@ public class AuthenticationTests extends BaseTest {
 
     // ==================== ORIGINAL LOGIN TESTS ====================
 
-    @Test(priority = 7, groups = {"authentication", "regression", "smoke"}, description = "Verify successful login with test user")
+    @Test(priority = P_LOGIN_SUCCESS_BASIC, groups = {"authentication", "regression", "smoke"}, description = "Verify successful login with test user")
     public void testValidLogin() {
         logger.info("Starting valid login test with test user");
 
@@ -293,7 +271,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Valid login test completed successfully");
     }
 
-    @Test(priority = 8, groups = {"authentication", "regression"}, description = "Verify login failure with invalid credentials and error dialog handling")
+    @Test(priority = P_LOGIN_INVALID_BASIC, groups = {"authentication", "regression"}, description = "Verify login failure with invalid credentials and error dialog handling")
     public void testInvalidLogin() {
         logger.info("Starting invalid login test with error dialog handling");
 
@@ -329,63 +307,41 @@ public class AuthenticationTests extends BaseTest {
     }
 
     private LoginPage openLoginPage() {
-        // After launch, the landing page requires a manual tap (Login/Signup) before auth screens appear.
-        // LoadingPage.waitForAutoNavigation() now performs that tap and returns the actual current page.
-        BasePage current = new LoadingPage().waitForAutoNavigation();
+        logger.info("Opening login page (LoadingScreen -> Login)");
 
-        // If already logged in, logout first to guarantee a clean auth state
-        if (current instanceof HomePage) {
-            logger.info("Detected HomePage at start -> logging out to reach LoginPage");
-            ProfilePage profilePage = ((HomePage) current).navigateToProfile();
-            current = profilePage.logout();
-        }
+        LoadingPage loadingPage = new LoadingPage();
+        loadingPage.waitForLoadingScreenVisible();
+        loadingPage.waitForLoginSignupButtonsVisible();
 
-        // Fallbacks (should rarely happen, but keeps the test resilient)
-        if (current instanceof SignupPage) {
-            logger.info("Detected SignupPage at start -> navigating to LoginPage via link");
-            current = ((SignupPage) current).clickLoginLink();
-        } else if (current instanceof LoadingPage) {
-            logger.info("Detected LoadingPage at start -> tapping Login button");
-            current = ((LoadingPage) current).clickLoginButton();
-        }
-
-        if (!(current instanceof LoginPage)) {
-            throw new AssertionError("Expected LoginPage, but got: " + current.getClass().getSimpleName());
-        }
-
-        LoginPage loginPage = (LoginPage) current;
+        LoginPage loginPage = loadingPage.clickLoginButton();
         loginPage.waitForPageToLoad();
         return loginPage;
     }
+    
+    /**
+     * Helper method to check if element is displayed by accessibility ID
+     */
+    private boolean isElementDisplayedByAccessibilityId(String accessibilityId) {
+        try {
+            return !driver.findElements(io.appium.java_client.AppiumBy.accessibilityId(accessibilityId)).isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     private SignupPage openSignupPage() {
-        BasePage current = new LoadingPage().waitForAutoNavigation();
+        logger.info("Opening signup page (LoadingScreen -> Signup)");
 
-        // If already logged in, logout first to guarantee we can navigate to signup consistently
-        if (current instanceof HomePage) {
-            logger.info("Detected HomePage at start -> logging out to reach SignupPage");
-            ProfilePage profilePage = ((HomePage) current).navigateToProfile();
-            current = profilePage.logout();
-        }
+        LoadingPage loadingPage = new LoadingPage();
+        loadingPage.waitForLoadingScreenVisible();
+        loadingPage.waitForLoginSignupButtonsVisible();
 
-        if (current instanceof LoadingPage) {
-            logger.info("Detected LoadingPage at start -> clicking Signup button");
-            current = ((LoadingPage) current).clickSignupButton();
-        } else if (current instanceof LoginPage) {
-            logger.info("Detected LoginPage at start -> navigating to SignupPage via link");
-            current = ((LoginPage) current).clickSignupLink();
-        }
-
-        if (!(current instanceof SignupPage)) {
-            throw new AssertionError("Expected SignupPage, but got: " + current.getClass().getSimpleName());
-        }
-
-        SignupPage signupPage = (SignupPage) current;
+        SignupPage signupPage = loadingPage.clickSignupButton();
         signupPage.waitForPageToLoad();
         return signupPage;
     }
 
-    @Test(priority = 9, groups = {"authentication", "regression"}, description = "Verify error dialog requires OK button click to dismiss")
+    @Test(priority = P_LOGIN_DIALOG_OK, groups = {"authentication", "regression"}, description = "Verify error dialog requires OK button click to dismiss")
     public void testErrorDialogRequiresOKClick() {
         logger.info("Starting error dialog OK button requirement test");
 
@@ -396,44 +352,45 @@ public class AuthenticationTests extends BaseTest {
         loginPage.clearAndEnterPassword("wrong_password");
         loginPage.clickLoginButton();
 
-        // Wait for error dialog
+        WebDriverWait waitDialog = new WebDriverWait(driver, Duration.ofSeconds(5));
+        waitDialog.pollingEvery(Duration.ofMillis(250));
+
+        boolean dialogShown;
         try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            dialogShown = waitDialog.until(d -> loginPage.isLoginErrorDialogDisplayed());
+        } catch (TimeoutException e) {
+            dialogShown = false;
         }
 
-        if (loginPage.isLoginErrorDialogDisplayed()) {
+        if (dialogShown) {
             logger.info("Error dialog appeared, testing persistence and OK requirement");
 
             // Test 1: Dialog should persist after tapping outside
             loginPage.tapAtCoordinates(50, 50);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
-                "Error dialog should persist after tapping outside");
+            WebDriverWait stillThereAfterTap = new WebDriverWait(driver, Duration.ofSeconds(1));
+            stillThereAfterTap.pollingEvery(Duration.ofMillis(250));
+            Assert.assertTrue(stillThereAfterTap.until(d -> loginPage.isLoginErrorDialogDisplayed()),
+                    "Error dialog should persist after tapping outside");
 
             // Test 2: Dialog should persist after back button (if supported)
             try {
                 loginPage.goBack();
-                Thread.sleep(1000);
-                Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
-                    "Error dialog should persist after back button");
+                WebDriverWait stillThereAfterBack = new WebDriverWait(driver, Duration.ofSeconds(1));
+                stillThereAfterBack.pollingEvery(Duration.ofMillis(250));
+                Assert.assertTrue(stillThereAfterBack.until(d -> loginPage.isLoginErrorDialogDisplayed()),
+                        "Error dialog should persist after back button");
             } catch (Exception e) {
                 logger.info("Back button test skipped (not supported on this platform)");
             }
 
             // Test 3: Dialog should not auto-dismiss over time
+            WebDriverWait waitGone = new WebDriverWait(driver, Duration.ofSeconds(5));
+            waitGone.pollingEvery(Duration.ofMillis(250));
             try {
-                Thread.sleep(5000); // Wait 5 seconds
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                waitGone.until(d -> !loginPage.isLoginErrorDialogDisplayed());
+                Assert.fail("Error dialog should not auto-dismiss after waiting");
+            } catch (TimeoutException ignored) {
             }
-            Assert.assertTrue(loginPage.isLoginErrorDialogDisplayed(), 
-                "Error dialog should not auto-dismiss after waiting");
 
             // Test 4: Only OK button should dismiss the dialog
             loginPage.dismissLoginErrorDialog();
@@ -579,13 +536,17 @@ public class AuthenticationTests extends BaseTest {
 
     // ==================== LOGOUT TESTS ====================
 
-    @Test(priority = 17, groups = {"authentication", "regression"}, description = "Verify successful logout", dependsOnMethods = {"testValidLogin"})
+    @Test(priority = 17, groups = {"authentication", "regression"}, description = "Verify successful logout")
     public void testSuccessfulLogout() {
         logger.info("Starting successful logout test");
 
         // First login
         LoginPage loginPage = openLoginPage();
-        HomePage homePage = (HomePage) loginPage.loginWithTestUser();
+        BasePage afterLogin = loginPage.loginWithTestUser();
+        Assert.assertTrue(afterLogin instanceof HomePage,
+                "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
+        HomePage homePage = (HomePage) afterLogin;
+        homePage.waitForTopbarReadyAfterLogin(8);
 
         // Navigate to profile and logout
         ProfilePage profilePage = homePage.navigateToProfile();
@@ -603,7 +564,11 @@ public class AuthenticationTests extends BaseTest {
 
         // First login
         LoginPage loginPage = openLoginPage();
-        HomePage homePage = (HomePage) loginPage.loginWithTestUser();
+        BasePage afterLogin = loginPage.loginWithTestUser();
+        Assert.assertTrue(afterLogin instanceof HomePage,
+                "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
+        HomePage homePage = (HomePage) afterLogin;
+        homePage.waitForTopbarReadyAfterLogin(8);
 
         // Navigate to profile and cancel logout
         ProfilePage profilePage = homePage.navigateToProfile();

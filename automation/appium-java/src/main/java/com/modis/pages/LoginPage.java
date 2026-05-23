@@ -3,10 +3,13 @@ package com.modis.pages;
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
+import com.modis.drivers.DriverManager;
 import com.modis.utils.TestDataManager;
 import com.modis.utils.UiDebugUtils;
+import io.appium.java_client.AppiumBy;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import java.util.Map;
@@ -56,6 +59,16 @@ public class LoginPage extends BasePage {
     @AndroidFindBy(accessibility = TestIDs.LOADING_SPINNER)
     @iOSXCUITFindBy(accessibility = TestIDs.LOADING_SPINNER)
     private WebElement loadingSpinner;
+
+    // Lưu thông tin lỗi lần đăng nhập gần nhất để Test có thể assert mà không cần giữ popup trên màn hình
+    private String lastLoginErrorDialogMessage = "";
+
+    private enum LoginSubmitOutcome {
+        SUCCESS,
+        FAILURE_DIALOG,
+        FAILURE_NO_DIALOG,
+        TIMEOUT
+    }
     
     // ==================== PAGE ACTIONS ====================
     
@@ -83,50 +96,147 @@ public class LoginPage extends BasePage {
     }
     
     /**
-     * Click login button
-     * @return HomePage if login successful, LoginPage if failed
+     * Click nút Login và xử lý theo đúng trạng thái thực tế của app.
+     *
+     * Mục tiêu:
+     * - Không được "assume" login thành công và đi tìm element của HomePage khi popup lỗi đang che màn hình
+     * - Ưu tiên detect 2 nhánh rõ ràng: SUCCESS hoặc FAILURE (dialog / inline)
+     * - Timeout ngắn để tránh treo 60s do findByAccessibilityId() bị gọi sai màn hình
      */
     public BasePage clickLoginButton() {
         logger.info("Clicking login button");
+        lastLoginErrorDialogMessage = "";
+
         waitForElementClickable(TestIDs.LOGIN_SUBMIT_BUTTON);
         clickByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
 
-        // Wait until:
-        // - Home screen appears (login OK), OR
-        // - login button becomes enabled again (request finished but still on login -> invalid creds)
-        try {
-            waitUtils.waitForCondition(d -> {
-                // Success signals
-                if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN) ||
-                    isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON) ||
-                    isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN) ||
-                    isElementDisplayedByAccessibilityId(TestIDs.FEED_SCREEN)) {
-                    return true;
-                }
+        LoginSubmitOutcome outcome = waitForLoginSubmitOutcome(12);
 
-                // Failure/finished signal: login button enabled again
-                try {
-                    WebElement btn = findByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
-                    return btn.isEnabled();
-                } catch (Exception ignored) {
-                    return false;
-                }
-            }, AppConstants.PAGE_LOAD_TIMEOUT);
-        } catch (Exception e) {
-            UiDebugUtils.dumpOnFailure(driver, "login_outcome_timeout");
-            throw e;
+        if (outcome == LoginSubmitOutcome.FAILURE_DIALOG) {
+            // Popup lỗi đang che màn hình -> MUST dismiss trước, và KHÔNG được đi tìm element HomePage
+            lastLoginErrorDialogMessage = getErrorDialogMessage();
+            clickErrorDialogOk();
+            logger.info("Login failed (dialog) - staying on login screen");
+            return this;
         }
 
-        if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN) ||
-            isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON) ||
-            isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN) ||
-            isElementDisplayedByAccessibilityId(TestIDs.FEED_SCREEN)) {
-            logger.info("Login successful - navigated to home flow");
-            return new HomePage();
+        if (outcome == LoginSubmitOutcome.SUCCESS) {
+            logger.info("Login successful - navigated to home");
+            HomePage homePage = new HomePage();
+            homePage.waitForTopbarReadyAfterLogin(8);
+            return homePage;
         }
 
-        logger.warn("Login finished but still on login screen (likely invalid credentials)");
+        // FAILURE_NO_DIALOG hoặc TIMEOUT: không thấy Home, không thấy dialog -> coi như fail và giữ ở LoginPage
+        logger.info("Login failed (no dialog/timeout) - staying on login screen");
         return this;
+    }
+
+    /**
+     * Check nhanh HomePage đã hiển thị chưa (không gọi findByAccessibilityId để tránh timeout dài).
+     */
+    public boolean isHomePageDisplayed() {
+        return isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON) ||
+                isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_CONTAINER) ||
+                isElementDisplayedByAccessibilityId(TestIDs.FEED_SCREEN) ||
+                isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN);
+    }
+
+    private boolean isLoginScreenDisplayed() {
+        return isElementDisplayedByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT) &&
+                isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
+    }
+
+    /**
+     * LoginSpinner là tín hiệu "đang xử lý". Nếu spinner còn hiện thì chưa nên kết luận fail/success.
+     */
+    private boolean isLoginProcessing() {
+        try {
+            java.util.List<WebElement> spinners = DriverManager.safelyFindElements(AppiumBy.accessibilityId(TestIDs.LOADING_SPINNER));
+            if (spinners == null || spinners.isEmpty()) {
+                spinners = DriverManager.safelyFindElements(AppiumBy.id(TestIDs.LOADING_SPINNER));
+            }
+            return spinners != null && !spinners.isEmpty() && spinners.get(0).isDisplayed();
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    /**
+     * Chờ kết quả sau khi bấm Login theo 3 nhánh:
+     * - SUCCESS: HomePage indicator xuất hiện
+     * - FAILURE_DIALOG: popup/dialog lỗi xuất hiện (cần bấm OK)
+     * - FAILURE_NO_DIALOG: form enable lại nhưng không có Home, không có dialog (ví dụ lỗi inline)
+     */
+    private LoginSubmitOutcome waitForLoginSubmitOutcome(int timeoutSeconds) {
+        final long[] spinnerGoneSinceNs = new long[]{-1};
+        final long startNs = System.nanoTime();
+
+        try {
+            LoginSubmitOutcome outcome = waitUtils.waitForCondition(d -> {
+                if (isHomePageDisplayed()) {
+                    return LoginSubmitOutcome.SUCCESS;
+                }
+
+                if (isLoginErrorDialogDisplayed()) {
+                    return LoginSubmitOutcome.FAILURE_DIALOG;
+                }
+
+                boolean onLogin = isLoginScreenDisplayed();
+                if (!onLogin) return null;
+
+                java.util.List<WebElement> btns = DriverManager.safelyFindElements(AppiumBy.accessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON));
+                if ((btns == null || btns.isEmpty())) {
+                    btns = DriverManager.safelyFindElements(AppiumBy.id(TestIDs.LOGIN_SUBMIT_BUTTON));
+                }
+
+                boolean enabled = false;
+                if (btns != null && !btns.isEmpty()) {
+                    try {
+                        WebElement btn = btns.get(0);
+                        enabled = btn != null && btn.isDisplayed() && btn.isEnabled();
+                    } catch (Exception ignored) {
+                        enabled = false;
+                    }
+                }
+
+                if (!enabled) return null;
+
+                long elapsedMs = java.time.Duration.ofNanos(System.nanoTime() - startNs).toMillis();
+                if (elapsedMs < 1200) return null;
+
+                boolean spinnerVisible = isLoginProcessing();
+                if (spinnerVisible) {
+                    spinnerGoneSinceNs[0] = -1;
+                    return null;
+                }
+
+                if (spinnerGoneSinceNs[0] < 0) {
+                    spinnerGoneSinceNs[0] = System.nanoTime();
+                    return null;
+                }
+
+                long spinnerGoneMs = java.time.Duration.ofNanos(System.nanoTime() - spinnerGoneSinceNs[0]).toMillis();
+                if (spinnerGoneMs < 600) return null;
+
+                if (!isHomePageDisplayed() && !isLoginErrorDialogDisplayed()) {
+                    return LoginSubmitOutcome.FAILURE_NO_DIALOG;
+                }
+
+                return null;
+            }, timeoutSeconds);
+
+            return outcome != null ? outcome : LoginSubmitOutcome.TIMEOUT;
+        } catch (Exception e) {
+            return LoginSubmitOutcome.TIMEOUT;
+        }
+    }
+
+    /**
+     * Getter để Test đọc message lỗi gần nhất (đặc biệt hữu ích khi clickLoginButton() auto dismiss dialog).
+     */
+    public String getLastLoginErrorDialogMessage() {
+        return lastLoginErrorDialogMessage != null ? lastLoginErrorDialogMessage : "";
     }
     
     /**
@@ -168,7 +278,7 @@ public class LoginPage extends BasePage {
      * @return HomePage if successful, LoginPage if failed
      */
     public BasePage loginWithTestUser() {
-        Map<String, String> user = TestDataManager.getRealLoginUser();
+        Map<String, String> user = TestDataManager.getTestDataLoginUser();
         return login(user.get("username"), user.get("password"));
     }
     
@@ -484,328 +594,165 @@ public class LoginPage extends BasePage {
     // ==================== ERROR DIALOG HANDLING ====================
     
     /**
-     * Check if login error dialog is displayed
-     * @return true if error dialog is visible
+     * SIMPLIFIED: Check if login error dialog is displayed - chỉ dùng accessibility ID chính xác
      */
     public boolean isLoginErrorDialogDisplayed() {
         logger.debug("Checking if login error dialog is displayed");
         
-        // Try multiple possible selectors for error dialog
         try {
-            return isElementDisplayedByAccessibilityId(TestIDs.LOGIN_ERROR_DIALOG) ||
-                   isElementDisplayedByAccessibilityId(TestIDs.ERROR_DIALOG) ||
-                   isElementDisplayedByAccessibilityId(TestIDs.ALERT_DIALOG) ||
-                   checkForErrorTextPrivate("Thông báo") ||
-                   checkForErrorTextPrivate("Tài khoản hoặc mật khẩu không chính xác") ||
-                   checkForErrorTextPrivate("Mật khẩu không chính xác!") ||
-                   checkForErrorTextPrivate("Tên đăng nhập không chính xác!") ||
-                   checkForErrorTextPrivate("Vui lòng nhập đầy đủ thông tin!") ||
-                   checkForErrorTextPrivate("Đăng nhập thất bại");
+            if (!driver.findElements(AppiumBy.accessibilityId(TestIDs.LOGIN_ERROR_DIALOG)).isEmpty()) {
+                return true;
+            }
+            if (!driver.findElements(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG)).isEmpty()) {
+                return true;
+            }
+            if (!driver.findElements(AppiumBy.accessibilityId(TestIDs.ALERT_DIALOG)).isEmpty()) {
+                return true;
+            }
+
+            return !driver.findElements(By.id("android:id/button1")).isEmpty();
         } catch (Exception e) {
             logger.debug("Error checking for login error dialog: " + e.getMessage());
             return false;
         }
     }
-    
-    /**
-     * Helper method to check for error text using XPath
-     * @param text Text to search for
-     * @return true if text is found
-     */
-    private boolean checkForErrorTextPrivate(String text) {
-        try {
-            String xpath = String.format("//*[@text='%s' or @content-desc='%s' or contains(@text,'%s')]", text, text, text);
-            WebElement element = findByXPath(xpath);
-            return element != null && isElementDisplayed(element);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    
-    /**
-     * Public method to check for error text (for test access)
-     * @param text Text to search for
-     * @return true if text is found
-     */
-    public boolean checkForErrorText(String text) {
-        return checkForErrorTextPrivate(text);
-    }
-    
-    /**
-     * Get error dialog message text
-     * @return Error message text
-     */
+
     public String getErrorDialogMessage() {
-        logger.info("Getting error dialog message");
-        
-        if (isLoginErrorDialogDisplayed()) {
-            // Try to find error message text with different possible messages
-            try {
-                // Check for specific Vietnamese error messages
-                String[] possibleMessages = {
-                    "Tài khoản hoặc mật khẩu không chính xác",
-                    "Mật khẩu không chính xác!",
-                    "Tên đăng nhập không chính xác!",
-                    "Vui lòng nhập đầy đủ thông tin!",
-                    "Đăng nhập thất bại",
-                    "Thông tin đăng nhập không hợp lệ",
-                    "Sai tên đăng nhập hoặc mật khẩu"
-                };
-                
-                for (String message : possibleMessages) {
-                    if (checkForErrorTextPrivate(message)) {
-                        return message;
-                    }
-                }
-                
-                // Try to get text from dialog container using XPath
-                String[] xpathSelectors = {
-                    "//android.widget.TextView[contains(@text,'mật khẩu')]",
-                    "//android.widget.TextView[contains(@text,'đăng nhập')]", 
-                    "//android.widget.TextView[contains(@text,'không chính xác')]",
-                    "//android.widget.TextView[contains(@text,'thất bại')]",
-                    "//android.widget.TextView[contains(@text,'không hợp lệ')]"
-                };
-                
-                for (String xpath : xpathSelectors) {
-                    try {
-                        WebElement messageElement = findByXPath(xpath);
-                        if (messageElement != null) {
-                            return getText(messageElement);
-                        }
-                    } catch (Exception e) {
-                        // Continue to next selector
-                    }
-                }
-                
-            } catch (Exception e) {
-                logger.warn("Could not get error dialog message: " + e.getMessage());
+        try {
+            if (isElementDisplayedByAccessibilityId(TestIDs.ERROR_DIALOG_MESSAGE)) {
+                return getTextByAccessibilityId(TestIDs.ERROR_DIALOG_MESSAGE);
             }
+        } catch (Exception ignored) {}
+
+        try {
+            if (isElementDisplayedByAccessibilityId(TestIDs.ERROR_DIALOG_TITLE)) {
+                return getTextByAccessibilityId(TestIDs.ERROR_DIALOG_TITLE);
+            }
+        } catch (Exception ignored) {}
+
+        return "";
+    }
+    
+    // ==================== REMOVED COMPLEX METHODS ====================
+    // Đã xóa: checkForErrorTextPrivate, getErrorDialogMessage, clickOkButton, waitForErrorDialogToDisappear
+    // Lý do: Quá phức tạp, dùng nhiều xpath, gây chậm và không ổn định
+    
+    /**
+     * SIMPLIFIED: Handle login error dialog if present
+     */
+    public boolean handleLoginErrorDialogIfPresent() {
+        if (isLoginErrorDialogDisplayed()) {
+            logger.info("Login error dialog detected - dismissing");
+            dismissLoginErrorDialog();
+            return true;
         }
-        
-        return "Login error occurred";
+        return false;
     }
     
     /**
-     * Dismiss login error dialog by clicking OK
-     * @return LoginPage for method chaining
+     * SIMPLIFIED: Dismiss login error dialog - chỉ dùng accessibility ID
      */
     public LoginPage dismissLoginErrorDialog() {
         logger.info("Dismissing login error dialog");
         
         if (isLoginErrorDialogDisplayed()) {
             try {
-                // Strategy 1: Try accessibility IDs first
+                // Chỉ thử accessibility ID, không dùng xpath phức tạp
                 if (isElementDisplayedByAccessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON)) {
-                    logger.info("Found OK button by LOGIN_ERROR_OK_BUTTON ID");
                     clickByAccessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON);
+                    logger.info("Dismissed using LOGIN_ERROR_OK_BUTTON");
                 } else if (isElementDisplayedByAccessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON)) {
-                    logger.info("Found OK button by ERROR_DIALOG_OK_BUTTON ID");
                     clickByAccessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON);
+                    logger.info("Dismissed using ERROR_DIALOG_OK_BUTTON");
                 } else if (isElementDisplayedByAccessibilityId(TestIDs.ALERT_OK_BUTTON)) {
-                    logger.info("Found OK button by ALERT_OK_BUTTON ID");
                     clickByAccessibilityId(TestIDs.ALERT_OK_BUTTON);
+                    logger.info("Dismissed using ALERT_OK_BUTTON");
                 } else {
-                    // Strategy 2: Try finding by text content
-                    logger.info("Trying to find OK button by text");
-                    boolean okButtonFound = false;
-                    
-                    // Try different text variations
-                    String[] okTexts = {"OK", "ok", "Ok", "Đồng ý", "Xác nhận"};
-                    for (String okText : okTexts) {
-                        try {
-                            String xpath = String.format("//*[@text='%s' or @content-desc='%s']", okText, okText);
-                            WebElement okButton = findByXPath(xpath);
-                            if (okButton != null && isElementDisplayed(okButton)) {
-                                logger.info("Found OK button by text: {}", okText);
-                                clickElement(okButton);
-                                okButtonFound = true;
-                                break;
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Could not find OK button by text '{}': {}", okText, e.getMessage());
-                        }
-                    }
-                    
-                    if (!okButtonFound) {
-                        // Strategy 3: Try finding any button in dialog
-                        logger.info("Trying to find any button in dialog");
-                        String[] buttonXpaths = {
-                            "//android.widget.Button[contains(@text,'OK') or contains(@content-desc,'OK')]",
-                            "//android.widget.Button",
-                            "//*[@class='android.widget.Button']",
-                            "//*[contains(@text,'OK')]",
-                            "//*[contains(@content-desc,'OK')]"
-                        };
-                        
-                        for (String xpath : buttonXpaths) {
-                            try {
-                                WebElement button = findByXPath(xpath);
-                                if (button != null && isElementDisplayed(button)) {
-                                    logger.info("Found button by xpath: {}", xpath);
-                                    clickElement(button);
-                                    okButtonFound = true;
-                                    break;
-                                }
-                            } catch (Exception e) {
-                                logger.debug("Could not find button by xpath '{}': {}", xpath, e.getMessage());
-                            }
-                        }
-                    }
-                    
-                    if (!okButtonFound) {
-                        // Strategy 4: Try tapping at common OK button positions
-                        logger.warn("Could not find OK button, trying to tap at common positions");
-                        org.openqa.selenium.Dimension screenSize = getScreenSize();
-                        int centerX = screenSize.width / 2;
-                        int bottomY = (int) (screenSize.height * 0.7); // 70% down from top
-                        
-                        tapAtCoordinates(centerX, bottomY);
-                        logger.info("Tapped at coordinates ({}, {}) for OK button", centerX, bottomY);
+                    // Fallback: thử standard Android OK button
+                    java.util.List<WebElement> okButtons = DriverManager.safelyFindElements(By.id("android:id/button1"));
+                    if (okButtons != null && !okButtons.isEmpty() && okButtons.get(0).isDisplayed()) {
+                        clickElement(okButtons.get(0));
+                        logger.info("Dismissed using standard android OK button");
                     }
                 }
-                
-                // Wait for dialog to disappear
-                waitForErrorDialogToDisappear();
-                
+
+                // Đợi popup biến mất nhanh (không dùng sleep dài để tránh chậm + flake)
+                try {
+                    waitUtils.waitForCondition(d -> !isLoginErrorDialogDisplayed(), 3);
+                } catch (Exception ignored) {}
             } catch (Exception e) {
                 logger.error("Failed to dismiss login error dialog: " + e.getMessage());
-                // Final fallback: try tapping at center-bottom of screen
-                try {
-                    org.openqa.selenium.Dimension screenSize = getScreenSize();
-                    int centerX = screenSize.width / 2;
-                    int bottomY = (int) (screenSize.height * 0.65);
-                    tapAtCoordinates(centerX, bottomY);
-                    logger.info("Fallback: tapped at center-bottom ({}, {})", centerX, bottomY);
-                    waitForErrorDialogToDisappear();
-                } catch (Exception fallbackEx) {
-                    logger.error("Fallback tap also failed: " + fallbackEx.getMessage());
-                }
             }
-        } else {
-            logger.info("No error dialog to dismiss");
         }
         
         return this;
     }
-    
+
     /**
-     * Helper method to click OK button using text search
+     * Helper mới theo yêu cầu: click OK của dialog lỗi.
+     * - Nếu dialog không tồn tại thì không làm gì
+     * - Nếu tồn tại thì dismiss bằng đúng nút OK (không tìm Home element)
      */
-    private void clickOkButton() {
-        try {
-            String xpath = "//*[@text='OK' or @content-desc='OK' or contains(@text,'OK')]";
-            WebElement okButton = findByXPath(xpath);
-            clickElement(okButton);
-        } catch (Exception e) {
-            logger.warn("Could not find OK button by text: " + e.getMessage());
-        }
+    public void clickErrorDialogOk() {
+        dismissLoginErrorDialog();
     }
     
     /**
-     * Wait for error dialog to disappear
-     */
-    private void waitForErrorDialogToDisappear() {
-        logger.debug("Waiting for error dialog to disappear");
-        
-        try {
-            // Wait up to 10 seconds for dialog to disappear
-            waitUtils.waitForCondition(driver -> !isLoginErrorDialogDisplayed(), 10);
-            logger.info("Error dialog successfully disappeared");
-        } catch (Exception e) {
-            logger.warn("Error dialog may still be visible after waiting: " + e.getMessage());
-            // Try one more time with a different approach
-            try {
-                Thread.sleep(2000); // Wait 2 more seconds
-                if (isLoginErrorDialogDisplayed()) {
-                    logger.warn("Error dialog still visible after additional wait");
-                } else {
-                    logger.info("Error dialog disappeared after additional wait");
-                }
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-    
-    /**
-     * Handle login error dialog if it appears
-     * @return true if error dialog was handled, false if no dialog appeared
-     */
-    public boolean handleLoginErrorDialogIfPresent() {
-        logger.debug("Checking for and handling login error dialog");
-        
-        if (isLoginErrorDialogDisplayed()) {
-            String errorMessage = getErrorDialogMessage();
-            logger.info("Login error dialog appeared with message: {}", errorMessage);
-            dismissLoginErrorDialog();
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Login with credentials and handle error dialog if it appears
-     * @param username Username
-     * @param password Password
-     * @return HomePage if successful, LoginPage if failed
+     * SIMPLIFIED: Login with error handling
      */
     public BasePage loginWithErrorHandling(String username, String password) {
-        logger.info("Attempting login with error handling for user: {}", username);
+        logger.info("Login with auto error handling - Username: {}", username);
         
-        // Clear existing text and enter credentials
-        clearAndEnterUsername(username);
-        clearAndEnterPassword(password);
+        enterUsername(username);
+        enterPassword(password);
+        BasePage result = clickLoginButton(); // Auto-dismiss included
         
-        // Click login button
-        clickLoginButton();
-        
-        // Wait a moment for response
-        waitFor(2);
-        
-        // Check for error dialog
-        if (handleLoginErrorDialogIfPresent()) {
-            logger.info("Login failed - error dialog was displayed and dismissed");
-            return this; // Stay on login page
-        }
-        
-        // Check if we navigated to home screen
-        if (isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN)) {
-            logger.info("Login successful - navigated to home screen");
-            return new HomePage();
-        }
-        
-        // If still on login screen without error dialog, something else happened
-        logger.warn("Login attempt completed but result is unclear");
-        return this;
+        return result;
     }
     
     /**
-     * Clear username field and enter new username
+     * SIMPLIFIED: Verify invalid login shows error
+     */
+    public boolean verifyInvalidLoginShowsError(String username, String password) {
+        logger.info("Verifying invalid login shows error - Username: {}", username);
+        
+        clearAllFields();
+        enterUsername(username);
+        enterPassword(password);
+        clickByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
+
+        // Wait for response
+        try {
+            waitUtils.waitForCondition(d ->
+                    isLoginErrorDialogDisplayed() ||
+                            isErrorMessageDisplayed() ||
+                            isElementDisplayedByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON),
+                    3);
+        } catch (Exception ignored) {}
+
+        // Check and handle error dialog
+        return handleLoginErrorDialogIfPresent();
+    }
+    
+    /**
+     * Clear and enter username (helper method)
      * @param username Username to enter
      * @return LoginPage for method chaining
      */
     public LoginPage clearAndEnterUsername(String username) {
-        logger.info("Clearing and entering username: {}", username);
-        waitForElementVisible(TestIDs.LOGIN_USERNAME_INPUT);
-        WebElement usernameField = findByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT);
-        usernameField.clear();
-        enterTextByAccessibilityId(TestIDs.LOGIN_USERNAME_INPUT, username);
+        clearUsername();
+        enterUsername(username);
         return this;
     }
     
     /**
-     * Clear password field and enter new password
+     * Clear and enter password (helper method)
      * @param password Password to enter
      * @return LoginPage for method chaining
      */
     public LoginPage clearAndEnterPassword(String password) {
-        logger.info("Clearing and entering password");
-        waitForElementVisible(TestIDs.LOGIN_PASSWORD_INPUT);
-        WebElement passwordField = findByAccessibilityId(TestIDs.LOGIN_PASSWORD_INPUT);
-        passwordField.clear();
-        enterTextByAccessibilityId(TestIDs.LOGIN_PASSWORD_INPUT, password);
+        clearPassword();
+        enterPassword(password);
         return this;
     }
     
@@ -827,35 +774,6 @@ public class LoginPage extends BasePage {
         handleLoginErrorDialogIfPresent();
         
         return this;
-    }
-    
-    /**
-     * Verify error dialog appears for invalid credentials
-     * @param invalidUsername Invalid username
-     * @param invalidPassword Invalid password
-     * @return true if error dialog appeared as expected
-     */
-    public boolean verifyInvalidLoginShowsError(String invalidUsername, String invalidPassword) {
-        logger.info("Verifying invalid login shows error dialog");
-        
-        clearAndEnterUsername(invalidUsername);
-        clearAndEnterPassword(invalidPassword);
-        clickLoginButton();
-        
-        // Wait for error dialog to appear
-        waitFor(3);
-        
-        boolean errorDialogAppeared = isLoginErrorDialogDisplayed();
-        
-        if (errorDialogAppeared) {
-            String errorMessage = getErrorDialogMessage();
-            logger.info("Error dialog appeared with message: {}", errorMessage);
-            dismissLoginErrorDialog();
-        } else {
-            logger.warn("Expected error dialog did not appear for invalid credentials");
-        }
-        
-        return errorDialogAppeared;
     }
     
     /**

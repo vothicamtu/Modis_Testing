@@ -9,8 +9,6 @@
     
     <listeners>
         <listener class-name="com.modis.listeners.TestListener"/>
-        <listener class-name="com.modis.listeners.ScreenshotListener"/>
-        <listener class-name="com.modis.listeners.AllureListener"/>
     </listeners>
     
     <!-- Authentication Tests with Real Data -->

@@ -313,27 +313,29 @@ public abstract class BasePage {
         // Keep this check ultra-fast & robust.
         // It is called frequently for state detection (Loading/Login/Home) so it must not perform expensive waits.
         try {
-            WebElement el = DriverManager.safelyFindElement(AppiumBy.accessibilityId(accessibilityId));
-            if (el != null && isElementDisplayed(el)) return true;
+            List<WebElement> els = DriverManager.safelyFindElements(AppiumBy.accessibilityId(accessibilityId));
+            if (isAnyDisplayed(els)) return true;
         } catch (Exception ignored) {}
 
         try {
-            WebElement el = DriverManager.safelyFindElement(AppiumBy.id(accessibilityId));
-            if (el != null && isElementDisplayed(el)) return true;
+            List<WebElement> els = DriverManager.safelyFindElements(AppiumBy.id(accessibilityId));
+            if (isAnyDisplayed(els)) return true;
         } catch (Exception ignored) {}
 
         try {
             String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
-            WebElement el = DriverManager.safelyFindElement(AppiumBy.androidUIAutomator(uiSelector));
-            if (el != null && isElementDisplayed(el)) return true;
+            List<WebElement> els = DriverManager.safelyFindElements(AppiumBy.androidUIAutomator(uiSelector));
+            if (isAnyDisplayed(els)) return true;
         } catch (Exception ignored) {}
 
-        try {
-            String xpath = String.format("//*[contains(@resource-id,'%s')]", accessibilityId);
-            WebElement el = DriverManager.safelyFindElement(By.xpath(xpath));
-            if (el != null && isElementDisplayed(el)) return true;
-        } catch (Exception ignored) {}
+        return false;
+    }
 
+    private boolean isAnyDisplayed(List<WebElement> els) {
+        if (els == null || els.isEmpty()) return false;
+        for (WebElement el : els) {
+            if (el != null && isElementDisplayed(el)) return true;
+        }
         return false;
     }
     

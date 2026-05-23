@@ -1,6 +1,7 @@
 package com.modis.tests;
 
 import com.modis.base.BaseTest;
+import com.modis.base.BasePage;
 import com.modis.constants.AppConstants;
 import com.modis.pages.*;
 import org.testng.Assert;
@@ -21,7 +22,11 @@ public class ProfileTests extends BaseTest {
         
         LoadingPage loadingPage = new LoadingPage();
         LoginPage loginPage = loadingPage.clickLoginButton();
-        homePage = (HomePage) loginPage.loginWithTestUser();
+        BasePage afterLogin = loginPage.loginWithTestUser();
+        Assert.assertTrue(afterLogin instanceof HomePage,
+                "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
+        homePage = (HomePage) afterLogin;
+        homePage.waitForTopbarReadyAfterLogin(8);
         
         Assert.assertTrue(homePage.isDisplayed(), "Should be logged in before profile tests");
     }

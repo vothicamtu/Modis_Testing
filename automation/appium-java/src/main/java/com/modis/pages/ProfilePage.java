@@ -98,6 +98,10 @@ public class ProfilePage extends BasePage {
      */
     public LoginPage logout() {
         logger.info("Logging out from profile screen");
+        for (int i = 0; i < 8; i++) {
+            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) break;
+            scrollDownBase();
+        }
         waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
         clickElement(logoutButton);
         
@@ -115,6 +119,11 @@ public class ProfilePage extends BasePage {
      */
     public LoginPage logoutWithConfirmation() {
         logger.info("Logging out with confirmation");
+        for (int i = 0; i < 8; i++) {
+            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) break;
+            scrollDownBase();
+        }
+        waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
         clickElement(logoutButton);
         
         // Confirm logout in modal
@@ -131,6 +140,11 @@ public class ProfilePage extends BasePage {
      */
     public ProfilePage cancelLogout() {
         logger.info("Canceling logout");
+        for (int i = 0; i < 8; i++) {
+            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) break;
+            scrollDownBase();
+        }
+        waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
         clickElement(logoutButton);
         
         // Cancel logout in modal

@@ -450,8 +450,8 @@ public class WaitUtils {
      */
     public boolean isElementPresent(By locator) {
         try {
-            driver.findElement(locator);
-            return true;
+            List<WebElement> elements = driver.findElements(locator);
+            return elements != null && !elements.isEmpty();
         } catch (Exception e) {
             return false;
         }
@@ -464,8 +464,14 @@ public class WaitUtils {
      */
     public boolean isElementVisible(By locator) {
         try {
-            WebElement element = driver.findElement(locator);
-            return element.isDisplayed();
+            List<WebElement> elements = driver.findElements(locator);
+            if (elements == null || elements.isEmpty()) return false;
+            for (WebElement element : elements) {
+                try {
+                    if (element != null && element.isDisplayed()) return true;
+                } catch (Exception ignored) {}
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }
@@ -481,9 +487,10 @@ public class WaitUtils {
     public <T> T waitForCondition(org.openqa.selenium.support.ui.ExpectedCondition<T> condition, int timeoutSeconds) {
         try {
             WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+            customWait.pollingEvery(Duration.ofMillis(250));
             return customWait.until(condition);
         } catch (TimeoutException e) {
-            logger.error("Custom condition not met within {} seconds", timeoutSeconds);
+            logger.debug("Custom condition not met within {} seconds", timeoutSeconds);
             throw new TimeoutException("Custom condition timeout", e);
         }
     }

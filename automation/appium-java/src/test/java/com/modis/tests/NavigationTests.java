@@ -55,6 +55,7 @@ public class NavigationTests extends BaseTest {
                 "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
 
         homePage = (HomePage) afterLogin;
+        homePage.waitForTopbarReadyAfterLogin(8);
         Assert.assertTrue(homePage.isDisplayed(), "Should be on home page before navigation tests");
     }
     
