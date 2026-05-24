@@ -32,6 +32,13 @@ public class AuthenticationFlowTests extends BaseTest {
         loginPage.clearAndEnterPassword("invalid_pass");
 
         BasePage afterSubmit = loginPage.clickLoginButton();
+
+        // Always try to dismiss error dialog if present, and wait for it to disappear
+        if (loginPage.isLoginErrorDialogDisplayed()) {
+            loginPage.clickErrorDialogOk();
+            loginPage.waitForAuthDialogDisappear();
+        }
+
         Assert.assertTrue(afterSubmit instanceof LoginPage,
                 "Invalid login should remain on LoginPage, but got: " +
                         (afterSubmit != null ? afterSubmit.getClass().getSimpleName() : "null"));

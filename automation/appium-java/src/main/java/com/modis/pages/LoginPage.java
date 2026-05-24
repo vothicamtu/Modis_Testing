@@ -21,12 +21,6 @@ import java.util.Map;
 public class LoginPage extends BasePage {
     
     // ==================== PAGE ELEMENTS ====================
-    // NOTE:
-    // Do not rely on the root container testID/accessibilityId (login_screen) for React Native.
-    // In the current RN code, the root LinearGradient sets testID/accessibilityLabel but does NOT set accessible={true},
-    // so it may not be exposed as an accessibility node on Android -> AppiumBy.accessibilityId("login_screen") can fail.
-    // Use stable, interactive child elements as the screen "ready" signal instead (inputs / buttons).
-    
     @AndroidFindBy(accessibility = TestIDs.LOGIN_TITLE_TEXT)
     @iOSXCUITFindBy(accessibility = TestIDs.LOGIN_TITLE_TEXT)
     private WebElement titleText;
@@ -94,15 +88,7 @@ public class LoginPage extends BasePage {
         enterTextByAccessibilityId(TestIDs.LOGIN_PASSWORD_INPUT, password);
         return this;
     }
-    
-    /**
-     * Click nút Login và xử lý theo đúng trạng thái thực tế của app.
-     *
-     * Mục tiêu:
-     * - Không được "assume" login thành công và đi tìm element của HomePage khi popup lỗi đang che màn hình
-     * - Ưu tiên detect 2 nhánh rõ ràng: SUCCESS hoặc FAILURE (dialog / inline)
-     * - Timeout ngắn để tránh treo 60s do findByAccessibilityId() bị gọi sai màn hình
-     */
+
     public BasePage clickLoginButton() {
         logger.info("Clicking login button");
         lastLoginErrorDialogMessage = "";
@@ -650,15 +636,18 @@ public class LoginPage extends BasePage {
     }
     
     /**
-     * SIMPLIFIED: Dismiss login error dialog - chỉ dùng accessibility ID
+     * SIMPLIFIED: Dismiss login error dialog - supports new auth_dialog_ok_button and fallback to text "OK".
      */
     public LoginPage dismissLoginErrorDialog() {
         logger.info("Dismissing login error dialog");
-        
         if (isLoginErrorDialogDisplayed()) {
             try {
-                // Chỉ thử accessibility ID, không dùng xpath phức tạp
-                if (isElementDisplayedByAccessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON)) {
+                // Try new auth_dialog_ok_button first
+                if (isElementDisplayedByAccessibilityId("auth_dialog_ok_button")) {
+                    waitForElementClickable("auth_dialog_ok_button");
+                    clickByAccessibilityId("auth_dialog_ok_button");
+                    logger.info("Dismissed using auth_dialog_ok_button");
+                } else if (isElementDisplayedByAccessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON)) {
                     clickByAccessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON);
                     logger.info("Dismissed using LOGIN_ERROR_OK_BUTTON");
                 } else if (isElementDisplayedByAccessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON)) {
@@ -668,24 +657,36 @@ public class LoginPage extends BasePage {
                     clickByAccessibilityId(TestIDs.ALERT_OK_BUTTON);
                     logger.info("Dismissed using ALERT_OK_BUTTON");
                 } else {
-                    // Fallback: thử standard Android OK button
-                    java.util.List<WebElement> okButtons = DriverManager.safelyFindElements(By.id("android:id/button1"));
+                    // Fallback: try to find button with text "OK"
+                    java.util.List<WebElement> okButtons = DriverManager.safelyFindElements(By.xpath("//android.widget.Button[@text='OK']"));
                     if (okButtons != null && !okButtons.isEmpty() && okButtons.get(0).isDisplayed()) {
                         clickElement(okButtons.get(0));
-                        logger.info("Dismissed using standard android OK button");
+                        logger.info("Dismissed using text OK button");
+                    } else {
+                        // Fallback: standard Android OK button
+                        okButtons = DriverManager.safelyFindElements(By.id("android:id/button1"));
+                        if (okButtons != null && !okButtons.isEmpty() && okButtons.get(0).isDisplayed()) {
+                            clickElement(okButtons.get(0));
+                            logger.info("Dismissed using standard android OK button");
+                        }
                     }
                 }
-
-                // Đợi popup biến mất nhanh (không dùng sleep dài để tránh chậm + flake)
-                try {
-                    waitUtils.waitForCondition(d -> !isLoginErrorDialogDisplayed(), 3);
-                } catch (Exception ignored) {}
+                // Wait for dialog to disappear
+                waitForAuthDialogDisappear();
             } catch (Exception e) {
                 logger.error("Failed to dismiss login error dialog: " + e.getMessage());
             }
         }
-        
         return this;
+    }
+
+    /**
+     * Wait for the auth dialog to disappear (invisible)
+     */
+    public void waitForAuthDialogDisappear() {
+        try {
+            waitUtils.waitForCondition(d -> !isLoginErrorDialogDisplayed(), 5);
+        } catch (Exception ignored) {}
     }
 
     /**
