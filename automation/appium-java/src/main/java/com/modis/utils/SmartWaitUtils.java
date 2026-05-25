@@ -356,8 +356,16 @@ public class SmartWaitUtils {
         }
 
         logger.debug("Checking for error dialogs to auto-dismiss");
-        
+
         try {
+            if (isElementPresent(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_OK_BUTTON))) {
+                By ok = AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_OK_BUTTON);
+                driver.findElements(ok).get(0).click();
+                logger.info("Dismissed dialog using AUTH_DIALOG_OK_BUTTON");
+                waitForGone(driver, ok, 2);
+                return true;
+            }
+
             // STRATEGY 1: Chỉ check accessibility ID chính xác
             if (isElementPresent(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON))) {
                 By ok = AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON);
@@ -366,7 +374,7 @@ public class SmartWaitUtils {
                 waitForGone(driver, ok, 2);
                 return true;
             }
-            
+
             if (isElementPresent(AppiumBy.accessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON))) {
                 By ok = AppiumBy.accessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON);
                 driver.findElements(ok).get(0).click();
@@ -374,7 +382,7 @@ public class SmartWaitUtils {
                 waitForGone(driver, ok, 2);
                 return true;
             }
-            
+
             if (isElementPresent(AppiumBy.accessibilityId(TestIDs.ALERT_OK_BUTTON))) {
                 By ok = AppiumBy.accessibilityId(TestIDs.ALERT_OK_BUTTON);
                 driver.findElements(ok).get(0).click();
@@ -382,7 +390,7 @@ public class SmartWaitUtils {
                 waitForGone(driver, ok, 2);
                 return true;
             }
-            
+
             // STRATEGY 2: Chỉ check resource-id chuẩn (không xpath)
             try {
                 By ok = By.id("android:id/button1");
@@ -394,12 +402,132 @@ public class SmartWaitUtils {
                     return true;
                 }
             } catch (Exception ignored) {}
-            
+
             return false; // No dialog found
-            
+
         } catch (Exception e) {
             logger.debug("Error during auto-dismiss dialog check: {}", e.getMessage());
             return false;
+        }
+    }
+
+    public static boolean isAuthDialogVisible() {
+        return isElementPresent(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_CONTAINER))
+                || isElementPresent(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_TITLE))
+                || isElementPresent(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_MESSAGE))
+                || isElementPresent(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG))
+                || isElementPresent(AppiumBy.accessibilityId(TestIDs.LOGIN_ERROR_DIALOG))
+                || isElementPresent(AppiumBy.accessibilityId(TestIDs.ALERT_DIALOG));
+    }
+
+    public static String getAuthDialogTitle() {
+        String title = getTextByLocator(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_TITLE));
+        if (!title.isEmpty()) {
+            return title;
+        }
+        return getTextByLocator(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_TITLE));
+    }
+
+    public static String getAuthDialogMessage() {
+        String message = getTextByLocator(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_MESSAGE));
+        if (!message.isEmpty()) {
+            return message;
+        }
+        message = getTextByLocator(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_MESSAGE));
+        if (!message.isEmpty()) {
+            return message;
+        }
+        return getTextByLocator(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG));
+    }
+
+    public static boolean waitForAuthDialog(int timeoutSeconds) {
+        AppiumDriver driver = DriverManager.getDriver();
+        if (driver == null) {
+            return false;
+        }
+
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+            wait.pollingEvery(Duration.ofMillis(POLLING_INTERVAL_MS));
+            return wait.until(d -> isAuthDialogVisible());
+        } catch (Exception e) {
+            logger.debug("Auth dialog not detected within {}s: {}", timeoutSeconds, e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean dismissAuthDialog() {
+        AppiumDriver driver = DriverManager.getDriver();
+        if (driver == null) {
+            return false;
+        }
+
+        if (!isAuthDialogVisible()) {
+            return false;
+        }
+
+        try {
+            if (isElementPresent(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_OK_BUTTON))) {
+                clickFirst(AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_OK_BUTTON));
+                waitForGone(driver, AppiumBy.accessibilityId(TestIDs.AUTH_DIALOG_CONTAINER), 5);
+                return true;
+            }
+
+            if (isElementPresent(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON))) {
+                clickFirst(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON));
+                waitForGone(driver, AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG), 5);
+                return true;
+            }
+
+            if (isElementPresent(AppiumBy.accessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON))) {
+                clickFirst(AppiumBy.accessibilityId(TestIDs.LOGIN_ERROR_OK_BUTTON));
+                waitForGone(driver, AppiumBy.accessibilityId(TestIDs.LOGIN_ERROR_DIALOG), 5);
+                return true;
+            }
+
+            if (isElementPresent(AppiumBy.accessibilityId(TestIDs.ALERT_OK_BUTTON))) {
+                clickFirst(AppiumBy.accessibilityId(TestIDs.ALERT_OK_BUTTON));
+                waitForGone(driver, AppiumBy.accessibilityId(TestIDs.ALERT_DIALOG), 5);
+                return true;
+            }
+
+            List<WebElement> okButtons = driver.findElements(By.id("android:id/button1"));
+            if (okButtons != null && !okButtons.isEmpty() && okButtons.get(0).isDisplayed()) {
+                okButtons.get(0).click();
+                waitForGone(driver, By.id("android:id/button1"), 5);
+                return true;
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to dismiss auth dialog: {}", e.getMessage());
+        }
+
+        return false;
+    }
+
+    private static void clickFirst(By locator) {
+        List<WebElement> elements = DriverManager.safelyFindElements(locator);
+        if (elements != null && !elements.isEmpty()) {
+            elements.get(0).click();
+        }
+    }
+
+    private static String getTextByLocator(By locator) {
+        try {
+            List<WebElement> elements = DriverManager.safelyFindElements(locator);
+            if (elements == null || elements.isEmpty()) {
+                return "";
+            }
+            WebElement element = elements.get(0);
+            String text = element.getText();
+            if (text == null || text.isEmpty()) {
+                text = element.getAttribute("content-desc");
+            }
+            if (text == null || text.isEmpty()) {
+                text = element.getAttribute("text");
+            }
+            return text == null ? "" : text;
+        } catch (Exception e) {
+            return "";
         }
     }
 

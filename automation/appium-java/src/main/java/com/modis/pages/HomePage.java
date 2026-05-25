@@ -565,4 +565,12 @@ public class HomePage extends BasePage {
     public boolean isUserLoggedIn() {
         return isDisplayed() && isTopBarDisplayed();
     }
+    
+    /**
+     * Check if topbar avatar is displayed (indicates authenticated state)
+     * @return true if topbar avatar is visible, false otherwise
+     */
+    public boolean isTopbarAvatarDisplayed() {
+        return isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON);
+    }
 }

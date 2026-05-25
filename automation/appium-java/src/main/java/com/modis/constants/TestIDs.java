@@ -150,6 +150,10 @@ public class TestIDs {
     public static final String ERROR_DIALOG_OK_BUTTON = "error_dialog_ok_button";
     public static final String LOGIN_ERROR_DIALOG = "login_error_dialog";
     public static final String LOGIN_ERROR_OK_BUTTON = "login_error_ok_button";
+    public static final String AUTH_DIALOG_CONTAINER = "auth_dialog_container";
+    public static final String AUTH_DIALOG_TITLE = "auth_dialog_title";
+    public static final String AUTH_DIALOG_MESSAGE = "auth_dialog_message";
+    public static final String AUTH_DIALOG_OK_BUTTON = "auth_dialog_ok_button";
     
     // ==================== LOADING AND PROGRESS ====================
     public static final String LOADING_SPINNER = "loading_spinner";

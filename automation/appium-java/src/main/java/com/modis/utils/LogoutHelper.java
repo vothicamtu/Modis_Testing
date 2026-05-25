@@ -57,7 +57,7 @@ public final class LogoutHelper {
             // 2) Chờ nút logout xuất hiện (bounded)
             if (!isVisible(driver, AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON), 5)) {
                 try {
-                    GestureUtils gestureUtils = new GestureUtils(driver);
+                    GestureUtils gestureUtils = new GestureUtils();
                     WebElement logout = gestureUtils.scrollToElementByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON);
                     if (logout == null || !logout.isDisplayed()) {
                         logger.warn("Không thấy logout button trong Profile -> skip logout");

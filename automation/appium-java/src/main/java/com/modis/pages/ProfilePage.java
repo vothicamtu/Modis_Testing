@@ -98,61 +98,72 @@ public class ProfilePage extends BasePage {
      */
     public LoginPage logout() {
         logger.info("Logging out from profile screen");
-        for (int i = 0; i < 8; i++) {
-            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) break;
-            scrollDownBase();
-        }
+        WebElement logoutTarget = ensureLogoutButtonVisible();
         waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
-        clickElement(logoutButton);
-        
+        clickElement(logoutTarget);
+
         // Handle logout confirmation if it appears
         handleLogoutConfirmation();
-        
+
         // Wait for navigation to login screen
         waitForElementVisible(TestIDs.LOGIN_SCREEN);
         return new LoginPage();
     }
-    
+
     /**
      * Logout with confirmation
      * @return LoginPage
      */
     public LoginPage logoutWithConfirmation() {
         logger.info("Logging out with confirmation");
-        for (int i = 0; i < 8; i++) {
-            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) break;
-            scrollDownBase();
-        }
+        WebElement logoutTarget = ensureLogoutButtonVisible();
         waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
-        clickElement(logoutButton);
-        
+        clickElement(logoutTarget);
+
         // Confirm logout in modal
         if (isModalDisplayed()) {
             confirmAction();
         }
-        
+
         return new LoginPage();
     }
-    
+
     /**
      * Cancel logout
      * @return ProfilePage for method chaining
      */
     public ProfilePage cancelLogout() {
         logger.info("Canceling logout");
-        for (int i = 0; i < 8; i++) {
-            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) break;
-            scrollDownBase();
-        }
+        WebElement logoutTarget = ensureLogoutButtonVisible();
         waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
-        clickElement(logoutButton);
-        
+        clickElement(logoutTarget);
+
         // Cancel logout in modal
         if (isModalDisplayed()) {
             cancelAction();
         }
-        
+
         return this;
+    }
+
+    private WebElement ensureLogoutButtonVisible() {
+        if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) {
+            return logoutButton;
+        }
+
+        WebElement logoutTarget = gestureUtils.scrollToElementByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON);
+        if (logoutTarget != null && logoutTarget.isDisplayed()) {
+            return logoutTarget;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            scrollDownBase();
+            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) {
+                return logoutButton;
+            }
+        }
+
+        throw new RuntimeException("Logout button is not visible on profile screen");
     }
     
     // ==================== PROFILE EDIT ACTIONS ====================

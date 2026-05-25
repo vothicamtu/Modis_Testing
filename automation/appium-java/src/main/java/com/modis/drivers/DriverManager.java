@@ -22,7 +22,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Driver Manager for Appium WebDriver instances
@@ -32,6 +37,12 @@ public class DriverManager {
 
     private static final Logger logger = LoggerUtil.getLogger(DriverManager.class);
     private static final ThreadLocal<AppiumDriver> driver = new ThreadLocal<>();
+    private static final ExecutorService driverShutdownExecutor = Executors.newCachedThreadPool(r -> {
+        Thread thread = new Thread(r, "appium-driver-shutdown");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private static final long DRIVER_SHUTDOWN_TIMEOUT_MS = 5000L;
 
     /**
      * Get the current driver instance for the thread
@@ -199,7 +210,7 @@ public class DriverManager {
         // UiAutomator2 specific - Enhanced for stability
         options.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerLaunchTimeout", 60000)); // 1 minute
         options.setCapability("uiautomator2ServerInstallTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerInstallTimeout", 60000)); // 1 minute
-        options.setCapability("uiautomator2ServerReadTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerReadTimeout", 15000));
+        options.setCapability("uiautomator2ServerReadTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerReadTimeout", 8000));
         options.setCapability("adbExecTimeout", ConfigReader.getIntProperty("android.adbExecTimeout", 60000));
 
         // Element finding timeouts - Optimized for React Native
@@ -393,13 +404,44 @@ public class DriverManager {
         if (currentDriver != null) {
             try {
                 logger.info("Quitting driver");
-                currentDriver.quit();
+                shutdownDriverSafely(currentDriver);
             } catch (Exception e) {
                 logger.warn("Error while quitting driver", e);
             } finally {
                 driver.remove();
                 logger.info("Driver removed from ThreadLocal");
             }
+        }
+    }
+
+    private static boolean shutdownDriverSafely(AppiumDriver driverToShutdown) {
+        if (driverToShutdown == null) {
+            return true;
+        }
+
+        Future<?> future = driverShutdownExecutor.submit(() -> {
+            try {
+                driverToShutdown.quit();
+            } catch (Exception e) {
+                logger.debug("Driver quit completed with exception: {}", e.getMessage());
+            }
+        });
+
+        try {
+            future.get(DRIVER_SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            return true;
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            logger.warn("Driver quit timed out after {}ms; continuing recovery without blocking", DRIVER_SHUTDOWN_TIMEOUT_MS);
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            future.cancel(true);
+            logger.warn("Driver quit interrupted; continuing recovery without blocking");
+            return false;
+        } catch (ExecutionException e) {
+            logger.debug("Driver quit completed with exception: {}", e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+            return true;
         }
     }
 
@@ -477,8 +519,12 @@ public class DriverManager {
             // Step 2: Attempt graceful shutdown
             try {
                 logger.info("Attempting graceful driver shutdown...");
-                currentDriver.quit();
-                logger.info("✓ Driver quit successfully");
+                boolean quitCompleted = shutdownDriverSafely(currentDriver);
+                if (quitCompleted) {
+                    logger.info("✓ Driver quit successfully");
+                } else {
+                    logger.warn("Driver quit did not complete within timeout; proceeding with recovery");
+                }
             } catch (Exception quitEx) {
                 logger.debug("Quit failed (expected if crashed): {}", quitEx.getMessage());
             }
@@ -521,7 +567,7 @@ public class DriverManager {
                         } else {
                             logger.warn("New driver created but UiAutomator2 health check failed");
                             try {
-                                newDriver.quit();
+                                shutdownDriverSafely(newDriver);
                             } catch (Exception e) {
                                 logger.debug("Error quitting unhealthy driver: {}", e.getMessage());
                             }
@@ -587,7 +633,6 @@ public class DriverManager {
                     errorMessage.contains("instrumentation process is not running") ||
                             errorMessage.contains("Could not proxy command") ||
                             errorMessage.contains("socket hang up") ||
-                            errorMessage.contains("timeout of") ||
                             errorMessage.contains("ECONNRESET") ||
                             errorMessage.contains("ECONNREFUSED");
 
@@ -640,9 +685,8 @@ public class DriverManager {
 
             boolean likelyUiA2Crash =
                     errorMessage.contains("instrumentation process is not running") ||
-                            errorMessage.contains("Could not proxy command") ||
+                            errorMessage.contains("Could not proxy command to the remote server") ||
                             errorMessage.contains("socket hang up") ||
-                            errorMessage.contains("timeout of") ||
                             errorMessage.contains("ECONNRESET") ||
                             errorMessage.contains("ECONNREFUSED");
 

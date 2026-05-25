@@ -20,9 +20,25 @@ public class LoadingPage extends BasePage {
     public LoadingPage waitForPageToLoad() {
         logger.info("Checking loading page readiness");
 
-        waitForLoadingScreenVisible();
-        waitForLoginSignupButtonsVisible();
-        return this;
+        if (isLoginScreenVisible() || isSignupScreenVisible()) {
+            logger.info("Already on auth screen; skipping loading wait");
+            return this;
+        }
+
+        try {
+            waitForLoadingScreenVisible();
+            waitForLoginSignupButtonsVisible();
+            return this;
+        } catch (RuntimeException firstFailure) {
+            logger.warn("Loading page wait failed on first attempt; checking whether the session needs recovery", firstFailure);
+            if (DriverManager.recoverFromUiAutomator2Crash()) {
+                waitForLoadingScreenVisible();
+                waitForLoginSignupButtonsVisible();
+                logger.info("Loading page is ready after recovery");
+                return this;
+            }
+            throw firstFailure;
+        }
     }
 
     /**
@@ -101,6 +117,21 @@ public class LoadingPage extends BasePage {
         return false;
     }
 
+    private boolean isLoadingScreenVisible() {
+        return isPresentByAccessibilityOrId(TestIDs.LOADING_LOGIN_BUTTON)
+                || isPresentByAccessibilityOrId(TestIDs.LOADING_SIGNUP_BUTTON);
+    }
+
+    private boolean isLoginScreenVisible() {
+        return isPresentByAccessibilityOrId(TestIDs.LOGIN_USERNAME_INPUT)
+                || isPresentByAccessibilityOrId(TestIDs.LOGIN_SUBMIT_BUTTON);
+    }
+
+    private boolean isSignupScreenVisible() {
+        return isPresentByAccessibilityOrId(TestIDs.SIGNUP_USERNAME_INPUT)
+                || isPresentByAccessibilityOrId(TestIDs.SIGNUP_SUBMIT_BUTTON);
+    }
+
     /**
      * Click login button on loading screen
      * @return LoginPage
@@ -109,16 +140,44 @@ public class LoadingPage extends BasePage {
     @Deprecated
     public LoginPage clickLoginButton() {
         logger.info("Clicking login button on loading page");
-        
+
+        if (isLoginScreenVisible()) {
+            logger.info("Already on login screen, skipping loading button click");
+            LoginPage loginPage = new LoginPage();
+            loginPage.waitForPageToLoad();
+            return loginPage;
+        }
+
         try {
-            WebElement button = DriverManager.safelyFindElement(AppiumBy.accessibilityId(TestIDs.LOADING_LOGIN_BUTTON));
-            if (button == null) {
-                button = DriverManager.safelyFindElement(AppiumBy.id(TestIDs.LOADING_LOGIN_BUTTON));
+            if (!isLoadingScreenVisible()) {
+                logger.warn("Loading login button is not visible; falling back to login screen detection");
+                LoginPage loginPage = new LoginPage();
+                loginPage.waitForPageToLoad();
+                return loginPage;
             }
-            if (button == null) {
-                throw new RuntimeException("Loading login button not found: " + TestIDs.LOADING_LOGIN_BUTTON);
+
+            clickByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
+
+            SmartWaitUtils.ScreenDetectionResult screen = SmartWaitUtils.waitForAnyScreen(10);
+            if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOGIN) {
+                LoginPage loginPage = new LoginPage();
+                loginPage.waitForPageToLoad();
+                return loginPage;
             }
-            button.click();
+
+            if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOADING) {
+                logger.warn("Login button tap did not advance to LOGIN screen; retrying once");
+                clickByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
+                screen = SmartWaitUtils.waitForAnyScreen(10);
+            }
+
+            if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOGIN) {
+                LoginPage loginPage = new LoginPage();
+                loginPage.waitForPageToLoad();
+                return loginPage;
+            }
+
+            logger.warn("Login button tap did not reach LOGIN screen, current screen: {}", screen.getScreenType());
             LoginPage loginPage = new LoginPage();
             loginPage.waitForPageToLoad();
             return loginPage;
@@ -136,16 +195,30 @@ public class LoadingPage extends BasePage {
     @Deprecated
     public SignupPage clickSignupButton() {
         logger.info("Clicking signup button on loading page");
-        
+
         try {
-            WebElement button = DriverManager.safelyFindElement(AppiumBy.accessibilityId(TestIDs.LOADING_SIGNUP_BUTTON));
-            if (button == null) {
-                button = DriverManager.safelyFindElement(AppiumBy.id(TestIDs.LOADING_SIGNUP_BUTTON));
+            clickByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON);
+
+            SmartWaitUtils.ScreenDetectionResult screen = SmartWaitUtils.waitForAnyScreen(10);
+            if (screen.getScreenType() == SmartWaitUtils.ScreenType.SIGNUP) {
+                SignupPage signupPage = new SignupPage();
+                signupPage.waitForPageToLoad();
+                return signupPage;
             }
-            if (button == null) {
-                throw new RuntimeException("Loading signup button not found: " + TestIDs.LOADING_SIGNUP_BUTTON);
+
+            if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOADING) {
+                logger.warn("Signup button tap did not advance to SIGNUP screen; retrying once");
+                clickByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON);
+                screen = SmartWaitUtils.waitForAnyScreen(10);
             }
-            button.click();
+
+            if (screen.getScreenType() == SmartWaitUtils.ScreenType.SIGNUP) {
+                SignupPage signupPage = new SignupPage();
+                signupPage.waitForPageToLoad();
+                return signupPage;
+            }
+
+            logger.warn("Signup button tap did not reach SIGNUP screen, current screen: {}", screen.getScreenType());
             SignupPage signupPage = new SignupPage();
             signupPage.waitForPageToLoad();
             return signupPage;

@@ -108,7 +108,7 @@ public class TestListener implements ITestListener {
      * @return true if screenshot should be taken, false otherwise
      */
     private boolean shouldTakeScreenshotOnSuccess() {
-        String takeScreenshotOnPass = System.getProperty("screenshot.onPass", "false");
+        String takeScreenshotOnPass = System.getProperty("screenshot.onPass", "true");
         return Boolean.parseBoolean(takeScreenshotOnPass);
     }
 }
