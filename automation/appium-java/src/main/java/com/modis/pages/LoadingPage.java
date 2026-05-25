@@ -7,16 +7,8 @@ import com.modis.utils.SmartWaitUtils;
 import io.appium.java_client.AppiumBy;
 import org.openqa.selenium.WebElement;
 
-/**
- * Loading Page - Handles app launch and initial navigation
- * Optimized for React Native apps with UiAutomator2 stability
- */
 public class LoadingPage extends BasePage {
 
-    /**
-     * Wait for loading page to be ready with quick timeout
-     * @return LoadingPage for method chaining
-     */
     public LoadingPage waitForPageToLoad() {
         logger.info("Checking loading page readiness");
 
@@ -41,9 +33,6 @@ public class LoadingPage extends BasePage {
         }
     }
 
-    /**
-     * SIMPLIFIED: Wait for app auto-navigation với timeout ngắn
-     */
     public BasePage waitForAutoNavigation() {
         logger.info("Waiting for app initial LoadingScreen -> Login/Signup buttons");
         waitForLoadingScreenVisible();
@@ -51,9 +40,6 @@ public class LoadingPage extends BasePage {
         return this;
     }
 
-    /**
-     * SIMPLIFIED: Handle loading screen navigation - chỉ thử 1 lần
-     */
     private BasePage handleLoadingScreenNavigation() {
         try {
             // Chỉ thử click login button 1 lần, không retry
@@ -64,10 +50,10 @@ public class LoadingPage extends BasePage {
                 loginPage.waitForPageToLoad();
                 return loginPage;
             }
-            
+
             logger.warn("No loading login button found - assuming LoginPage");
             return new LoginPage();
-            
+
         } catch (Exception e) {
             logger.error("Loading screen navigation failed: {}", e.getMessage());
             return new LoginPage();
@@ -132,11 +118,6 @@ public class LoadingPage extends BasePage {
                 || isPresentByAccessibilityOrId(TestIDs.SIGNUP_SUBMIT_BUTTON);
     }
 
-    /**
-     * Click login button on loading screen
-     * @return LoginPage
-     * @deprecated Use waitForAutoNavigation() instead for better reliability
-     */
     @Deprecated
     public LoginPage clickLoginButton() {
         logger.info("Clicking login button on loading page");
@@ -187,11 +168,6 @@ public class LoadingPage extends BasePage {
         }
     }
 
-    /**
-     * Click signup button on loading screen
-     * @return SignupPage
-     * @deprecated Use waitForAutoNavigation() instead for better reliability
-     */
     @Deprecated
     public SignupPage clickSignupButton() {
         logger.info("Clicking signup button on loading page");
@@ -228,42 +204,24 @@ public class LoadingPage extends BasePage {
         }
     }
 
-    // ==================== VALIDATION METHODS ====================
-    
-    /**
-     * Check if loading spinner is displayed
-     * @return true if loading, false otherwise
-     */
+    //  VALIDATION METHODS 
     public boolean isLoading() {
         return isElementDisplayedByAccessibilityId(TestIDs.LOADING_SPINNER);
     }
-    
-    /**
-     * Check if logo is displayed
-     * @return true if logo is visible, false otherwise
-     */
+
     public boolean isLogoDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.LOADING_LOGO);
     }
-    
-    /**
-     * Check if login button is displayed
-     * @return true if login button is visible, false otherwise
-     */
+
     public boolean isLoginButtonDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
     }
-    
-    /**
-     * Check if signup button is displayed
-     * @return true if signup button is visible, false otherwise
-     */
+
     public boolean isSignupButtonDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON);
     }
-    
-    // ==================== INHERITED METHODS ====================
-    
+
+    //  INHERITED METHODS 
     @Override
     public boolean isDisplayed() {
         try {
@@ -273,7 +231,7 @@ public class LoadingPage extends BasePage {
             return false;
         }
     }
-    
+
     @Override
     public String getPageTitle() {
         return "Loading Screen";

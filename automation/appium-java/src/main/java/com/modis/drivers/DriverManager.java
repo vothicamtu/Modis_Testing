@@ -29,10 +29,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Driver Manager for Appium WebDriver instances
- * Handles driver creation, configuration, and lifecycle management
- */
 public class DriverManager {
 
     private static final Logger logger = LoggerUtil.getLogger(DriverManager.class);
@@ -44,27 +40,14 @@ public class DriverManager {
     });
     private static final long DRIVER_SHUTDOWN_TIMEOUT_MS = 5000L;
 
-    /**
-     * Get the current driver instance for the thread
-     * @return AppiumDriver instance
-     */
     public static AppiumDriver getDriver() {
         return driver.get();
     }
 
-    /**
-     * Set driver instance for the current thread
-     * @param appiumDriver The driver instance to set
-     */
     public static void setDriver(AppiumDriver appiumDriver) {
         driver.set(appiumDriver);
     }
 
-    /**
-     * Create and initialize Appium driver based on platform
-     * @param platform The platform (android/ios)
-     * @return AppiumDriver instance
-     */
     public static AppiumDriver createDriver(String platform) {
         logger.info("Creating driver for platform: {}", platform);
 
@@ -149,19 +132,13 @@ public class DriverManager {
         throw new RuntimeException("Appium server not accessible for iOS. Please verify serverUrl/serverPath.", last);
     }
 
-    /**
-     * Get Android options with UiAutomator2 stability improvements
-     * @return UiAutomator2Options for Android
-     */
     private static UiAutomator2Options getAndroidOptions() {
         UiAutomator2Options options = new UiAutomator2Options();
 
-        // Platform capabilities - REMOVED hardcoded platformVersion
         options.setPlatformName("Android");
         options.setAutomationName("UiAutomator2");
         options.setDeviceName(ConfigReader.getProperty("android.deviceName", AppConstants.DEFAULT_DEVICE_NAME));
-        
-        // FIXED: Only set platformVersion if explicitly provided in config
+
         String platformVersion = ConfigReader.getProperty("android.platformVersion", "").trim();
         if (!platformVersion.isEmpty()) {
             options.setPlatformVersion(platformVersion);
@@ -169,7 +146,7 @@ public class DriverManager {
         } else {
             logger.info("No platformVersion specified - letting Appium auto-detect");
         }
-        
+
         String udid = ConfigReader.getProperty("android.udid", "").trim();
         if (!udid.isEmpty()) {
             options.setUdid(udid);
@@ -184,11 +161,9 @@ public class DriverManager {
             options.setAppActivity(ConfigReader.getProperty("android.appActivity", AppConstants.APP_ACTIVITY));
         }
 
-        // FIXED: App reset strategy for stability
-        // noReset=true prevents SecurityException on Android 11+ real devices
         boolean noReset = ConfigReader.getBooleanProperty("android.noReset", true);
         boolean fullReset = ConfigReader.getBooleanProperty("android.fullReset", false);
-        
+
         logger.info("Setting app reset capabilities: noReset={}, fullReset={}", noReset, fullReset);
         options.setNoReset(noReset);
         options.setFullReset(fullReset);
@@ -224,7 +199,6 @@ public class DriverManager {
         options.setCapability("unlockType", ConfigReader.getProperty("android.unlockType", "pin"));
         options.setCapability("unlockKey", ConfigReader.getProperty("android.unlockKey", "1234"));
 
-        // FIXED: UiAutomator2 stability improvements for debugging
         // Turn OFF ignoreUnimportantViews when debugging accessibility issues
         boolean debugMode = ConfigReader.getBooleanProperty("android.debugMode", false);
         options.setCapability("ignoreUnimportantViews", !debugMode); // false when debugging
@@ -238,15 +212,11 @@ public class DriverManager {
         // Logging
         options.setCapability("enablePerformanceLogging", ConfigReader.getBooleanProperty("android.enablePerformanceLogging", false));
 
-        logger.info("Android options configured with stability improvements: debugMode={}, ignoreUnimportantViews={}", 
-                   debugMode, !debugMode);
+        logger.info("Android options configured with stability improvements: debugMode={}, ignoreUnimportantViews={}",
+                debugMode, !debugMode);
         return options;
     }
 
-    /**
-     * Get iOS options
-     * @return XCUITestOptions for iOS
-     */
     private static XCUITestOptions getIOSOptions() {
         XCUITestOptions options = new XCUITestOptions();
 
@@ -282,17 +252,9 @@ public class DriverManager {
         return options;
     }
 
-    /**
-     * Configure driver with timeouts and settings
-     * @param appiumDriver The driver to configure
-     */
     private static void configureDriver(AppiumDriver appiumDriver) {
-        // BEST PRACTICE: implicit wait should be 0 to avoid compounding with explicit waits
         appiumDriver.manage().timeouts().implicitlyWait(Duration.ZERO);
         logger.info("Driver configured - implicitWait=0 (explicit waits are used for stability)");
-
-        // Enforce critical UiAutomator2 settings at runtime as well (in case the server ignored caps).
-        // This is especially important for RN apps with continuous animations.
         if (appiumDriver instanceof AndroidDriver) {
             try {
                 HasSettings settings = (HasSettings) appiumDriver;
@@ -307,22 +269,11 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Generate a robust list of Appium server URLs to try.
-     * Appium 2/3 use the root ("/") endpoint and MUST NOT use "/wd/hub".
-     *
-     * Misconfiguration prevention:
-     * - If serverUrl contains a non-root path (e.g. "/wd/hub"), fail fast with a clear message.
-     * - appium.serverPath is deprecated (legacy Appium 1.x). It is ignored, and "/wd/hub" will be rejected.
-     */
     private static List<URL> getAppiumServerURLs() {
         try {
-            // Support specifying multiple endpoints explicitly (recommended for CI / multiple hosts).
-            // Example: appium.serverUrls=http://127.0.0.1:4723,http://localhost:4723
             String rawList = ConfigReader.getProperty("appium.serverUrls", "").trim();
             String baseUrl = ConfigReader.getProperty("appium.serverUrl", "http://127.0.0.1:4723").trim();
 
-            // Legacy property (Appium 1.x). We keep it only to detect & block misconfiguration.
             String serverPath = ConfigReader.getProperty("appium.serverPath", "").trim();
             if (!serverPath.isEmpty()) {
                 String normalized = serverPath.startsWith("/") ? serverPath : "/" + serverPath;
@@ -336,7 +287,7 @@ public class DriverManager {
 
             LinkedHashSet<String> candidates = new LinkedHashSet<>();
 
-            // 1) User-provided list or single URL
+            // User-provided list or single URL
             if (!rawList.isEmpty()) {
                 for (String part : rawList.split(",")) {
                     String s = part.trim();
@@ -348,7 +299,7 @@ public class DriverManager {
                 candidates.add(normalizeAndValidateAppiumRootUrl(baseUrl));
             }
 
-            // 2) Safe fallbacks (root endpoint only)
+            //  Safe fallbacks (root endpoint only)
             candidates.add("http://127.0.0.1:4723");
             candidates.add("http://localhost:4723");
 
@@ -369,11 +320,6 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Normalize serverUrl and enforce Appium 2/3 root endpoint:
-     * - Reject "/wd/hub" and any non-root path (Appium 3 returns 404 for /wd/hub).
-     * - Normalize to "scheme://host:port" (no trailing slash).
-     */
     private static String normalizeAndValidateAppiumRootUrl(String rawUrl) throws MalformedURLException {
         String trimmed = rawUrl.trim();
         if (trimmed.isEmpty()) {
@@ -396,9 +342,6 @@ public class DriverManager {
         return u.getProtocol() + "://" + u.getHost() + portPart;
     }
 
-    /**
-     * Quit the current driver and remove from ThreadLocal
-     */
     public static void quitDriver() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver != null) {
@@ -445,10 +388,6 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Check if driver is initialized and UiAutomator2 is healthy
-     * @return true if driver exists and UiAutomator2 is responsive, false otherwise
-     */
     public static boolean isDriverInitialized() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver == null) {
@@ -459,10 +398,6 @@ public class DriverManager {
         return isUiAutomator2Healthy();
     }
 
-    /**
-     * Ultra-light session check (no extra Appium calls).
-     * Useful to avoid doing heavy health checks too frequently.
-     */
     public static boolean isSessionAlive() {
         AppiumDriver currentDriver = getDriver();
         try {
@@ -472,10 +407,6 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Check UiAutomator2 server health
-     * @return true if UiAutomator2 is responsive, false if crashed
-     */
     public static boolean isUiAutomator2Healthy() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver == null) {
@@ -497,18 +428,13 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Recover from UiAutomator2 crash by recreating session
-     * @return true if recovery successful, false otherwise
-     */
-
     public static boolean recoverFromUiAutomator2Crash() {
         logger.warn(" Attempting to recover from UiAutomator2 crash...");
 
         try {
             AppiumDriver currentDriver = getDriver();
 
-            // Step 1: Validate we actually have a driver to recover from
+            // Validate we actually have a driver to recover from
             if (currentDriver == null) {
                 logger.warn("No driver to recover from - creating new driver");
                 String platform = System.getProperty("platform", "android");
@@ -516,12 +442,12 @@ public class DriverManager {
                 return newDriver != null && isUiAutomator2Healthy();
             }
 
-            // Step 2: Attempt graceful shutdown
+            // Attempt graceful shutdown
             try {
                 logger.info("Attempting graceful driver shutdown...");
                 boolean quitCompleted = shutdownDriverSafely(currentDriver);
                 if (quitCompleted) {
-                    logger.info("✓ Driver quit successfully");
+                    logger.info(" Driver quit successfully");
                 } else {
                     logger.warn("Driver quit did not complete within timeout; proceeding with recovery");
                 }
@@ -529,7 +455,7 @@ public class DriverManager {
                 logger.debug("Quit failed (expected if crashed): {}", quitEx.getMessage());
             }
 
-            // Step 3: Store platform before cleanup
+            // Store platform before cleanup
             String platform = "android";
             try {
                 Object platformCap = currentDriver.getCapabilities().getCapability("platformName");
@@ -540,16 +466,15 @@ public class DriverManager {
                 logger.debug("Could not get platform capability, using default: android");
             }
 
-            // IMPROVED: Longer cleanup wait (from 3s to 8s for thorough cleanup)
             long cleanupWaitMs = ConfigReader.getLongProperty("android.recovery.cleanupWaitMs", AppConstants.UIAUTOMATOR2_RECOVERY_WAIT_MS);
             logger.info("Waiting {}ms for system cleanup and resource release...", cleanupWaitMs);
             Thread.sleep(cleanupWaitMs);
 
-            // Step 4: Clear ThreadLocal reference
+            // Clear ThreadLocal reference
             driver.remove();
-            logger.info("✓ Cleared ThreadLocal driver reference");
+            logger.info(" Cleared ThreadLocal driver reference");
 
-            // Step 5: Create new driver with retry logic
+            // Create new driver with retry logic
             logger.info("Creating new driver for platform: {}", platform);
             int retries = AppConstants.UIAUTOMATOR2_RECOVERY_MAX_ATTEMPTS;
 
@@ -562,7 +487,7 @@ public class DriverManager {
                         // Validate the new driver is healthy
                         if (isUiAutomator2Healthy()) {
                             logger.info(" Successfully recovered from UiAutomator2 crash!");
-                            logger.info("✓ New driver is healthy and responsive");
+                            logger.info(" New driver is healthy and responsive");
                             return true;
                         } else {
                             logger.warn("New driver created but UiAutomator2 health check failed");
@@ -593,11 +518,7 @@ public class DriverManager {
             return false;
         }
     }
-    /**
-     * Safe element finding with UiAutomator2 crash protection
-     * @param locator Element locator
-     * @return WebElement or null if not found or UiAutomator2 crashed
-     */
+
     public static WebElement safelyFindElement(By locator) {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver == null) {
@@ -622,13 +543,6 @@ public class DriverManager {
             return null;
         } catch (Exception e) {
             String errorMessage = e.getMessage() != null ? e.getMessage() : "";
-
-            // Treat transport/proxy errors as UiAutomator2 crash/unresponsive.
-            // Common symptoms:
-            // - "instrumentation process is not running"
-            // - "Could not proxy command to the remote server"
-            // - "socket hang up"
-            // - "timeout of 30000ms exceeded"
             boolean likelyUiA2Crash =
                     errorMessage.contains("instrumentation process is not running") ||
                             errorMessage.contains("Could not proxy command") ||
@@ -709,10 +623,6 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Get current platform name
-     * @return Platform name (Android/iOS)
-     */
     public static String getCurrentPlatform() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver != null) {
@@ -721,10 +631,6 @@ public class DriverManager {
         return "Unknown";
     }
 
-    /**
-     * Get current device name
-     * @return Device name
-     */
     public static String getCurrentDeviceName() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver != null) {
@@ -733,9 +639,6 @@ public class DriverManager {
         return "Unknown";
     }
 
-    /**
-     * Restart the app
-     */
     public static void restartApp() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver != null) {
@@ -757,9 +660,6 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Clear app data and restart (for clean state)
-     */
     public static void clearAppDataAndRestart() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver != null) {
@@ -769,11 +669,11 @@ public class DriverManager {
                     // Terminate app first
                     currentDriver.executeScript("mobile: terminateApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
                     Thread.sleep(1000);
-                    
+
                     // Clear app data
                     currentDriver.executeScript("mobile: clearApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
                     Thread.sleep(2000); // Wait for clear to complete
-                    
+
                     // Restart app
                     currentDriver.executeScript("mobile: activateApp", java.util.Map.of("appId", AppConstants.APP_PACKAGE));
                     logger.info("App data cleared and app restarted successfully");
@@ -789,9 +689,6 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Check if app is stuck on splash/loading screen
-     */
     public static boolean isAppStuckOnSplash() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver == null) {
@@ -803,18 +700,18 @@ public class DriverManager {
                 AndroidDriver androidDriver = (AndroidDriver) currentDriver;
                 String currentActivity = androidDriver.getCurrentPackage();
                 String currentActivityName = androidDriver.currentActivity();
-                
+
                 // Check if stuck on splash activity or no activity detected
-                boolean stuckOnSplash = currentActivity == null || 
-                                      currentActivityName == null ||
-                                      currentActivityName.contains("SplashActivity") ||
-                                      currentActivityName.contains("LaunchActivity");
-                
+                boolean stuckOnSplash = currentActivity == null ||
+                        currentActivityName == null ||
+                        currentActivityName.contains("SplashActivity") ||
+                        currentActivityName.contains("LaunchActivity");
+
                 if (stuckOnSplash) {
-                    logger.warn("App appears stuck on splash screen - activity: {}, package: {}", 
-                              currentActivityName, currentActivity);
+                    logger.warn("App appears stuck on splash screen - activity: {}, package: {}",
+                            currentActivityName, currentActivity);
                 }
-                
+
                 return stuckOnSplash;
             }
             return false;
@@ -824,42 +721,35 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Recover from app stuck on splash screen
-     */
     public static boolean recoverFromSplashScreen() {
         logger.warn("Attempting to recover from splash screen...");
-        
+
         try {
             // Try clearing app data and restarting
             clearAppDataAndRestart();
-            
+
             // Wait for app to load
             Thread.sleep(5000);
-            
+
             // Check if recovery was successful
             if (!isAppStuckOnSplash()) {
                 logger.info("Successfully recovered from splash screen");
                 return true;
             }
-            
+
             // If still stuck, try force restart
             logger.warn("Still stuck after clear data, trying force restart...");
             restartApp();
             Thread.sleep(5000);
-            
+
             return !isAppStuckOnSplash();
-            
+
         } catch (Exception e) {
             logger.error("Failed to recover from splash screen", e);
             return false;
         }
     }
 
-    /**
-     * Put app in background for specified duration
-     * @param duration Duration in seconds
-     */
     public static void backgroundApp(int duration) {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver != null) {
@@ -877,9 +767,6 @@ public class DriverManager {
         }
     }
 
-    /**
-     * Reset app to initial state
-     */
     public static void resetApp() {
         AppiumDriver currentDriver = getDriver();
         if (currentDriver != null) {

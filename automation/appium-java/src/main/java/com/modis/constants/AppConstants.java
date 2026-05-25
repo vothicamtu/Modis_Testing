@@ -1,32 +1,24 @@
 package com.modis.constants;
 
-/**
- * Application constants for Modis mobile app automation
- * Contains configuration values, timeouts, and app-specific constants
- */
 public class AppConstants {
     
-    // ==================== APP INFORMATION ====================
+    // APP INFORMATION 
     public static final String APP_NAME = "Modis";
     public static final String APP_PACKAGE = "com.modis";
     public static final String APP_ACTIVITY = "com.modis.MainActivity";
     public static final String APP_BUNDLE_ID = "com.modis.app";
     
-    // ==================== APPIUM SERVER CONFIGURATION ====================
+    // APPIUM SERVER CONFIGURATION 
     public static final String APPIUM_SERVER_URL = "http://127.0.0.1:4723";
-    /**
-     * Appium 2/3 uses the root ("/") endpoint and MUST NOT use "/wd/hub".
-     * Keep this empty to prevent legacy Appium 1.x path concatenation.
-     */
     public static final String APPIUM_SERVER_PATH = "";
     
-    // ==================== DEVICE CONFIGURATION ====================
+    // DEVICE CONFIGURATION 
     public static final String DEFAULT_PLATFORM = "Android";
     public static final String DEFAULT_DEVICE_NAME = "Android Emulator";
     public static final String DEFAULT_PLATFORM_VERSION = "11.0";
     public static final String DEFAULT_AUTOMATION_NAME = "UiAutomator2";
     
-    // ==================== TIMEOUT CONSTANTS (in seconds) ====================
+    // TIMEOUT CONSTANTS (in seconds) 
     public static final int IMPLICIT_WAIT = 10;
     public static final int EXPLICIT_WAIT = 20;
     public static final int SHORT_WAIT = 5;
@@ -36,7 +28,7 @@ public class AppConstants {
     public static final int NETWORK_WAIT = 3;
     public static final int ANIMATION_WAIT = 2;
 
-    // ==================== REACT NATIVE SPECIFIC TIMEOUTS ====================
+    // REACT NATIVE SPECIFIC TIMEOUTS 
     public static final int RN_BRIDGE_WAIT = 15; // React Native bridge ready timeout
     public static final int RN_APP_LAUNCH_TIMEOUT = 20; // React Native app launch timeout
     public static final int RN_ELEMENT_WAIT = 8; // React Native element wait timeout
@@ -44,7 +36,7 @@ public class AppConstants {
     public static final int RN_BRIDGE_RETRY_ATTEMPTS = 3; // Max retry attempts for RN bridge
     public static final int RN_BRIDGE_RETRY_DELAY_MS = 2000; // Delay between RN bridge retries
 
-    // ==================== UIAUTOMATOR2 STABILITY IMPROVEMENTS ====================
+    // UIAUTOMATOR2 STABILITY IMPROVEMENTS 
     // Element finding optimization
     public static final int MAX_ELEMENT_FIND_ATTEMPTS = 2;        // Reduced from 3
     public static final int ELEMENT_FIND_TIMEOUT_SEC = 10;         // Reduced from 15
@@ -65,58 +57,58 @@ public class AppConstants {
     public static final boolean SKIP_SCREENSHOT_ON_CRASH = true;   // Skip screenshot if UiAutomator2 crashed
     public static final boolean ENABLE_QUICK_APP_STATE_LOGGING = true;  // Use activity-only checks
 
-    // ==================== RETRY CONFIGURATION ====================
+    // RETRY CONFIGURATION 
     public static final int MAX_RETRY_COUNT = 3;
     public static final int RETRY_DELAY_MS = 1000;
     public static final int MAX_SCROLL_ATTEMPTS = 10;
     
-    // ==================== SCREENSHOT CONFIGURATION ====================
+    // SCREENSHOT CONFIGURATION 
     public static final String SCREENSHOT_DIR = "screenshots";
     public static final String SCREENSHOT_FORMAT = "png";
     public static final boolean TAKE_SCREENSHOT_ON_FAILURE = true;
     public static final boolean TAKE_SCREENSHOT_ON_PASS = false;
     
-    // ==================== LOGGING CONFIGURATION ====================
+    // LOGGING CONFIGURATION 
     public static final String LOG_DIR = "logs";
     public static final String LOG_FILE_NAME = "automation.log";
     public static final boolean ENABLE_DEBUG_LOGGING = true;
     public static final boolean LOG_PAGE_SOURCE_ON_FAILURE = false;
     
-    // ==================== REPORT CONFIGURATION ====================
+    // REPORT CONFIGURATION 
     public static final String REPORTS_DIR = "reports";
     public static final String EXTENT_REPORT_NAME = "ModisAutomationReport.html";
     public static final String ALLURE_RESULTS_DIR = "allure-results";
     
-    // ==================== TEST DATA CONFIGURATION ====================
+    // TEST DATA CONFIGURATION 
     public static final String TEST_DATA_DIR = "src/test/resources/testdata";
     public static final String TEST_USERS_FILE = "users.json";
     public static final String TEST_MESSAGES_FILE = "messages.json";
     
-    // ==================== GESTURE CONFIGURATION ====================
+    // GESTURE CONFIGURATION 
     public static final int SWIPE_DURATION_MS = 1000;
     public static final int TAP_DURATION_MS = 100;
     public static final int LONG_PRESS_DURATION_MS = 2000;
     public static final double SWIPE_START_PERCENTAGE = 0.8;
     public static final double SWIPE_END_PERCENTAGE = 0.2;
     
-    // ==================== PERFORMANCE THRESHOLDS ====================
+    // PERFORMANCE THRESHOLDS 
     public static final int MAX_SCREEN_LOAD_TIME_MS = 5000;
     public static final int MAX_API_RESPONSE_TIME_MS = 3000;
     public static final int MAX_IMAGE_LOAD_TIME_MS = 8000;
     
-    // ==================== NETWORK CONFIGURATION ====================
+    // NETWORK CONFIGURATION 
     public static final String DEFAULT_NETWORK_SPEED = "full";
     public static final boolean ENABLE_GPS = true;
     public static final boolean AUTO_GRANT_PERMISSIONS = true;
     public static final boolean AUTO_ACCEPT_ALERTS = true;
     
-    // ==================== TEST ENVIRONMENT ====================
+    // TEST ENVIRONMENT 
     public static final String DEFAULT_ENVIRONMENT = "dev";
     public static final String DEV_BASE_URL = "https://dev-api.modis.com";
     public static final String STAGING_BASE_URL = "https://staging-api.modis.com";
     public static final String PROD_BASE_URL = "https://api.modis.com";
     
-    // ==================== MODIS APP SPECIFIC CONSTANTS ====================
+    // MODIS APP SPECIFIC CONSTANTS 
     
     // Screen Names
     public static final String LOADING_SCREEN = "LoadingScreen";
@@ -175,7 +167,7 @@ public class AppConstants {
     public static final String THEME_DARK = "dark";
     public static final String THEME_SYSTEM = "system";
     
-    // ==================== VALIDATION CONSTANTS ====================
+    // VALIDATION CONSTANTS 
     
     // Username validation
     public static final int MIN_USERNAME_LENGTH = 3;
@@ -192,7 +184,7 @@ public class AppConstants {
     // Phone validation
     public static final String PHONE_PATTERN = "^[0-9]{10,15}$";
     
-    // ==================== ERROR MESSAGES ====================
+    // ERROR MESSAGES 
     public static final String ERROR_INVALID_CREDENTIALS = "Invalid username or password";
     public static final String ERROR_USERNAME_TAKEN = "Username is already taken";
     public static final String ERROR_EMAIL_TAKEN = "Email is already registered";
@@ -201,7 +193,7 @@ public class AppConstants {
     public static final String ERROR_PERMISSION_DENIED = "Permission denied";
     public static final String ERROR_CAMERA_NOT_AVAILABLE = "Camera not available";
     
-    // ==================== SUCCESS MESSAGES ====================
+    // SUCCESS MESSAGES 
     public static final String SUCCESS_LOGIN = "Login successful";
     public static final String SUCCESS_SIGNUP = "Account created successfully";
     public static final String SUCCESS_PHOTO_SENT = "Photo sent successfully";
@@ -209,7 +201,7 @@ public class AppConstants {
     public static final String SUCCESS_FRIEND_REQUEST_ACCEPTED = "Friend request accepted";
     public static final String SUCCESS_MESSAGE_SENT = "Message sent";
     
-    // ==================== TEST DATA CONSTANTS ====================
+    // TEST DATA CONSTANTS 
     
     // Test Users
     public static final String TEST_USER_USERNAME = "testuser";
@@ -229,7 +221,7 @@ public class AppConstants {
     public static final String TEST_SEARCH_QUERY = "test";
     public static final String TEST_SEARCH_NO_RESULTS = "xyzabc123";
     
-    // ==================== PLATFORM SPECIFIC CONSTANTS ====================
+    // PLATFORM SPECIFIC CONSTANTS 
     
     // Android specific
     public static final String ANDROID_SETTINGS_PACKAGE = "com.android.settings";
@@ -241,13 +233,7 @@ public class AppConstants {
     public static final String IOS_CAMERA_BUNDLE = "com.apple.camera";
     public static final String IOS_PHOTOS_BUNDLE = "com.apple.mobileslideshow";
     
-    // ==================== UTILITY METHODS ====================
-    
-    /**
-     * Get base URL based on environment
-     * @param environment Environment name
-     * @return Base URL for the environment
-     */
+    // UTILITY METHODS 
     public static String getBaseUrl(String environment) {
         switch (environment.toLowerCase()) {
             case "dev":
@@ -264,38 +250,17 @@ public class AppConstants {
         }
     }
     
-    /**
-     * Get app package based on platform
-     * @param platform Platform name (android/ios)
-     * @return App package/bundle ID
-     */
     public static String getAppPackage(String platform) {
         return platform.toLowerCase().equals("ios") ? APP_BUNDLE_ID : APP_PACKAGE;
     }
-    
-    /**
-     * Get platform-specific settings package
-     * @param platform Platform name (android/ios)
-     * @return Settings package/bundle ID
-     */
     public static String getSettingsPackage(String platform) {
         return platform.toLowerCase().equals("ios") ? IOS_SETTINGS_BUNDLE : ANDROID_SETTINGS_PACKAGE;
     }
     
-    /**
-     * Check if environment is production
-     * @param environment Environment name
-     * @return true if production, false otherwise
-     */
     public static boolean isProduction(String environment) {
         return "prod".equalsIgnoreCase(environment) || "production".equalsIgnoreCase(environment);
     }
     
-    /**
-     * Get timeout based on operation type
-     * @param operationType Type of operation (element, page, network, etc.)
-     * @return Timeout in seconds
-     */
     public static int getTimeout(String operationType) {
         switch (operationType.toLowerCase()) {
             case "element":
@@ -313,7 +278,6 @@ public class AppConstants {
         }
     }
     
-    // Private constructor to prevent instantiation
     private AppConstants() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }

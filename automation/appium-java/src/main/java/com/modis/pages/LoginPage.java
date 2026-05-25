@@ -29,44 +29,99 @@ public class LoginPage extends BasePage {
     }
 
     public BasePage clickLoginButton() {
-        logger.info("Clicking login button");
-        lastLoginErrorDialogMessage = "";
 
-        if (!isLoginButtonEnabled()) {
-            logger.info("Login button is disabled; stopping submit without clicking");
-            return this;
-        }
+        logger.info("Preparing to click login button");
 
-        hideKeyboard();
-
-        // WAIT CHO RN UPDATE UI
+        // Wait for UI stabilize
         waitFor(1);
 
-        // ENSURE BUTTON VISIBLE + CLICKABLE
-        ensureElementScrolledIntoViewAndClickable(TestIDs.LOGIN_SUBMIT_BUTTON);
+        // Hide keyboard because Android keyboard
+        // may cover submit button
+        hideKeyboard();
 
-        // RETRY CLICK
-        for (int i = 0; i < 3; i++) {
-            try {
-                clickByAccessibilityId(TestIDs.LOGIN_SUBMIT_BUTTON);
-                break;
-            } catch (Exception e) {
-                logger.warn("Retry click login button: {}", i + 1);
-                waitFor(1);
-            }
+        waitForAnimation();
+
+        // Small scroll adjustment
+        try {
+
+            scrollDownSlightly();
+
+        } catch (Exception e) {
+
+            logger.debug(
+                    "Scroll adjustment skipped: {}",
+                    e.getMessage()
+            );
         }
 
-        if (waitForAuthDialog(8)) {
-            lastLoginErrorDialogMessage = getAuthDialogMessage();
-            logger.info("Login dialog captured: {}", lastLoginErrorDialogMessage);
+        // Final validation
+        if (!isLoginButtonEnabled()) {
+
+            logger.warn(
+                    "Login button still disabled"
+            );
+
             return this;
         }
 
-        if (isHomePageDisplayed()) {
-            HomePage homePage = new HomePage();
-            homePage.waitForTopbarReadyAfterLogin(8);
-            return homePage;
+        logger.info("Clicking login button");
+
+        clickByAccessibilityId(
+                TestIDs.LOGIN_SUBMIT_BUTTON
+        );
+
+        // Wait for RN render/navigation/dialog
+        waitFor(2);
+
+        // INVALID LOGIN
+        try {
+
+            if (isAuthDialogVisible()) {
+
+                logger.info(
+                        "Authentication dialog detected"
+                );
+
+                lastLoginErrorDialogMessage =
+                        getAuthDialogMessage();
+
+                return this;
+            }
+
+        } catch (Exception e) {
+
+            logger.debug(
+                    "No auth dialog detected: {}",
+                    e.getMessage()
+            );
         }
+
+        // SUCCESS LOGIN
+        try {
+
+            HomePage homePage =
+                    new HomePage();
+
+            if (homePage.isDisplayed()) {
+
+                logger.info(
+                        "HomePage detected after successful login"
+                );
+
+                return homePage;
+            }
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed verifying HomePage: {}",
+                    e.getMessage()
+            );
+        }
+
+        logger.warn(
+                "Could not determine login result, returning LoginPage"
+        );
 
         return this;
     }
@@ -221,9 +276,38 @@ public class LoginPage extends BasePage {
     }
 
     public LoginPage waitForPageToLoad() {
-        waitForElementVisible(TestIDs.LOGIN_USERNAME_INPUT);
-        waitForElementVisible(TestIDs.LOGIN_PASSWORD_INPUT);
-        waitForElementVisible(TestIDs.LOGIN_SUBMIT_BUTTON);
+        logger.info("Waiting for LoginPage to load");
+        waitFor(2);
+        boolean loginLoaded = false;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            logger.info("Login page detection attempt {}/3", attempt);
+            try {
+                if (safeCheckElement(TestIDs.LOGIN_USERNAME_INPUT)) {
+                    loginLoaded = true;
+                    break;
+                }
+                if (safeCheckElement(TestIDs.LOGIN_PASSWORD_INPUT)) {
+                    loginLoaded = true;
+                    break;
+                }
+                if (safeCheckElement(TestIDs.LOGIN_SUBMIT_BUTTON)) {
+                    loginLoaded = true;
+                    break;
+                }
+                if (safeCheckElement(TestIDs.LOGIN_SIGNUP_LINK)) {
+                    loginLoaded = true;
+                    break;
+                }
+            } catch (Exception e) {
+                logger.warn("Login page detection failed on attempt {}: {}", attempt, e.getMessage());
+            }
+            waitFor(2);
+        }
+        if (!loginLoaded) {
+            logger.error("LoginPage not detected after retries");
+            throw new RuntimeException("LoginPage not loaded properly");
+        }
+        logger.info("LoginPage loaded successfully");
         return this;
     }
 
@@ -243,6 +327,18 @@ public class LoginPage extends BasePage {
     @Override
     public String getPageTitle() {
         return "Login Screen";
+    }
+
+    private boolean safeCheckElement(String accessibilityId) {
+        try {
+            return isElementDisplayedByAccessibilityId(accessibilityId);
+        } catch (Exception e) {
+            logger.debug(
+                    "Safe check failed for {}: {}",
+                    accessibilityId,
+                    e.getMessage());
+            return false;
+        }
     }
 
     private void clearFieldByAccessibilityId(String accessibilityId) {

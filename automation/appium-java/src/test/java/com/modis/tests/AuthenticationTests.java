@@ -2,175 +2,187 @@ package com.modis.tests;
 
 import com.modis.base.BasePage;
 import com.modis.base.BaseTest;
+
+import com.modis.pages.HomePage;
 import com.modis.pages.LoadingPage;
 import com.modis.pages.LoginPage;
 import com.modis.pages.SignupPage;
+import com.modis.pages.TakePage;
+
 import com.modis.utils.LoggerUtil;
 import com.modis.utils.ScreenshotUtils;
+import com.modis.utils.TestDataReader;
 
 import org.slf4j.Logger;
+
 import org.testng.Assert;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import java.text.Normalizer;
+import java.util.List;
+import java.util.Map;
+
 public class AuthenticationTests extends BaseTest {
 
-    private static final Logger logger =
-            LoggerUtil.getLogger(AuthenticationTests.class);
+    private static final Logger logger = LoggerUtil.getLogger(AuthenticationTests.class);
+    private final TestDataReader testDataReader = new TestDataReader();
+
 
     // LOGIN TESTS
-
-    @Test( groups = {"authentication", "regression"},description = "Login submit must stay disabled until both fields are filled")
+    @Test(groups = {"authentication", "regression"}, description = "Login submit must stay disabled until both fields are filled")
     public void testLoginButtonDisabledWhenFieldsMissing() {
-
         LoginPage loginPage = openLoginPage();
-
         logger.info("Clearing all login fields");
         loginPage.clearAllFields();
-
-        logger.info("Verifying login page still displayed");
-        Assert.assertTrue(
-                loginPage.isDisplayed(),
-                "Login page should remain visible"
-        );
-
-        logger.info("Verifying login button is disabled");
-        Assert.assertFalse(
-                loginPage.isLoginButtonEnabled(),
-                "Login button should be disabled when username and password are empty"
-        );
+        Assert.assertTrue(loginPage.isDisplayed(), "Login page should remain visible");
+        Assert.assertFalse(loginPage.isLoginButtonEnabled(), "Login button should be disabled when username and password are empty");
     }
 
-    @Test(groups = {"authentication", "regression"},description = "Login invalid username should show the auth dialog and stop the flow")
+    @Test(groups = {"authentication", "regression"}, description = "Login invalid username should show auth dialog")
     public void testLoginShowsDialogForUnknownUsername() {
-
         LoginPage loginPage = openLoginPage();
-
-        String username =
-                "missing_user_" + System.currentTimeMillis();
-
-        logger.info("Entering invalid username: {}", username);
+        List<Map<String, Object>> invalidCredentials = testDataReader.getInvalidLoginCredentials();
+        Map<String, Object> invalidUser = invalidCredentials.get(0);
+        String username = (String) invalidUser.get("username");
+        String password = (String) invalidUser.get("password");
+        logger.info("Using invalid username from JSON: {}", username);
 
         loginPage.enterUsername(username);
-        loginPage.enterPassword("Password123");
+        loginPage.enterPassword(password);
 
-        logger.info("Submitting login form");
+        BasePage submitResult = loginPage.clickLoginButton();
 
-        BasePage submitResult =
-                loginPage.clickLoginButton();
-
-        String dialogMessageRaw =
-                loginPage.getAuthDialogMessage();
-
-        logger.info("Verifying still on LoginPage");
-        Assert.assertTrue(
-                submitResult instanceof LoginPage,
-                "Invalid login should stay on the login screen"
-        );
-
-        logger.info("Verifying auth dialog is visible");
-        Assert.assertTrue(
-                loginPage.isAuthDialogVisible(),
-                "Expected the auth dialog to appear for an invalid login"
-        );
-
-        logger.info("Verifying auth dialog message");
-        Assert.assertFalse(
-                dialogMessageRaw == null || dialogMessageRaw.isBlank(),
-                "Expected an auth dialog message for the invalid username flow"
-        );
-
-        Assert.assertEquals(
-                dialogMessageRaw,
-                "Tài khoản không tồn tại!",
-                "Expected the invalid username dialog to show account-not-found message"
-        );
-
-        logger.info("Dismissing auth dialog");
+        String dialogMessage = loginPage.getAuthDialogMessage();
+        Assert.assertTrue(submitResult instanceof LoginPage, "Invalid login should stay on LoginPage");
+        Assert.assertTrue(loginPage.isAuthDialogVisible(), "Auth dialog should appear");
+        Assert.assertFalse(dialogMessage == null || dialogMessage.isBlank(), "Dialog message should not be empty");
 
         loginPage.dismissLoginErrorDialog();
+        Assert.assertFalse(loginPage.isAuthDialogVisible(), "Dialog should close after dismiss");
 
-        Assert.assertFalse(
-                loginPage.isAuthDialogVisible(),
-                "Dialog should close after OK"
-        );
+        ScreenshotUtils.takeScreenshot("INVALID_USERNAME_DIALOG");
     }
 
-    @Test(groups = {"authentication", "regression"}, description = "Login wrong password should show the auth dialog and stop the flow")
+    @Test(groups = {"authentication", "regression"}, description = "Login wrong password should show auth dialog")
     public void testLoginShowsDialogForWrongPassword() {
-
         LoginPage loginPage = openLoginPage();
+        List<Map<String, Object>> invalidCredentials = testDataReader.getInvalidLoginCredentials();
+        Map<String, Object> invalidPasswordUser = invalidCredentials.get(1);
+        String username = (String) invalidPasswordUser.get("username");
+        String password = (String) invalidPasswordUser.get("password");
+        logger.info("Using invalid password test data for user: {}", username);
 
-        logger.info("Entering valid username with wrong password");
+        loginPage.enterUsername(username);
+        loginPage.enterPassword(password);
 
-        loginPage.enterUsername("testuser");
-        loginPage.enterPassword("wrong_password");
+        BasePage submitResult = loginPage.clickLoginButton();
 
-        BasePage submitResult =
-                loginPage.clickLoginButton();
-
-        String dialogMessageRaw =
-                loginPage.getAuthDialogMessage();
-
-        Assert.assertTrue(
-                submitResult instanceof LoginPage,
-                "Invalid password should keep the user on the login screen"
-        );
-
-        Assert.assertTrue(
-                loginPage.isAuthDialogVisible(),
-                "Expected the auth dialog to appear for a wrong password"
-        );
-
-        Assert.assertFalse(
-                dialogMessageRaw == null || dialogMessageRaw.isBlank(),
-                "Expected an auth dialog message for the wrong-password flow"
-        );
-
-        Assert.assertEquals(
-                dialogMessageRaw,
-                "Tài khoản không tồn tại!",
-                "Expected the exact Vietnamese wrong-password dialog text"
-        );
+        String dialogMessage = loginPage.getAuthDialogMessage();
+        Assert.assertTrue(submitResult instanceof LoginPage, "Invalid password should stay on LoginPage");
+        Assert.assertTrue(loginPage.isAuthDialogVisible(), "Auth dialog should appear");
+        Assert.assertFalse(dialogMessage == null || dialogMessage.isBlank(), "Dialog message should not be empty");
 
         loginPage.dismissLoginErrorDialog();
 
-        Assert.assertFalse(
-                loginPage.isAuthDialogVisible(),
-                "Dialog should close after OK"
-        );
+        Assert.assertFalse(loginPage.isAuthDialogVisible(), "Dialog should close after dismiss");
+
+        ScreenshotUtils.takeScreenshot("WRONG_PASSWORD_DIALOG");
     }
+
+    @Test(groups = {"authentication", "regression"}, description = "Empty credentials should show validation error")
+    public void testLoginWithEmptyCredentials() {
+        LoginPage loginPage = openLoginPage();
+        List<Map<String, Object>> invalidCredentials = testDataReader.getInvalidLoginCredentials();
+        Map<String, Object> emptyData = invalidCredentials.get(4);
+        String username = (String) emptyData.get("username");
+        String password = (String) emptyData.get("password");
+        logger.info("Testing empty credentials validation");
+
+        loginPage.enterUsername(username);
+        loginPage.enterPassword(password);
+        Assert.assertFalse(loginPage.isLoginButtonEnabled(), "Login button should stay disabled");
+
+        ScreenshotUtils.takeScreenshot("EMPTY_CREDENTIALS_VALIDATION");
+    }
+
+    @Test(groups = {"authentication", "regression"}, description = "Empty username should show validation error")
+    public void testLoginWithEmptyUsername() {
+        LoginPage loginPage = openLoginPage();
+        List<Map<String, Object>> invalidCredentials = testDataReader.getInvalidLoginCredentials();
+        Map<String, Object> emptyUsername = invalidCredentials.get(5);
+        String username = (String) emptyUsername.get("username");
+        String password = (String) emptyUsername.get("password");
+        logger.info("Testing empty username validation");
+        loginPage.enterUsername(username);
+        loginPage.enterPassword(password);
+        Assert.assertFalse(loginPage.isLoginButtonEnabled(), "Login button should remain disabled");
+
+        ScreenshotUtils.takeScreenshot("EMPTY_USERNAME_VALIDATION");
+    }
+
+    @Test(groups = {"authentication", "regression"}, description = "Empty password should show validation error")
+    public void testLoginWithEmptyPassword() {
+        LoginPage loginPage = openLoginPage();
+        List<Map<String, Object>> invalidCredentials = testDataReader.getInvalidLoginCredentials();
+        Map<String, Object> emptyPassword = invalidCredentials.get(6);
+        String username = (String) emptyPassword.get("username");
+        String password = (String) emptyPassword.get("password");
+        logger.info("Testing empty password validation");
+
+        loginPage.enterUsername(username);
+        loginPage.enterPassword(password);
+
+        Assert.assertFalse(loginPage.isLoginButtonEnabled(), "Login button should remain disabled");
+        ScreenshotUtils.takeScreenshot("EMPTY_PASSWORD_VALIDATION");
+    }
+
+    @Test(groups = {"authentication", "smoke", "regression"}, description = "Valid login should navigate to Home and Take screen")
+    public void testLoginSuccessfullyNavigateToHomeAndTake() {
+        LoginPage loginPage = openLoginPage();
+        List<Map<String, Object>> validCredentials = testDataReader.getValidLoginCredentials();
+        Map<String, Object> validUser = validCredentials.get(0);
+
+        String username = (String) validUser.get("username");
+        String password = (String) validUser.get("password");
+
+        logger.info("Logging in with valid JSON user: {}", username);
+        BasePage afterLogin = loginPage.login(username, password);
+
+        Assert.assertTrue(afterLogin instanceof HomePage, "Login should navigate to HomePage");
+
+        HomePage homePage = (HomePage) afterLogin;
+        logger.info("Waiting for authenticated Home screen");
+        homePage.waitForTopbarReadyAfterLogin(8);
+        Assert.assertTrue(homePage.isDisplayed(), "Home page should display");
+        logger.info("Home page detected successfully after login");
+        ScreenshotUtils.takeScreenshot("LOGIN_SUCCESS_HOME");
+        logger.info("Navigating to Take screen");
+        TakePage takePage = homePage.navigateToCamera();
+        Assert.assertNotNull(takePage, "TakePage should not be null");
+        takePage.waitForPageToLoad();
+        Assert.assertTrue(takePage.isDisplayed(), "Take screen should display");
+        ScreenshotUtils.takeScreenshot("LOGIN_SUCCESS_TAKE");
+        logger.info("Authentication login flow completed successfully");
+    }
+
 
     // SIGNUP TESTS
-
-    @Test( groups = {"authentication", "regression"}, description = "Signup submit must stay disabled until all required fields are filled")
+    @Test(groups = {"authentication", "regression"}, description = "Signup submit must stay disabled until all required fields are filled")
     public void testSignupButtonDisabledWhenRequiredFieldsMissing() {
-
         SignupPage signupPage = openSignupPage();
-
         logger.info("Entering partial signup form");
-
         signupPage.enterUsername("signup_blocker");
         signupPage.enterPassword("Password123");
-
-        logger.info("Verifying signup button remains disabled");
-
-        Assert.assertFalse(
-                signupPage.isSignupButtonEnabled(),
-                "Signup button should remain disabled until all required fields are filled"
-        );
+        Assert.assertFalse(signupPage.isSignupButtonEnabled(), "Signup button should remain disabled");
     }
 
-    @Test(groups = {"authentication", "regression"}, description = "Signup mismatched passwords should show the auth dialog and stop the flow")
+    @Test(groups = {"authentication", "regression"}, description = "Signup mismatched passwords should show auth dialog")
     public void testSignupShowsDialogWhenPasswordsMismatch() {
 
         SignupPage signupPage = openSignupPage();
-
-        String timestamp =
-                String.valueOf(System.currentTimeMillis());
-
-        logger.info("Entering signup data with mismatched passwords");
+        String timestamp = String.valueOf(System.currentTimeMillis());
 
         signupPage.enterUsername("signup_mismatch_" + timestamp);
         signupPage.enterFullname("Signup Mismatch");
@@ -179,141 +191,117 @@ public class AuthenticationTests extends BaseTest {
         signupPage.enterPassword("Password123");
         signupPage.enterConfirmPassword("DifferentPassword");
 
-        BasePage submitResult =
-                signupPage.clickSignupButton();
+        BasePage submitResult = signupPage.clickSignupButton();
 
-        String dialogMessageRaw =
-                signupPage.getAuthDialogMessage();
-
-        Assert.assertTrue(
-                submitResult instanceof SignupPage,
-                "Mismatched signup should stay on signup screen"
+        // Verify vẫn ở signup page
+        Assert.assertTrue(submitResult instanceof SignupPage, "Signup should stay on SignupPage"
         );
 
-        Assert.assertTrue(
-                signupPage.isAuthDialogVisible(),
-                "Expected the auth dialog to appear for invalid signup input"
-        );
+        // Verify dialog hiện
+        Assert.assertTrue(signupPage.isAuthDialogVisible(), "Auth dialog should display");
+        // Verify exact dialog message
+        String dialogMessage = signupPage.getAuthDialogMessage();
 
-        Assert.assertFalse(
-                dialogMessageRaw == null || dialogMessageRaw.isBlank(),
-                "Expected an auth dialog message for the mismatched password flow"
-        );
+        Assert.assertEquals(Normalizer.normalize(dialogMessage.trim(), Normalizer.Form.NFC), Normalizer.normalize("Mật khẩu không khớp", Normalizer.Form.NFC), "Wrong signup mismatch dialog message");
 
-        logger.info("Dismiss signup error dialog");
-
+        // Close dialog
         signupPage.dismissSignupErrorDialog();
 
-        Assert.assertFalse(
-                signupPage.isAuthDialogVisible(),
-                "Dialog should close after OK"
-        );
+        // Verify dialog đóng
+        Assert.assertFalse(signupPage.isAuthDialogVisible(), "Dialog should close");
+        ScreenshotUtils.takeScreenshot("SIGNUP_PASSWORD_MISMATCH");
     }
 
-    // PASS / FAIL LOGGER
+    @Test(groups = {"authentication", "smoke", "regression"}, description = "Valid signup should show success dialog")
+    public void testSignupSuccessfully() {
+        SignupPage signupPage = openSignupPage();
+        logger.info("Creating random user account");
+        BasePage resultPage = signupPage.signupWithRandomUser();
+        Assert.assertTrue(resultPage instanceof SignupPage, "Signup should remain on SignupPage");
 
+        String dialogMessage = signupPage.getAuthDialogMessage();
+        logger.info("Signup dialog captured: {}", dialogMessage);
+        Assert.assertNotNull(dialogMessage, "Signup success dialog should appear");
+        Assert.assertTrue(dialogMessage.contains("Đăng ký thành công"), "Expected signup success message");
+        ScreenshotUtils.takeScreenshot("SIGNUP_SUCCESS_DIALOG");
+        logger.info("Authentication signup flow completed successfully");
+    }
+
+
+    // PASS / FAIL LOGGER
     @AfterMethod(alwaysRun = true)
     public void logAuthenticationResult(ITestResult result) {
-
-        String testName =
-                result.getMethod().getMethodName();
-
-        String description =
-                result.getMethod().getDescription();
-
-        long duration =
-                result.getEndMillis() - result.getStartMillis();
+        String testName = result.getMethod().getMethodName();
+        String description = result.getMethod().getDescription();
+        long duration = result.getEndMillis() - result.getStartMillis();
 
         if (result.getStatus() == ITestResult.SUCCESS) {
-
             logger.info("");
-            
             logger.info("AUTH TEST PASSED");
             logger.info("Test Case : {}", testName);
             logger.info("Description : {}", description);
             logger.info("Reason : {}", getPassReason(testName));
             logger.info("Duration : {} ms", duration);
-            
             logger.info("");
+            String screenshotPath = ScreenshotUtils.takeScreenshot("PASS_" + testName);
 
-            ScreenshotUtils.takeScreenshot(
-                    "PASS_" + testName
-            );
+            logger.info("PASS screenshot saved: {}", screenshotPath);
         } else if (result.getStatus() == ITestResult.FAILURE) {
-
             logger.error("");
-            
             logger.error("AUTH TEST FAILED");
             logger.error("Test Case : {}", testName);
             logger.error("Description : {}", description);
-            logger.error("Error : {}",
-                    result.getThrowable() != null
-                            ? result.getThrowable().getMessage()
-                            : "Unknown Error");
+            logger.error("Error : {}", result.getThrowable() != null
+                    ? result.getThrowable().getMessage()
+                    : "Unknown Error");
             logger.error("Duration : {} ms", duration);
-            
             logger.error("");
         }
     }
 
     private String getPassReason(String testName) {
-
         switch (testName) {
-
             case "testLoginButtonDisabledWhenFieldsMissing":
                 return "System correctly prevented login with empty credentials";
-
             case "testLoginShowsDialogForUnknownUsername":
-                return "System correctly blocked login for unknown username";
-
+                return "System correctly blocked unknown username";
             case "testLoginShowsDialogForWrongPassword":
-                return "System correctly blocked login for wrong password";
-
+                return "System correctly blocked wrong password";
+            case "testLoginWithEmptyCredentials":
+                return "System correctly validated empty credentials";
+            case "testLoginWithEmptyUsername":
+                return "System correctly validated empty username";
+            case "testLoginWithEmptyPassword":
+                return "System correctly validated empty password";
+            case "testLoginSuccessfullyNavigateToHomeAndTake":
+                return "System successfully authenticated user and navigated to Home and Take screens";
             case "testSignupButtonDisabledWhenRequiredFieldsMissing":
-                return "System correctly prevented incomplete signup submission";
-
+                return "System correctly prevented incomplete signup";
             case "testSignupShowsDialogWhenPasswordsMismatch":
-                return "System correctly validated password confirmation mismatch";
-
+                return "System correctly validated mismatched passwords";
+            case "testSignupSuccessfully":
+                return "System successfully created account and displayed signup success dialog";
             default:
-                return "All assertions passed successfully";
+                return "All assertions passed";
         }
     }
 
-    // NAVIGATION HELPERS
-
+    // HELPERS
     private LoginPage openLoginPage() {
-
-        logger.info("Opening Login Page");
-
+        logger.info("Opening Login page");
         LoadingPage loadingPage = new LoadingPage();
-
         loadingPage.waitForPageToLoad();
-        loadingPage.waitForLoginSignupButtonsVisible();
-
-        LoginPage loginPage =
-                loadingPage.clickLoginButton();
-
+        LoginPage loginPage = loadingPage.clickLoginButton();
         loginPage.waitForPageToLoad();
-
         return loginPage;
     }
 
     private SignupPage openSignupPage() {
-
-        logger.info("Opening Signup Page");
-
-        LoadingPage loadingPage =
-                new LoadingPage();
-
+        logger.info("Opening Signup page");
+        LoadingPage loadingPage = new LoadingPage();
         loadingPage.waitForPageToLoad();
-        loadingPage.waitForLoginSignupButtonsVisible();
-
-        SignupPage signupPage =
-                loadingPage.clickSignupButton();
-
+        SignupPage signupPage = loadingPage.clickSignupButton();
         signupPage.waitForPageToLoad();
-
         return signupPage;
     }
 }

@@ -14,8 +14,12 @@ import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AppiumFieldDecorator;
 import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Pause;
+import org.openqa.selenium.interactions.PointerInput;
+import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.PageFactory;
 import org.slf4j.Logger;
 
@@ -24,10 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Base Page class for all page objects
- * Contains common methods and utilities for page interactions
- */
 public abstract class BasePage {
 
     protected final Logger logger = LoggerUtil.getLogger(this.getClass());
@@ -39,52 +39,40 @@ public abstract class BasePage {
         this.driver = DriverManager.getDriver();
         this.waitUtils = new WaitUtils(driver);
         this.gestureUtils = new GestureUtils();
-        // IMPORTANT:
-        // Do NOT call driver.manage().window().getSize() here.
-        // On some real devices / UiAutomator2 states this can hang and break the test run.
         PageFactory.initElements(new AppiumFieldDecorator(driver, Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT)), this);
         logger.info("Initialized page: {}", this.getClass().getSimpleName());
     }
 
-    /**
-     * Screen size accessor (lazy + capability-first via GestureUtils)
-     */
     protected org.openqa.selenium.Dimension getScreenSize() {
         return gestureUtils.getScreenSize();
     }
 
-    // ==================== ELEMENT FINDING METHODS ====================
+    // ELEMENT FINDING METHODS
 
-    /**
-     * Find element by accessibility ID with React Native testID fallback
-     *
-     * @param accessibilityId The accessibility ID or testID
-     * @return WebElement
-     */
     protected WebElement findByAccessibilityId(String accessibilityId) {
         logger.debug("Finding element by accessibility ID: {}", accessibilityId);
 
         // Overall cap to avoid "hang forever" when locator is wrong or accessibility is inconsistent.
         final long deadlineNs = System.nanoTime() + Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT).toNanos();
 
-        // Strategy 1: accessibility id (Android -> content-desc). Preferred.
+        // accessibility id (Android -> content-desc). Preferred.
         WebElement element = tryWaitVisible(AppiumBy.accessibilityId(accessibilityId), deadlineNs, 5);
         if (element != null) return element;
 
-        // Strategy 2: Android resource-id direct (some RN components expose testID as resource-id).
+        // Android resource-id direct (some RN components expose testID as resource-id).
         element = tryWaitVisible(AppiumBy.id(accessibilityId), deadlineNs, 3);
         if (element != null) return element;
 
-        // Strategy 3: UiAutomator resourceIdMatches (match package prefix)
+        // UiAutomator resourceIdMatches (match package prefix)
         String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
         element = tryWaitVisible(AppiumBy.androidUIAutomator(uiSelector), deadlineNs, 3);
         if (element != null) return element;
 
-        // Strategy 4: XPath resource-id contains (last resort)
+        //  XPath resource-id contains (last resort)
         element = tryWaitVisible(By.xpath(String.format("//*[contains(@resource-id,'%s')]", accessibilityId)), deadlineNs, 2);
         if (element != null) return element;
 
-        // Strategy 5: XPath content-desc exact (last resort)
+        // XPath content-desc exact (last resort)
         element = tryWaitVisible(By.xpath(String.format("//*[@content-desc='%s']", accessibilityId)), deadlineNs, 2);
         if (element != null) return element;
 
@@ -108,14 +96,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * React Native + UiAutomator2 stability helper:
-     * Use bounded polling with DriverManager.safelyFindElement() instead of WebDriverWait for the core lookup.
-     * <p>
-     * Why:
-     * - When UiAutomator2 gets into a bad state, WebDriverWait can amplify the problem (each poll becomes a long proxy timeout)
-     * - safelyFindElement() can detect transport errors and perform a controlled session recovery
-     */
     private WebElement pollForVisible(By locator, int timeoutSec) {
         long endNs = System.nanoTime() + Duration.ofSeconds(timeoutSec).toNanos();
         RuntimeException last = null;
@@ -142,12 +122,6 @@ public abstract class BasePage {
         return null;
     }
 
-    /**
-     * Find elements by accessibility ID
-     *
-     * @param accessibilityId The accessibility ID
-     * @return List of WebElements
-     */
     protected List<WebElement> findElementsByAccessibilityId(String accessibilityId) {
         logger.debug("Finding elements by accessibility ID: {}", accessibilityId);
         try {
@@ -161,70 +135,34 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Find element by XPath (use sparingly)
-     *
-     * @param xpath The XPath expression
-     * @return WebElement
-     */
     protected WebElement findByXPath(String xpath) {
         logger.debug("Finding element by XPath: {}", xpath);
         return waitUtils.waitForElementToBeVisible(By.xpath(xpath));
     }
 
-    /**
-     * Find element by ID
-     *
-     * @param id The element ID
-     * @return WebElement
-     */
     protected WebElement findById(String id) {
         logger.debug("Finding element by ID: {}", id);
         return waitUtils.waitForElementToBeVisible(By.id(id));
     }
 
-    /**
-     * Find element by class name
-     *
-     * @param className The class name
-     * @return WebElement
-     */
     protected WebElement findByClassName(String className) {
         logger.debug("Finding element by class name: {}", className);
         return waitUtils.waitForElementToBeVisible(By.className(className));
     }
 
-    /**
-     * Find element by text content
-     *
-     * @param text The text to search for
-     * @return WebElement
-     */
     protected WebElement findByText(String text) {
         logger.debug("Finding element by text: {}", text);
         String xpath = String.format("//*[@text='%s' or @content-desc='%s']", text, text);
         return waitUtils.waitForElementToBeVisible(By.xpath(xpath));
     }
 
-    /**
-     * Find element by partial text content
-     *
-     * @param partialText The partial text to search for
-     * @return WebElement
-     */
     protected WebElement findByPartialText(String partialText) {
         logger.debug("Finding element by partial text: {}", partialText);
         String xpath = String.format("//*[contains(@text,'%s') or contains(@content-desc,'%s')]", partialText, partialText);
         return waitUtils.waitForElementToBeVisible(By.xpath(xpath));
     }
 
-    // ==================== ELEMENT INTERACTION METHODS ====================
-
-    /**
-     * Click on element with retry mechanism
-     *
-     * @param element The element to click
-     */
+    // ELEMENT INTERACTION METHODS
     protected void clickElement(WebElement element) {
         if (element == null) {
             throw new RuntimeException("Click target is null");
@@ -239,11 +177,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Click on element by accessibility ID
-     *
-     * @param accessibilityId The accessibility ID
-     */
     protected void clickByAccessibilityId(String accessibilityId) {
         for (int attempt = 1; attempt <= 2; attempt++) {
             try {
@@ -263,12 +196,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Enter text into input field
-     *
-     * @param element The input element
-     * @param text    The text to enter
-     */
     protected void enterText(WebElement element, String text) {
         if (element == null) {
             throw new RuntimeException("Text input element is null");
@@ -284,12 +211,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Enter text by accessibility ID
-     *
-     * @param accessibilityId The accessibility ID
-     * @param text            The text to enter
-     */
     protected void enterTextByAccessibilityId(String accessibilityId, String text) {
         for (int attempt = 1; attempt <= 2; attempt++) {
             try {
@@ -309,12 +230,43 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Get text from element
-     *
-     * @param element The element
-     * @return Text content
-     */
+    protected void sleep(long milliseconds) {
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    protected void scrollDownSlightly() {
+        Dimension size = driver.manage().window().getSize();
+        int startX = size.width / 2;
+        int startY = (int) (size.height * 0.70);
+        int endY = (int) (size.height * 0.55);
+
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence swipe = new Sequence(finger, 1);
+        swipe.addAction(finger.createPointerMove(
+                Duration.ZERO,
+                PointerInput.Origin.viewport(),
+                startX,
+                startY));
+
+        swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        swipe.addAction(new Pause(finger, Duration.ofMillis(150)));
+        swipe.addAction(finger.createPointerMove(
+                Duration.ofMillis(350),
+                PointerInput.Origin.viewport(),
+                startX,
+                endY));
+
+        swipe.addAction(finger.createPointerUp(
+                PointerInput.MouseButton.LEFT.asArg()));
+
+        driver.perform(List.of(swipe));
+        logger.info("Performed slight downward scroll adjustment");
+    }
+
     protected String getText(WebElement element) {
         waitUtils.waitForElementToBeVisible(element);
         String text = element.getText();
@@ -328,23 +280,11 @@ public abstract class BasePage {
         return text != null ? text : "";
     }
 
-    /**
-     * Get text by accessibility ID
-     *
-     * @param accessibilityId The accessibility ID
-     * @return Text content
-     */
     protected String getTextByAccessibilityId(String accessibilityId) {
         WebElement element = findByAccessibilityId(accessibilityId);
         return getText(element);
     }
 
-    /**
-     * Check if element is displayed
-     *
-     * @param element The element
-     * @return true if displayed, false otherwise
-     */
     protected boolean isElementDisplayed(WebElement element) {
         try {
             return element.isDisplayed();
@@ -354,12 +294,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Check if element exists by accessibility ID with React Native testID fallback
-     *
-     * @param accessibilityId The accessibility ID or testID
-     * @return true if exists, false otherwise
-     */
     protected boolean isElementDisplayedByAccessibilityId(String accessibilityId) {
         // Keep this check ultra-fast & robust.
         // It is called frequently for state detection (Loading/Login/Home) so it must not perform expensive waits.
@@ -393,12 +327,6 @@ public abstract class BasePage {
         return false;
     }
 
-    /**
-     * Check if element is enabled
-     *
-     * @param element The element
-     * @return true if enabled, false otherwise
-     */
     protected boolean isElementEnabled(WebElement element) {
         try {
             waitUtils.waitForElementToBeVisible(element);
@@ -409,196 +337,105 @@ public abstract class BasePage {
         }
     }
 
-    // ==================== SCROLL GESTURES ====================
-
-    /**
-     * Scroll to element by text
-     *
-     * @param text Text to scroll to
-     * @return WebElement if found
-     */
+    // SCROLL GESTURES
     protected WebElement scrollToElementByText(String text) {
         logger.info("Scrolling to element with text: {}", text);
         return gestureUtils.scrollToElementByText(text);
     }
 
-    /**
-     * Scroll to element by accessibility ID
-     *
-     * @param accessibilityId The accessibility ID
-     * @return WebElement if found
-     */
     protected WebElement scrollToElementByAccessibilityId(String accessibilityId) {
         logger.info("Scrolling to element with accessibility ID: {}", accessibilityId);
         return gestureUtils.scrollToElementByAccessibilityId(accessibilityId);
     }
 
-    /**
-     * Scroll down on screen
-     */
     protected void scrollDownBase() {
         gestureUtils.scrollDown();
         logger.info("Scrolled down");
     }
 
-    /**
-     * Scroll up on screen
-     */
     protected void scrollUpBase() {
         gestureUtils.scrollUp();
         logger.info("Scrolled up");
     }
 
-    /**
-     * Scroll to top of screen
-     */
     protected void scrollToTopBase() {
         gestureUtils.scrollToTop();
         logger.info("Scrolled to top");
     }
 
-    /**
-     * Scroll to bottom of screen
-     */
     protected void scrollToBottomBase() {
         gestureUtils.scrollToBottom();
         logger.info("Scrolled to bottom");
     }
 
-    /**
-     * Scroll within a specific element
-     *
-     * @param scrollableElement The scrollable container element
-     * @param direction         Direction to scroll (up/down)
-     */
     protected void scrollInElement(WebElement scrollableElement, String direction) {
         gestureUtils.scrollInElement(scrollableElement, direction);
         logger.debug("Scrolled {} in element", direction);
     }
 
-    /**
-     * Pull to refresh gesture
-     */
     protected void pullToRefresh() {
         gestureUtils.pullToRefresh();
         logger.info("Performed pull to refresh");
     }
 
-    // ==================== GESTURE METHODS ====================
+    // GESTURE METHODS
 
-    /**
-     * Swipe left on the screen
-     */
     protected void swipeLeft() {
         gestureUtils.swipeLeft();
         logger.info("Performed swipe left gesture");
     }
 
-    /**
-     * Swipe right on the screen
-     */
     protected void swipeRight() {
         gestureUtils.swipeRight();
         logger.info("Performed swipe right gesture");
     }
 
-    /**
-     * Swipe up on the screen
-     */
     protected void swipeUp() {
         gestureUtils.swipeUp();
         logger.info("Performed swipe up gesture");
     }
 
-    /**
-     * Swipe down on the screen
-     */
+
     protected void swipeDown() {
         gestureUtils.swipeDown();
         logger.info("Performed swipe down gesture");
     }
 
-    /**
-     * Swipe on specific element
-     *
-     * @param element   Element to swipe on
-     * @param direction Direction (left, right, up, down)
-     */
     protected void swipeOnElement(WebElement element, String direction) {
         gestureUtils.swipeOnElement(element, direction);
         logger.info("Performed swipe {} on element", direction);
     }
 
-    /**
-     * Long press on element
-     *
-     * @param element    Element to long press
-     * @param durationMs Duration in milliseconds
-     */
     protected void longPressElement(WebElement element, int durationMs) {
         gestureUtils.longPressElement(element, durationMs);
         logger.info("Long pressed element for {}ms", durationMs);
     }
 
-    /**
-     * Tap at specific coordinates
-     *
-     * @param x X coordinate
-     * @param y Y coordinate
-     */
     protected void tapAtCoordinates(int x, int y) {
         gestureUtils.tapAtCoordinates(x, y);
         logger.debug("Tapped at coordinates: ({}, {})", x, y);
     }
 
-    /**
-     * Tap on element
-     *
-     * @param element Element to tap
-     */
     protected void tapElement(WebElement element) {
         gestureUtils.tapElement(element);
         logger.debug("Tapped element");
     }
 
-    /**
-     * Pinch out (zoom in) on element
-     *
-     * @param element Element to pinch on
-     */
     protected void pinchOut(WebElement element) {
         gestureUtils.pinchOut(element);
         logger.info("Performed pinch out on element");
     }
 
-    /**
-     * Pinch in (zoom out) on element
-     *
-     * @param element Element to pinch on
-     */
     protected void pinchIn(WebElement element) {
         gestureUtils.pinchIn(element);
         logger.info("Performed pinch in on element");
     }
 
-    // ==================== WAIT METHODS ====================
-
-    /**
-     * Wait for element to be visible
-     *
-     * @param accessibilityId The accessibility ID
-     * @return WebElement
-     */
+    // WAIT METHODS
     protected WebElement waitForElementVisible(String accessibilityId) {
         return findByAccessibilityId(accessibilityId);
     }
 
-    /**
-     * Wait for element to be clickable
-     *
-     * @param accessibilityId The accessibility ID
-     * @return WebElement
-     */
     protected WebElement waitForElementClickable(String accessibilityId) {
         // For clickability we still use multi-strategy, but keep bounded overall.
         final long deadlineNs = System.nanoTime() + Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT).toNanos();
@@ -629,11 +466,7 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Wait for element to disappear
-     *
-     * @param accessibilityId The accessibility ID
-     */
+
     protected void waitForElementToDisappear(String accessibilityId) {
         waitUtils.waitForElementToDisappear(AppiumBy.accessibilityId(accessibilityId));
         if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
@@ -641,12 +474,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Wait for text to be present in element
-     *
-     * @param accessibilityId The accessibility ID
-     * @param text            The expected text
-     */
     protected void waitForTextInElement(String accessibilityId, String text) {
         try {
             waitUtils.waitForTextToBePresentInElement(AppiumBy.accessibilityId(accessibilityId), text);
@@ -660,31 +487,17 @@ public abstract class BasePage {
         }
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Wait for animation to complete
-     */
+    // UTILITY METHODS
     protected void waitForAnimation() {
         waitUtils.waitForAnimation();
         logger.debug("Animation wait completed");
     }
 
-    /**
-     * Take screenshot
-     *
-     * @param screenshotName The name for the screenshot
-     */
     protected void takeScreenshot(String screenshotName) {
         ScreenshotUtils.takeScreenshot(screenshotName);
         logger.info("Screenshot taken: {}", screenshotName);
     }
 
-    /**
-     * Wait for specified duration
-     *
-     * @param seconds Duration in seconds
-     */
     protected void waitFor(int seconds) {
         try {
             Thread.sleep(seconds * 1000L);
@@ -695,9 +508,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Hide keyboard if visible
-     */
     protected void hideKeyboard() {
         try {
             driver.executeScript("mobile: hideKeyboard");
@@ -743,11 +553,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Get current package (Android only)
-     *
-     * @return Current package name or empty string
-     */
     protected String getCurrentPackage() {
         try {
             if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
@@ -761,11 +566,6 @@ public abstract class BasePage {
         return "";
     }
 
-    /**
-     * Get current activity (Android only)
-     *
-     * @return Current activity name or empty string
-     */
     protected String getCurrentActivity() {
         try {
             if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
@@ -779,12 +579,6 @@ public abstract class BasePage {
         return "";
     }
 
-    /**
-     * Verify page is loaded by checking key element
-     *
-     * @param keyElementAccessibilityId The accessibility ID of key element
-     * @return true if page is loaded, false otherwise
-     */
     protected boolean isPageLoaded(String keyElementAccessibilityId) {
         try {
             waitForElementVisible(keyElementAccessibilityId);
@@ -796,17 +590,11 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Refresh the current page/screen
-     */
     protected void refreshPage() {
         logger.info("Refreshing page");
         gestureUtils.pullToRefresh();
     }
 
-    /**
-     * Go back using device back button (Android)
-     */
     protected void goBack() {
         try {
             if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
@@ -818,14 +606,7 @@ public abstract class BasePage {
         }
     }
 
-    // ==================== ANDROID SCROLL ENHANCEMENT METHODS ====================
-
-    /**
-     * Enhanced method to ensure element is scrolled into view and clickable for Android
-     * Handles keyboard interference, viewport issues, and animation delays
-     *
-     * @param accessibilityId The accessibility ID of the element
-     */
+    // ANDROID SCROLL ENHANCEMENT METHODS
     protected void ensureElementScrolledIntoViewAndClickable(String accessibilityId) {
         logger.info("Ensuring element '{}' is scrolled into view and clickable", accessibilityId);
 
@@ -881,12 +662,6 @@ public abstract class BasePage {
         }
     }
 
-    /**
-     * Check if element is both displayed and clickable
-     *
-     * @param accessibilityId The accessibility ID
-     * @return true if element is displayed and clickable
-     */
     private boolean isElementDisplayedAndClickable(String accessibilityId) {
         try {
             List<WebElement> elements = DriverManager.safelyFindElements(AppiumBy.accessibilityId(accessibilityId));
@@ -971,19 +746,7 @@ public abstract class BasePage {
         );
     }
 
-    /**
-     * Abstract method to verify page is displayed
-     * Must be implemented by each page class
-     *
-     * @return true if page is displayed, false otherwise
-     */
     public abstract boolean isDisplayed();
 
-    /**
-     * Abstract method to get page title/identifier
-     * Must be implemented by each page class
-     *
-     * @return Page title or identifier
-     */
     public abstract String getPageTitle();
 }

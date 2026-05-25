@@ -6,10 +6,6 @@ import org.slf4j.Logger;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
-/**
- * TestNG listener for handling test events
- * Provides logging, screenshots, and reporting functionality
- */
 public class TestListener implements ITestListener {
     
     private static final Logger logger = LoggerUtil.getLogger(TestListener.class);
@@ -102,11 +98,7 @@ public class TestListener implements ITestListener {
         // Handle as partial success
         onTestSuccess(result);
     }
-    
-    /**
-     * Check if screenshot should be taken on test success
-     * @return true if screenshot should be taken, false otherwise
-     */
+
     private boolean shouldTakeScreenshotOnSuccess() {
         String takeScreenshotOnPass = System.getProperty("screenshot.onPass", "true");
         return Boolean.parseBoolean(takeScreenshotOnPass);
