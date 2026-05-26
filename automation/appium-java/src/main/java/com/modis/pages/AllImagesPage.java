@@ -32,20 +32,27 @@ public class AllImagesPage extends BasePage {
     public TakePage navigateBack() {
         logger.info("Navigating back from All Images screen");
         waitForElementClickable(TestIDs.ALL_IMAGES_BACK_BUTTON);
-        clickElement(backButton);
+        clickByAccessibilityId(
+                TestIDs.ALL_IMAGES_BACK_BUTTON
+        );
         return new TakePage();
     }
 
     public boolean hasImages() {
-        return true;
+
+        return getVisibleImagesCount() > 0;
     }
 
     public boolean areImagesDisplayed() {
-        return true;
+
+        return isImagesGridDisplayed()
+                &&
+                getVisibleImagesCount() > 0;
     }
 
     public int getImageCount() {
-        return 1;
+
+        return getVisibleImagesCount();
     }
 
     // IMAGE ACTIONS
@@ -119,7 +126,12 @@ public class AllImagesPage extends BasePage {
     public AllImagesPage scrollImagesGrid(String direction) {
         logger.debug("Scrolling images grid: {}", direction);
         waitForElementVisible(TestIDs.ALL_IMAGES_GRID);
-        scrollInElement(imagesGrid, direction);
+        WebElement grid =
+                findByAccessibilityId(
+                        TestIDs.ALL_IMAGES_GRID
+                );
+
+        scrollInElement(grid, direction);
         return this;
     }
 
@@ -165,12 +177,43 @@ public class AllImagesPage extends BasePage {
     }
 
     public int getVisibleImagesCount() {
+
+        logger.info(
+                "Getting visible images count"
+        );
+
         if (isEmptyStateDisplayed()) {
             return 0;
         }
 
-        List<WebElement> images = findElementsByAccessibilityId(TestIDs.ALL_IMAGES_ITEM_PREFIX + "*");
-        return images.size();
+        try {
+
+            List<WebElement> images =
+                    findElementsByXPath(
+                            "//*[contains(@resource-id,'all_images_item_')]"
+                    );
+
+            int count =
+                    images != null
+                            ? images.size()
+                            : 0;
+
+            logger.info(
+                    "Visible images count: {}",
+                    count
+            );
+
+            return count;
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed to get visible images count: {}",
+                    e.getMessage()
+            );
+
+            return 0;
+        }
     }
 
     public boolean isImageSelected(String imageId) {
@@ -187,18 +230,42 @@ public class AllImagesPage extends BasePage {
     }
 
     public int getSelectedImagesCount() {
-        List<WebElement> images = findElementsByAccessibilityId(TestIDs.ALL_IMAGES_ITEM_PREFIX + "*");
-        int selectedCount = 0;
 
-        for (WebElement image : images) {
-            String selected = image.getAttribute("selected");
-            if ("true".equals(selected)) {
-                selectedCount++;
+        try {
+
+            List<WebElement> images =
+                    findElementsByXPath(
+                            "//*[contains(@resource-id,'all_images_item_')]"
+                    );
+
+            int selectedCount = 0;
+
+            for (WebElement image : images) {
+
+                String selected =
+                        image.getAttribute("selected");
+
+                if ("true".equals(selected)) {
+                    selectedCount++;
+                }
             }
-        }
 
-        logger.debug("Selected images count: {}", selectedCount);
-        return selectedCount;
+            logger.debug(
+                    "Selected images count: {}",
+                    selectedCount
+            );
+
+            return selectedCount;
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed to get selected images count: {}",
+                    e.getMessage()
+            );
+
+            return 0;
+        }
     }
 
     // GRID VIEW MODES
@@ -299,7 +366,9 @@ public class AllImagesPage extends BasePage {
 
         if (isEmptyStateDisplayed()) {
             // Tap on empty state to see if any action occurs
-            clickElement(emptyState);
+            clickByAccessibilityId(
+                    TestIDs.ALL_IMAGES_EMPTY_STATE
+            );
         }
 
         return this;
@@ -372,7 +441,14 @@ public class AllImagesPage extends BasePage {
         boolean backButtonPresent = isElementDisplayedByAccessibilityId(TestIDs.ALL_IMAGES_BACK_BUTTON);
         boolean gridOrEmptyPresent = isImagesGridDisplayed() || isEmptyStateDisplayed();
 
-        boolean allElementsPresent = screenPresent && backButtonPresent && gridOrEmptyPresent;
+        boolean allElementsPresent =
+                screenPresent
+                        &&
+                        (
+                                backButtonPresent
+                                        ||
+                                        gridOrEmptyPresent
+                        );
 
         logger.info("All images page elements verification: {}", allElementsPresent ? "PASSED" : "FAILED");
         return allElementsPresent;

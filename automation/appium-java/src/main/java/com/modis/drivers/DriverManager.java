@@ -189,7 +189,7 @@ public class DriverManager {
         options.setCapability("adbExecTimeout", ConfigReader.getIntProperty("android.adbExecTimeout", 60000));
 
         // Element finding timeouts - Optimized for React Native
-        options.setCapability("waitForIdleTimeout", 0); // Critical: disable idle wait for RN
+        options.setCapability("waitForIdleTimeout", 50); // Critical: disable idle wait for RN
         options.setCapability("waitForSelectorTimeout", ConfigReader.getIntProperty("android.waitForSelectorTimeout", 3000)); // Reduced to 3s
         options.setCapability("actionAcknowledgmentTimeout", ConfigReader.getIntProperty("android.actionAcknowledgmentTimeout", 3000)); // Reduced to 3s
         options.setCapability("scrollAcknowledgmentTimeout", ConfigReader.getIntProperty("android.scrollAcknowledgmentTimeout", 500));
@@ -207,7 +207,7 @@ public class DriverManager {
 
         // Optional: disable Android window animations to reduce RN transition flakiness
         options.setCapability("disableWindowAnimation",
-                ConfigReader.getBooleanProperty("android.disableWindowAnimation", true));
+                ConfigReader.getBooleanProperty("android.disableWindowAnimation", false));
 
         // Logging
         options.setCapability("enablePerformanceLogging", ConfigReader.getBooleanProperty("android.enablePerformanceLogging", false));
@@ -258,7 +258,7 @@ public class DriverManager {
         if (appiumDriver instanceof AndroidDriver) {
             try {
                 HasSettings settings = (HasSettings) appiumDriver;
-                settings.setSetting(Setting.WAIT_FOR_IDLE_TIMEOUT, 0);
+                settings.setSetting(Setting.WAIT_FOR_IDLE_TIMEOUT, 50);
                 boolean debugMode = ConfigReader.getBooleanProperty("android.debugMode", false);
                 boolean ignoreUnimportantViews = ConfigReader.getBooleanProperty("android.ignoreUnimportantViews", !debugMode);
                 settings.setSetting(Setting.IGNORE_UNIMPORTANT_VIEWS, ignoreUnimportantViews);

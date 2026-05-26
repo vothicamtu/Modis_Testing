@@ -40,7 +40,11 @@ public class ConversationPage extends BasePage {
     public MessagePage navigateBack() {
         logger.info("Navigating back from conversation screen");
         waitForElementClickable(TestIDs.CONVERSATION_BACK_BUTTON);
-        clickElement(backButton);
+        clickByAccessibilityId(
+                TestIDs.CONVERSATION_BACK_BUTTON
+        );
+
+        waitForAnimation();
         return new MessagePage();
     }
 

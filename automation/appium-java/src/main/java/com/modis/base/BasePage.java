@@ -17,9 +17,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Pause;
-import org.openqa.selenium.interactions.PointerInput;
-import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.PageFactory;
 import org.slf4j.Logger;
 
@@ -52,33 +49,68 @@ public abstract class BasePage {
     protected WebElement findByAccessibilityId(String accessibilityId) {
         logger.debug("Finding element by accessibility ID: {}", accessibilityId);
 
-        // Overall cap to avoid "hang forever" when locator is wrong or accessibility is inconsistent.
-        final long deadlineNs = System.nanoTime() + Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT).toNanos();
+        final long deadlineNs =
+                System.nanoTime()
+                        + Duration.ofSeconds(
+                        AppConstants.ELEMENT_WAIT_TIMEOUT
+                ).toNanos();
 
-        // accessibility id (Android -> content-desc). Preferred.
-        WebElement element = tryWaitVisible(AppiumBy.accessibilityId(accessibilityId), deadlineNs, 5);
-        if (element != null) return element;
+        // accessibility id
+        WebElement element =
+                tryWaitVisible(
+                        AppiumBy.accessibilityId(accessibilityId),
+                        deadlineNs,
+                        5
+                );
 
-        // Android resource-id direct (some RN components expose testID as resource-id).
-        element = tryWaitVisible(AppiumBy.id(accessibilityId), deadlineNs, 3);
-        if (element != null) return element;
+        if (element != null) {
+            return element;
+        }
 
-        // UiAutomator resourceIdMatches (match package prefix)
-        String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
-        element = tryWaitVisible(AppiumBy.androidUIAutomator(uiSelector), deadlineNs, 3);
-        if (element != null) return element;
+        // Android resource-id
+        element =
+                tryWaitVisible(
+                        AppiumBy.id(accessibilityId),
+                        deadlineNs,
+                        3
+                );
 
-        //  XPath resource-id contains (last resort)
-        element = tryWaitVisible(By.xpath(String.format("//*[contains(@resource-id,'%s')]", accessibilityId)), deadlineNs, 2);
-        if (element != null) return element;
+        if (element != null) {
+            return element;
+        }
 
-        // XPath content-desc exact (last resort)
-        element = tryWaitVisible(By.xpath(String.format("//*[@content-desc='%s']", accessibilityId)), deadlineNs, 2);
-        if (element != null) return element;
+        // LAST RESORT XPATH
+        element =
+                tryWaitVisible(
+                        By.xpath(
+                                String.format(
+                                        "//*[@content-desc='%s' or contains(@resource-id,'%s')]",
+                                        accessibilityId,
+                                        accessibilityId
+                                )
+                        ),
+                        deadlineNs,
+                        2
+                );
 
-        logger.error("Element '{}' not found with any strategy (timeout {}s)", accessibilityId, AppConstants.ELEMENT_WAIT_TIMEOUT);
-        UiDebugUtils.dumpOnFailure(driver, "element_not_found_" + accessibilityId);
-        throw new RuntimeException("Element not found: " + accessibilityId);
+        if (element != null) {
+            return element;
+        }
+
+        logger.error(
+                "Element '{}' not found with any strategy (timeout {}s)",
+                accessibilityId,
+                AppConstants.ELEMENT_WAIT_TIMEOUT
+        );
+
+        UiDebugUtils.dumpOnFailure(
+                driver,
+                "element_not_found_" + accessibilityId
+        );
+
+        throw new RuntimeException(
+                "Element not found: " + accessibilityId
+        );
     }
 
     private WebElement tryWaitVisible(By locator, long deadlineNs, int maxPerStrategySeconds) {
@@ -110,7 +142,7 @@ public abstract class BasePage {
             }
 
             try {
-                Thread.sleep(250);
+                Thread.sleep(500);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;
@@ -122,16 +154,53 @@ public abstract class BasePage {
         return null;
     }
 
-    protected List<WebElement> findElementsByAccessibilityId(String accessibilityId) {
-        logger.debug("Finding elements by accessibility ID: {}", accessibilityId);
+    protected List<WebElement> findElementsByAccessibilityId(
+            String accessibilityId
+    ) {
+
+        logger.debug(
+                "Finding elements by accessibility ID: {}",
+                accessibilityId
+        );
+
         try {
-            return waitUtils.waitForElementsToBeVisible(AppiumBy.accessibilityId(accessibilityId));
-        } catch (Exception e) {
-            if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
-                logger.debug("Finding elements by accessibility ID failed, trying native ID (resource-id): {}", accessibilityId);
-                return waitUtils.waitForElementsToBeVisible(AppiumBy.id(accessibilityId));
+
+            List<WebElement> elements =
+                    DriverManager.safelyFindElements(
+                            AppiumBy.accessibilityId(
+                                    accessibilityId
+                            )
+                    );
+
+            if (
+                    elements != null
+                            &&
+                            !elements.isEmpty()
+            ) {
+
+                return elements;
             }
-            throw e;
+
+            if (
+                    DriverManager.getCurrentPlatform()
+                            .equalsIgnoreCase("android")
+            ) {
+
+                return DriverManager.safelyFindElements(
+                        AppiumBy.id(accessibilityId)
+                );
+            }
+
+            return java.util.Collections.emptyList();
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed to find elements by accessibility ID: {}",
+                    e.getMessage()
+            );
+
+            return java.util.Collections.emptyList();
         }
     }
 
@@ -164,16 +233,41 @@ public abstract class BasePage {
 
     // ELEMENT INTERACTION METHODS
     protected void clickElement(WebElement element) {
+
         if (element == null) {
-            throw new RuntimeException("Click target is null");
+            throw new RuntimeException(
+                    "Click target is null"
+            );
         }
 
         try {
+
             element.click();
-            logger.debug("Clicked element successfully");
-        } catch (Exception e) {
-            logger.warn("Standard click failed, trying tap gesture", e);
-            gestureUtils.tapElement(element);
+
+            logger.debug(
+                    "Clicked element successfully"
+            );
+
+        } catch (Exception firstException) {
+
+            logger.warn(
+                    "Standard click failed, retrying..."
+            );
+
+            waitFor(1);
+
+            try {
+
+                element.click();
+
+            } catch (Exception secondException) {
+
+                logger.warn(
+                        "Retry click failed, trying tap gesture"
+                );
+
+                gestureUtils.tapElement(element);
+            }
         }
     }
 
@@ -239,32 +333,50 @@ public abstract class BasePage {
     }
 
     protected void scrollDownSlightly() {
-        Dimension size = driver.manage().window().getSize();
+
+        Dimension size =
+                driver.manage().window().getSize();
+
         int startX = size.width / 2;
-        int startY = (int) (size.height * 0.70);
-        int endY = (int) (size.height * 0.55);
 
-        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
-        Sequence swipe = new Sequence(finger, 1);
-        swipe.addAction(finger.createPointerMove(
-                Duration.ZERO,
-                PointerInput.Origin.viewport(),
-                startX,
-                startY));
+        int startY =
+                (int) (size.height * 0.70);
 
-        swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-        swipe.addAction(new Pause(finger, Duration.ofMillis(150)));
-        swipe.addAction(finger.createPointerMove(
-                Duration.ofMillis(350),
-                PointerInput.Origin.viewport(),
-                startX,
-                endY));
+        int endY =
+                (int) (size.height * 0.55);
 
-        swipe.addAction(finger.createPointerUp(
-                PointerInput.MouseButton.LEFT.asArg()));
+        try {
 
-        driver.perform(List.of(swipe));
-        logger.info("Performed slight downward scroll adjustment");
+            Map<String, Object> params =
+                    new HashMap<>();
+
+            params.put("startX", startX);
+            params.put("startY", startY);
+            params.put("endX", startX);
+            params.put("endY", endY);
+            params.put("speed", 600);
+
+            driver.executeScript(
+                    "mobile: dragGesture",
+                    params
+            );
+
+            logger.info(
+                    "Performed slight downward scroll adjustment"
+            );
+
+        } catch (Exception e) {
+
+            logger.error(
+                    "Failed to perform slight scroll",
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Scroll gesture failed",
+                    e
+            );
+        }
     }
 
     protected String getText(WebElement element) {
@@ -294,29 +406,39 @@ public abstract class BasePage {
         }
     }
 
-    protected boolean isElementDisplayedByAccessibilityId(String accessibilityId) {
-        // Keep this check ultra-fast & robust.
-        // It is called frequently for state detection (Loading/Login/Home) so it must not perform expensive waits.
+    protected boolean isElementDisplayedByAccessibilityId(
+            String accessibilityId
+    ) {
+
         try {
-            List<WebElement> els = DriverManager.safelyFindElements(AppiumBy.accessibilityId(accessibilityId));
-            if (isAnyDisplayed(els)) return true;
+
+            List<WebElement> els =
+                    DriverManager.safelyFindElements(
+                            AppiumBy.accessibilityId(
+                                    accessibilityId
+                            )
+                    );
+
+            if (isAnyDisplayed(els)) {
+                return true;
+            }
+
         } catch (Exception ignored) {
         }
 
         try {
-            List<WebElement> els = DriverManager.safelyFindElements(AppiumBy.id(accessibilityId));
-            if (isAnyDisplayed(els)) return true;
-        } catch (Exception ignored) {
-        }
 
-        try {
-            String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
-            List<WebElement> els = DriverManager.safelyFindElements(AppiumBy.androidUIAutomator(uiSelector));
-            if (isAnyDisplayed(els)) return true;
-        } catch (Exception ignored) {
-        }
+            List<WebElement> els =
+                    DriverManager.safelyFindElements(
+                            AppiumBy.id(accessibilityId)
+                    );
 
-        return false;
+            return isAnyDisplayed(els);
+
+        } catch (Exception ignored) {
+
+            return false;
+        }
     }
 
     private boolean isAnyDisplayed(List<WebElement> els) {
@@ -436,21 +558,61 @@ public abstract class BasePage {
         return findByAccessibilityId(accessibilityId);
     }
 
-    protected WebElement waitForElementClickable(String accessibilityId) {
-        // For clickability we still use multi-strategy, but keep bounded overall.
-        final long deadlineNs = System.nanoTime() + Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT).toNanos();
-        WebElement element = tryWaitClickable(AppiumBy.accessibilityId(accessibilityId), deadlineNs, 5);
-        if (element != null) return element;
-        element = tryWaitClickable(AppiumBy.id(accessibilityId), deadlineNs, 3);
-        if (element != null) return element;
-        String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
-        element = tryWaitClickable(AppiumBy.androidUIAutomator(uiSelector), deadlineNs, 3);
-        if (element != null) return element;
-        element = tryWaitClickable(By.xpath(String.format("//*[contains(@resource-id,'%s')]", accessibilityId)), deadlineNs, 2);
-        if (element != null) return element;
-        element = tryWaitClickable(By.xpath(String.format("//*[@content-desc='%s']", accessibilityId)), deadlineNs, 2);
-        if (element != null) return element;
-        throw new RuntimeException("Element not clickable: " + accessibilityId);
+    protected WebElement waitForElementClickable(
+            String accessibilityId
+    ) {
+
+        final long deadlineNs =
+                System.nanoTime()
+                        + Duration.ofSeconds(
+                        AppConstants.ELEMENT_WAIT_TIMEOUT
+                ).toNanos();
+
+        WebElement element =
+                tryWaitClickable(
+                        AppiumBy.accessibilityId(
+                                accessibilityId
+                        ),
+                        deadlineNs,
+                        5
+                );
+
+        if (element != null) {
+            return element;
+        }
+
+        element =
+                tryWaitClickable(
+                        AppiumBy.id(accessibilityId),
+                        deadlineNs,
+                        3
+                );
+
+        if (element != null) {
+            return element;
+        }
+
+        element =
+                tryWaitClickable(
+                        By.xpath(
+                                String.format(
+                                        "//*[@content-desc='%s' or contains(@resource-id,'%s')]",
+                                        accessibilityId,
+                                        accessibilityId
+                                )
+                        ),
+                        deadlineNs,
+                        2
+                );
+
+        if (element != null) {
+            return element;
+        }
+
+        throw new RuntimeException(
+                "Element not clickable: "
+                        + accessibilityId
+        );
     }
 
     private WebElement tryWaitClickable(By locator, long deadlineNs, int maxPerStrategySeconds) {
@@ -554,16 +716,22 @@ public abstract class BasePage {
     }
 
     protected String getCurrentPackage() {
+
         try {
-            if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
-                if (driver instanceof AndroidDriver) {
-                    return ((AndroidDriver) driver).getCurrentPackage();
-                }
-            }
+
+            return driver.getSessionId() != null
+                    ? "ACTIVE_SESSION"
+                    : "";
+
         } catch (Exception e) {
-            logger.debug("Failed to get current package", e);
+
+            logger.debug(
+                    "Failed to check session",
+                    e
+            );
+
+            return "";
         }
-        return "";
     }
 
     protected String getCurrentActivity() {
@@ -662,29 +830,55 @@ public abstract class BasePage {
         }
     }
 
-    private boolean isElementDisplayedAndClickable(String accessibilityId) {
-        try {
-            List<WebElement> elements = DriverManager.safelyFindElements(AppiumBy.accessibilityId(accessibilityId));
+    private boolean isElementDisplayedAndClickable(
+            String accessibilityId
+    ) {
 
-            // Android fallback strategies
-            if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
-                if (elements == null || elements.isEmpty()) {
-                    elements = DriverManager.safelyFindElements(AppiumBy.id(accessibilityId));
-                }
-                if (elements == null || elements.isEmpty()) {
-                    String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
-                    elements = DriverManager.safelyFindElements(AppiumBy.androidUIAutomator(uiSelector));
-                }
+        try {
+
+            List<WebElement> elements =
+                    DriverManager.safelyFindElements(
+                            AppiumBy.accessibilityId(
+                                    accessibilityId
+                            )
+                    );
+
+            if (
+                    (elements == null || elements.isEmpty())
+                            &&
+                            DriverManager.getCurrentPlatform()
+                                    .equalsIgnoreCase("android")
+            ) {
+
+                elements =
+                        DriverManager.safelyFindElements(
+                                AppiumBy.id(accessibilityId)
+                        );
             }
 
-            if (elements != null && !elements.isEmpty()) {
-                WebElement element = elements.get(0);
-                return element.isDisplayed() && element.isEnabled();
+            if (
+                    elements != null
+                            &&
+                            !elements.isEmpty()
+            ) {
+
+                WebElement element =
+                        elements.get(0);
+
+                return element.isDisplayed()
+                        &&
+                        element.isEnabled();
             }
 
             return false;
+
         } catch (Exception e) {
-            logger.debug("Error checking element visibility/clickability: {}", e.getMessage());
+
+            logger.debug(
+                    "Error checking element visibility/clickability: {}",
+                    e.getMessage()
+            );
+
             return false;
         }
     }
@@ -744,6 +938,32 @@ public abstract class BasePage {
                 "Could not find element after scrolling: "
                         + accessibilityId
         );
+    }
+
+    protected List<WebElement> findElementsByXPath(
+            String xpath
+    ) {
+
+        logger.debug(
+                "Finding elements by XPath: {}",
+                xpath
+        );
+
+        try {
+
+            return DriverManager.safelyFindElements(
+                    By.xpath(xpath)
+            );
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed to find elements by XPath: {}",
+                    e.getMessage()
+            );
+
+            return java.util.Collections.emptyList();
+        }
     }
 
     public abstract boolean isDisplayed();

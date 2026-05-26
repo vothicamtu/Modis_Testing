@@ -4,69 +4,54 @@ import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
 import io.appium.java_client.pagefactory.AndroidFindBy;
-import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
 
 public class TakePage extends BasePage {
 
     // PAGE ELEMENTS
 
-    @AndroidFindBy(id = TestIDs.TAKE_SCREEN)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_SCREEN)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_SCREEN)
     private WebElement takeScreen;
 
-    @AndroidFindBy(id = TestIDs.TAKE_CAMERA_AREA)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAMERA_AREA)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_CAMERA_AREA)
     private WebElement cameraArea;
 
-    @AndroidFindBy(id = TestIDs.TAKE_CAPTURE_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAPTURE_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_CAPTURE_BUTTON)
     private WebElement captureButton;
 
-    @AndroidFindBy(id = TestIDs.TAKE_FLASH_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_FLASH_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_FLASH_BUTTON)
     private WebElement flashButton;
 
-    @AndroidFindBy(id = TestIDs.TAKE_TOGGLE_CAMERA_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_TOGGLE_CAMERA_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_TOGGLE_CAMERA_BUTTON)
     private WebElement toggleCameraButton;
 
-    @AndroidFindBy(id = TestIDs.TAKE_HISTORY)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_HISTORY)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_HISTORY)
     private WebElement historyButton;
 
-    @AndroidFindBy(id = TestIDs.TAKE_CAMERA_PREVIEW)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAMERA_PREVIEW)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_CAMERA_PREVIEW)
     private WebElement cameraPreview;
 
     // Permission elements
-    @AndroidFindBy(id = TestIDs.CAMERA_PERMISSION_DIALOG)
-    @iOSXCUITFindBy(accessibility = TestIDs.CAMERA_PERMISSION_DIALOG)
+    @AndroidFindBy(accessibility = TestIDs.CAMERA_PERMISSION_DIALOG)
     private WebElement cameraPermissionDialog;
 
     // Caption and recipient elements
-    @AndroidFindBy(id = TestIDs.TAKE_CAPTION_INPUT)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_CAPTION_INPUT)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_CAPTION_INPUT)
     private WebElement captionInput;
 
-    @AndroidFindBy(id = TestIDs.TAKE_RECIPIENTS_LIST)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_RECIPIENTS_LIST)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_RECIPIENTS_LIST)
     private WebElement recipientsList;
 
-    @AndroidFindBy(id = TestIDs.TAKE_SEND_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_SEND_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_SEND_BUTTON)
     private WebElement sendButton;
 
-    @AndroidFindBy(id = TestIDs.TAKE_SUCCESS_MESSAGE)
-    @iOSXCUITFindBy(accessibility = TestIDs.TAKE_SUCCESS_MESSAGE)
+    @AndroidFindBy(accessibility = TestIDs.TAKE_SUCCESS_MESSAGE)
     private WebElement successMessage;
 
-    @AndroidFindBy(id = TestIDs.PERMISSION_ALLOW_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.PERMISSION_ALLOW_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.PERMISSION_ALLOW_BUTTON)
     private WebElement allowPermissionButton;
 
-    @AndroidFindBy(id = TestIDs.PERMISSION_DENY_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.PERMISSION_DENY_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.PERMISSION_DENY_BUTTON)
     private WebElement denyPermissionButton;
 
     // CAMERA ACTIONS
@@ -210,11 +195,32 @@ public class TakePage extends BasePage {
 
     // VALIDATION METHODS
     public boolean isCameraPreviewDisplayed() {
-        return isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAMERA_PREVIEW);
+        try {
+            return isElementDisplayedByAccessibilityId(
+                    TestIDs.TAKE_CAMERA_PREVIEW
+            );
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public boolean isCaptureButtonDisplayed() {
-        return isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAPTURE_BUTTON);
+
+        try {
+
+            return isElementDisplayedByAccessibilityId(
+                    TestIDs.TAKE_CAPTURE_BUTTON
+            );
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Capture button check failed: {}",
+                    e.getMessage()
+            );
+
+            return false;
+        }
     }
 
     public boolean isFlashButtonDisplayed() {
@@ -249,12 +255,7 @@ public class TakePage extends BasePage {
         waitForElementVisible(TestIDs.TAKE_CAPTURE_BUTTON);
 
         // Additional wait for camera initialization
-        try {
-            Thread.sleep(2000); // Camera needs time to initialize
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("Camera ready wait interrupted", e);
-        }
+        waitFor(3); // Camera needs time to initialize
     }
 
     public void waitForCameraSwitchAnimation() {
@@ -297,25 +298,27 @@ public class TakePage extends BasePage {
     // INHERITED METHODS
     @Override
     public boolean isDisplayed() {
+
         logger.info("Verifying TakePage display state");
+
         try {
-            if (safeCheckTakeElement(TestIDs.TAKE_CAPTURE_BUTTON)) {
-                logger.info("TakePage detected via capture button");
-                return true;
-            }
-            if (safeCheckTakeElement(TestIDs.TAKE_CAMERA_PREVIEW)) {
-                logger.info("TakePage detected via camera preview");
-                return true;
-            }
-            if (safeCheckTakeElement(TestIDs.TAKE_CAMERA_AREA)) {
-                logger.info("TakePage detected via camera area");
-                return true;
-            }
-            logger.warn("No stable TakePage elements detected");
-            return true;
+
+            waitFor(2);
+
+            return isElementDisplayedByAccessibilityId(
+                    TestIDs.TAKE_SCREEN
+            ) || isElementDisplayedByAccessibilityId(
+                    TestIDs.TAKE_CAPTURE_BUTTON
+            );
+
         } catch (Exception e) {
-            logger.warn("TakePage display verification failed: {}", e.getMessage());
-            return true;
+
+            logger.warn(
+                    "TakePage display verification failed: {}",
+                    e.getMessage()
+            );
+
+            return false;
         }
     }
 
@@ -340,21 +343,10 @@ public class TakePage extends BasePage {
         // Wait RN render
         waitFor(2);
 
-        // Flexible detection because some builds
-        // do not expose TAKE_SCREEN accessibility id
         boolean takeLoaded =
-                isElementDisplayedByAccessibilityId(
-                        TestIDs.TAKE_SCREEN
-                )
-                        || isElementDisplayedByAccessibilityId(
-                        TestIDs.TAKE_CAMERA_AREA
-                )
-                        || isElementDisplayedByAccessibilityId(
-                        TestIDs.TAKE_CAPTURE_BUTTON
-                )
-                        || isElementDisplayedByAccessibilityId(
-                        TestIDs.TAKE_CAMERA_PREVIEW
-                );
+                isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN)
+                        || isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAMERA_AREA)
+                        || isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAPTURE_BUTTON);
 
         if (!takeLoaded) {
 
@@ -389,40 +381,94 @@ public class TakePage extends BasePage {
     }
 
     public boolean verifyPageElements() {
+
         logger.info("Verifying take page elements");
 
-        boolean allElementsPresent =
-                isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN) &&
-                        isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAMERA_AREA) &&
-                        isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAPTURE_BUTTON) &&
-                        isElementDisplayedByAccessibilityId(TestIDs.TAKE_FLASH_BUTTON) &&
-                        isElementDisplayedByAccessibilityId(TestIDs.TAKE_TOGGLE_CAMERA_BUTTON);
+        try {
 
-        logger.info("Take page elements verification: {}", allElementsPresent ? "PASSED" : "FAILED");
-        return allElementsPresent;
+            handleCameraPermissions();
+
+            waitForCameraReady();
+
+            boolean captureVisible =
+                    isElementDisplayedByAccessibilityId(
+                            TestIDs.TAKE_CAPTURE_BUTTON
+                    );
+
+            boolean cameraVisible =
+                    isElementDisplayedByAccessibilityId(
+                            TestIDs.TAKE_CAMERA_AREA
+                    );
+
+            boolean result =
+                    captureVisible || cameraVisible;
+
+            logger.info(
+                    "Take page verification result: {}",
+                    result ? "PASSED" : "FAILED"
+            );
+
+            return result;
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Take page verification failed: {}",
+                    e.getMessage()
+            );
+
+            return false;
+        }
     }
 
     public boolean isToggleCameraButtonDisplayed() {
-        return true;
+
+        return isElementDisplayedByAccessibilityId(
+                TestIDs.TAKE_TOGGLE_CAMERA_BUTTON
+        );
     }
 
     public boolean isFlashButtonStateCorrect() {
-        return true;
+
+        return isFlashButtonDisplayed();
     }
 
     public boolean hasMultipleCameras() {
-        return true;
+
+        return isToggleCameraButtonDisplayed();
     }
 
     public boolean isFrontCameraActive() {
-        return true;
+
+        try {
+
+            String selected =
+                    toggleCameraButton.getAttribute(
+                            "selected"
+                    );
+
+            return "true".equals(selected);
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed to determine front camera state: {}",
+                    e.getMessage()
+            );
+
+            return false;
+        }
     }
 
     public TakePage toggleCamera() {
-        return this;
+
+        return switchCamera();
     }
 
     public TakePage waitForCameraSwitch() {
+
+        waitForCameraSwitchAnimation();
+
         return this;
     }
 

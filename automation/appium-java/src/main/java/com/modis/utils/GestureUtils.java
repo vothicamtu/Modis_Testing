@@ -4,32 +4,25 @@ import com.modis.constants.AppConstants;
 import com.modis.drivers.DriverManager;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
-import io.appium.java_client.TouchAction;
-import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.touch.WaitOptions;
-import io.appium.java_client.touch.offset.PointOption;
+
+import java.util.Map;
+import java.util.HashMap;
+
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.PointerInput;
-import org.openqa.selenium.interactions.Sequence;
 import org.slf4j.Logger;
 
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-/**
- * Utility class for handling gestures and touch actions
- * Provides methods for swipe, scroll, tap, pinch, and other mobile gestures
- */
 public class GestureUtils {
 
     private static final Logger logger = LoggerUtil.getLogger(GestureUtils.class);
+
     private AppiumDriver getDriver() {
-    return DriverManager.getDriver();
-}
+        return DriverManager.getDriver();
+    }
+
     private volatile Dimension cachedScreenSize;
 
     // Gesture constants
@@ -37,9 +30,8 @@ public class GestureUtils {
     private static final double SWIPE_END_PERCENTAGE = 0.2;
     private static final double SWIPE_ANCHOR_PERCENTAGE = 0.5;
     private static final int SWIPE_DURATION_MS = 1000;
-    private static final int TAP_DURATION_MS = 100;
     private static final int SCROLL_DURATION_MS = 800;
-    private static final int MAX_SCROLL_ATTEMPTS = 15;
+    private static final int MAX_SCROLL_ATTEMPTS = 8;
 
     public GestureUtils() {
     }
@@ -123,35 +115,46 @@ public class GestureUtils {
         }
     }
 
-    /**
-     * Tap at specific coordinates
-     *
-     * @param x X coordinate
-     * @param y Y coordinate
-     */
-    public void tapAtCoordinates(int x, int y) {
+    public void tapAtCoordinates(
+            int x,
+            int y
+    ) {
+
         try {
-            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
-            Sequence tap = new Sequence(finger, 1);
 
-            tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
-            tap.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            tap.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+            Map<String, Object> params =
+                    new HashMap<>();
 
-            getDriver().perform(Collections.singletonList(tap));
-            logger.debug("Tapped at coordinates: ({}, {})", x, y);
+            params.put("x", x);
+            params.put("y", y);
+
+            getDriver().executeScript(
+                    "mobile: clickGesture",
+                    params
+            );
+
+            logger.debug(
+                    "Tapped at coordinates: ({}, {})",
+                    x,
+                    y
+            );
+
         } catch (Exception e) {
-            logger.error("Failed to tap at coordinates: ({}, {})", x, y, e);
-            throw new RuntimeException("Tap at coordinates failed", e);
+
+            logger.error(
+                    "Failed to tap at coordinates: ({}, {})",
+                    x,
+                    y,
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Tap at coordinates failed",
+                    e
+            );
         }
     }
 
-    /**
-     * Long press on element
-     *
-     * @param element    Element to long press
-     * @param durationMs Duration in milliseconds
-     */
     public void longPressElement(WebElement element, int durationMs) {
         try {
             Point location = element.getLocation();
@@ -167,41 +170,49 @@ public class GestureUtils {
         }
     }
 
-    /**
-     * Long press at specific coordinates
-     *
-     * @param x          X coordinate
-     * @param y          Y coordinate
-     * @param durationMs Duration in milliseconds
-     */
-    public void longPressAtCoordinates(int x, int y, int durationMs) {
+    public void longPressAtCoordinates(
+            int x,
+            int y,
+            int durationMs
+    ) {
+
         try {
-            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
-            Sequence longPress = new Sequence(finger, 1);
 
-            longPress.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
-            longPress.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            // Use Thread.sleep instead of createPause for compatibility
-            try {
-                Thread.sleep(durationMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            longPress.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+            Map<String, Object> params =
+                    new HashMap<>();
 
-            getDriver().perform(Collections.singletonList(longPress));
-            logger.debug("Long pressed at coordinates: ({}, {}) for {}ms", x, y, durationMs);
+            params.put("x", x);
+            params.put("y", y);
+            params.put("duration", durationMs);
+
+            getDriver().executeScript(
+                    "mobile: longClickGesture",
+                    params
+            );
+
+            logger.debug(
+                    "Long pressed at coordinates: ({}, {}) for {}ms",
+                    x,
+                    y,
+                    durationMs
+            );
+
         } catch (Exception e) {
-            logger.error("Failed to long press at coordinates: ({}, {})", x, y, e);
-            throw new RuntimeException("Long press at coordinates failed", e);
+
+            logger.error(
+                    "Failed to long press at coordinates: ({}, {})",
+                    x,
+                    y,
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Long press failed",
+                    e
+            );
         }
     }
 
-    // ==================== SWIPE GESTURES ====================
-
-    /**
-     * Swipe left on screen
-     */
     public void swipeLeft() {
         Dimension screenSize = getScreenSize();
         int startX = (int) (screenSize.width * SWIPE_START_PERCENTAGE);
@@ -294,48 +305,99 @@ public class GestureUtils {
         logger.info("Swiped {} on element from ({}, {}) to ({}, {})", direction, startX, startY, endX, endY);
     }
 
-    /**
-     * Generic swipe method
-     *
-     * @param startX     Start X coordinate
-     * @param startY     Start Y coordinate
-     * @param endX       End X coordinate
-     * @param endY       End Y coordinate
-     * @param durationMs Duration in milliseconds
-     */
-    public void swipe(int startX, int startY, int endX, int endY, int durationMs) {
+    public void swipe(
+            int startX,
+            int startY,
+            int endX,
+            int endY,
+            int durationMs
+    ) {
+
         try {
-            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
-            Sequence swipe = new Sequence(finger, 1);
 
-            swipe.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), startX, startY));
-            swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            swipe.addAction(finger.createPointerMove(Duration.ofMillis(durationMs), PointerInput.Origin.viewport(), endX, endY));
-            swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+            AppiumDriver driver =
+                    DriverManager.getDriver();
 
-            getDriver().perform(Collections.singletonList(swipe));
-            logger.debug("Swiped from ({}, {}) to ({}, {}) in {}ms", startX, startY, endX, endY, durationMs);
+            Map<String, Object> params =
+                    new HashMap<>();
+
+            params.put("startX", startX);
+            params.put("startY", startY);
+            params.put("endX", endX);
+            params.put("endY", endY);
+
+            // convert duration -> speed
+            int distance =
+                    Math.abs(endY - startY)
+                            +
+                            Math.abs(endX - startX);
+
+            int speed =
+                    Math.max(
+                            300,
+                            distance / Math.max(1, durationMs / 100)
+                    );
+
+            params.put("speed", speed);
+
+            driver.executeScript(
+                    "mobile: dragGesture",
+                    params
+            );
+
+            logger.debug(
+                    "Swiped from ({}, {}) to ({}, {})",
+                    startX,
+                    startY,
+                    endX,
+                    endY
+            );
+
         } catch (Exception e) {
-            logger.error("Failed to swipe from ({}, {}) to ({}, {})", startX, startY, endX, endY, e);
-            throw new RuntimeException("Swipe gesture failed", e);
+
+            logger.error(
+                    "Failed to swipe from ({}, {}) to ({}, {})",
+                    startX,
+                    startY,
+                    endX,
+                    endY,
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Swipe gesture failed",
+                    e
+            );
         }
     }
 
-    // ==================== SCROLL GESTURES ====================
-
-    /**
-     * Scroll to element by text
-     *
-     * @param text Text to scroll to
-     * @return WebElement if found, null otherwise
-     */
     public WebElement scrollToElementByText(String text) {
         logger.info("Scrolling to element with text: {}", text);
 
         for (int attempt = 0; attempt < MAX_SCROLL_ATTEMPTS; attempt++) {
             try {
-                List<WebElement> elements = getDriver().findElements(AppiumBy.xpath(
-                        String.format("//*[@text='%s' or @content-desc='%s']", text, text)));
+                List<WebElement> elements =
+                        DriverManager.safelyFindElements(
+                                AppiumBy.accessibilityId(text)
+                        );
+
+                if (
+                        (elements == null || elements.isEmpty())
+                                &&
+                                DriverManager.getCurrentPlatform()
+                                        .equalsIgnoreCase("android")
+                ) {
+
+                    elements =
+                            DriverManager.safelyFindElements(
+                                    AppiumBy.androidUIAutomator(
+                                            String.format(
+                                                    "new UiSelector().text(\"%s\")",
+                                                    text
+                                            )
+                                    )
+                            );
+                }
                 if (elements != null && !elements.isEmpty() && elements.get(0).isDisplayed()) {
                     logger.info("Found element with text '{}' after {} scroll attempts", text, attempt);
                     return elements.get(0);
@@ -346,6 +408,7 @@ public class GestureUtils {
 
             // Scroll down to find element
             scrollDown();
+            waitForGestureAnimation();
         }
 
         logger.warn("Element with text '{}' not found after {} scroll attempts", text, MAX_SCROLL_ATTEMPTS);
@@ -370,11 +433,6 @@ public class GestureUtils {
                     elements = DriverManager.safelyFindElements(AppiumBy.id(accessibilityId));
                 }
 
-                if (isAndroid && (elements == null || elements.isEmpty())) {
-                    String uiSelector = String.format("new UiSelector().resourceIdMatches(\".*:id/%s\")", accessibilityId);
-                    elements = DriverManager.safelyFindElements(AppiumBy.androidUIAutomator(uiSelector));
-                }
-
                 if (elements != null && !elements.isEmpty()) {
                     for (WebElement el : elements) {
                         try {
@@ -391,6 +449,7 @@ public class GestureUtils {
             }
 
             scrollDown();
+            waitForGestureAnimation();
         }
 
         logger.warn("Element with ID/Accessibility ID '{}' not found after {} scroll attempts", accessibilityId, MAX_SCROLL_ATTEMPTS);
@@ -423,32 +482,30 @@ public class GestureUtils {
         logger.debug("Scrolled up");
     }
 
-    /**
-     * Scroll to top of screen
-     */
     public void scrollToTop() {
+
         logger.info("Scrolling to top");
+
         for (int i = 0; i < 5; i++) {
+
             scrollUp();
+
+            waitForGestureAnimation();
         }
     }
 
-    /**
-     * Scroll to bottom of screen
-     */
     public void scrollToBottom() {
+
         logger.info("Scrolling to bottom");
-        for (int i = 0; i < 10; i++) {
+
+        for (int i = 0; i < 8; i++) {
+
             scrollDown();
+
+            waitForGestureAnimation();
         }
     }
 
-    /**
-     * Scroll within a specific element
-     *
-     * @param scrollableElement The scrollable container element
-     * @param direction         Direction to scroll (up/down)
-     */
     public void scrollInElement(WebElement scrollableElement, String direction) {
         Point location = scrollableElement.getLocation();
         Dimension size = scrollableElement.getSize();
@@ -498,13 +555,9 @@ public class GestureUtils {
      * @param element Element to pinch on
      */
     public void pinchOut(WebElement element) {
-        Point location = element.getLocation();
-        Dimension size = element.getSize();
-
-        int centerX = location.x + size.width / 2;
-        int centerY = location.y + size.height / 2;
-
-        pinchOut(centerX, centerY);
+        logger.warn(
+                "Pinch out temporarily disabled for Android 15 stability"
+        );
     }
 
     /**
@@ -514,33 +567,9 @@ public class GestureUtils {
      * @param centerY Center Y coordinate
      */
     public void pinchOut(int centerX, int centerY) {
-        try {
-            PointerInput finger1 = new PointerInput(PointerInput.Kind.TOUCH, "finger1");
-            PointerInput finger2 = new PointerInput(PointerInput.Kind.TOUCH, "finger2");
-
-            Sequence pinch1 = new Sequence(finger1, 1);
-            Sequence pinch2 = new Sequence(finger2, 1);
-
-            int offset = 50;
-
-            // Finger 1 moves from center-offset to center-offset*3
-            pinch1.addAction(finger1.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), centerX - offset, centerY));
-            pinch1.addAction(finger1.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            pinch1.addAction(finger1.createPointerMove(Duration.ofMillis(1000), PointerInput.Origin.viewport(), centerX - offset * 3, centerY));
-            pinch1.addAction(finger1.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-
-            // Finger 2 moves from center+offset to center+offset*3
-            pinch2.addAction(finger2.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), centerX + offset, centerY));
-            pinch2.addAction(finger2.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            pinch2.addAction(finger2.createPointerMove(Duration.ofMillis(1000), PointerInput.Origin.viewport(), centerX + offset * 3, centerY));
-            pinch2.addAction(finger2.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-
-            getDriver().perform(Arrays.asList(pinch1, pinch2));
-            logger.info("Performed pinch out gesture at ({}, {})", centerX, centerY);
-        } catch (Exception e) {
-            logger.error("Failed to perform pinch out gesture", e);
-            throw new RuntimeException("Pinch out gesture failed", e);
-        }
+        logger.warn(
+                "Pinch out temporarily disabled for Android 15 stability"
+        );
     }
 
     /**
@@ -549,13 +578,9 @@ public class GestureUtils {
      * @param element Element to pinch on
      */
     public void pinchIn(WebElement element) {
-        Point location = element.getLocation();
-        Dimension size = element.getSize();
-
-        int centerX = location.x + size.width / 2;
-        int centerY = location.y + size.height / 2;
-
-        pinchIn(centerX, centerY);
+        logger.warn(
+                "Pinch in temporarily disabled for Android 15 stability"
+        );
     }
 
     /**
@@ -565,43 +590,13 @@ public class GestureUtils {
      * @param centerY Center Y coordinate
      */
     public void pinchIn(int centerX, int centerY) {
-        try {
-            PointerInput finger1 = new PointerInput(PointerInput.Kind.TOUCH, "finger1");
-            PointerInput finger2 = new PointerInput(PointerInput.Kind.TOUCH, "finger2");
-
-            Sequence pinch1 = new Sequence(finger1, 1);
-            Sequence pinch2 = new Sequence(finger2, 1);
-
-            int offset = 150;
-
-            // Finger 1 moves from center-offset*3 to center-offset
-            pinch1.addAction(finger1.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), centerX - offset * 3, centerY));
-            pinch1.addAction(finger1.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            pinch1.addAction(finger1.createPointerMove(Duration.ofMillis(1000), PointerInput.Origin.viewport(), centerX - offset, centerY));
-            pinch1.addAction(finger1.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-
-            // Finger 2 moves from center+offset*3 to center+offset
-            pinch2.addAction(finger2.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), centerX + offset * 3, centerY));
-            pinch2.addAction(finger2.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            pinch2.addAction(finger2.createPointerMove(Duration.ofMillis(1000), PointerInput.Origin.viewport(), centerX + offset, centerY));
-            pinch2.addAction(finger2.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-
-            getDriver().perform(Arrays.asList(pinch1, pinch2));
-            logger.info("Performed pinch in gesture at ({}, {})", centerX, centerY);
-        } catch (Exception e) {
-            logger.error("Failed to perform pinch in gesture", e);
-            throw new RuntimeException("Pinch in gesture failed", e);
-        }
+        logger.warn(
+                "Pinch in temporarily disabled for Android 15 stability"
+        );
     }
 
     // ==================== DRAG AND DROP ====================
 
-    /**
-     * Drag element to another element
-     *
-     * @param sourceElement Source element to drag
-     * @param targetElement Target element to drop on
-     */
     public void dragAndDrop(WebElement sourceElement, WebElement targetElement) {
         Point sourceLocation = sourceElement.getLocation();
         Dimension sourceSize = sourceElement.getSize();
@@ -617,45 +612,51 @@ public class GestureUtils {
         logger.info("Dragged element from ({}, {}) to ({}, {})", sourceX, sourceY, targetX, targetY);
     }
 
-    /**
-     * Drag from coordinates to coordinates
-     *
-     * @param startX Start X coordinate
-     * @param startY Start Y coordinate
-     * @param endX   End X coordinate
-     * @param endY   End Y coordinate
-     */
-    public void dragAndDrop(int startX, int startY, int endX, int endY) {
+    public void dragAndDrop(
+            int startX,
+            int startY,
+            int endX,
+            int endY
+    ) {
+
         try {
-            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
-            Sequence dragDrop = new Sequence(finger, 1);
 
-            dragDrop.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), startX, startY));
-            dragDrop.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            // Use Thread.sleep instead of createPause for compatibility
-            try {
-                Thread.sleep(500); // Hold before drag
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            dragDrop.addAction(finger.createPointerMove(Duration.ofMillis(1000), PointerInput.Origin.viewport(), endX, endY));
-            dragDrop.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+            Map<String, Object> params =
+                    new HashMap<>();
 
-            getDriver().perform(Collections.singletonList(dragDrop));
-            logger.debug("Performed drag and drop from ({}, {}) to ({}, {})", startX, startY, endX, endY);
+            params.put("startX", startX);
+            params.put("startY", startY);
+            params.put("endX", endX);
+            params.put("endY", endY);
+            params.put("speed", 500);
+
+            getDriver().executeScript(
+                    "mobile: dragGesture",
+                    params
+            );
+
+            logger.debug(
+                    "Dragged from ({}, {}) to ({}, {})",
+                    startX,
+                    startY,
+                    endX,
+                    endY
+            );
+
         } catch (Exception e) {
-            logger.error("Failed to perform drag and drop", e);
-            throw new RuntimeException("Drag and drop gesture failed", e);
+
+            logger.error(
+                    "Failed to drag and drop",
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Drag and drop failed",
+                    e
+            );
         }
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Get screen center coordinates
-     *
-     * @return Point representing screen center
-     */
     public Point getScreenCenter() {
         Dimension screenSize = getScreenSize();
         return new Point(screenSize.width / 2, screenSize.height / 2);

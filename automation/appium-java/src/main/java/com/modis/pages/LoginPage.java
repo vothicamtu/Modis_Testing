@@ -99,16 +99,23 @@ public class LoginPage extends BasePage {
         // SUCCESS LOGIN
         try {
 
-            HomePage homePage =
-                    new HomePage();
+            HomePage homePage = new HomePage();
 
-            if (homePage.isDisplayed()) {
+            logger.info("Waiting for HomePage after login");
 
-                logger.info(
-                        "HomePage detected after successful login"
-                );
+            for (int i = 0; i < 8; i++) {
 
-                return homePage;
+                waitFor(1);
+
+                if (homePage.isTopbarAvatarDisplayed()
+                        || homePage.isTopBarDisplayed()) {
+
+                    logger.info(
+                            "HomePage detected after successful login"
+                    );
+
+                    return homePage;
+                }
             }
 
         } catch (Exception e) {
