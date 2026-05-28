@@ -157,6 +157,16 @@
       "status": "ACTIVE"
     },
     {
+      "id": "user_6",
+      "username": "tune",
+      "password": "111111",
+      "email": "tune@gmail.com",
+      "phone": "0123456789",
+      "fullname": "tú nè",
+      "role": "USER",
+      "status": "ACTIVE"
+    },
+    {
       "id": "admin_1",
       "username": "admin22130038",
       "password": "encrypted_password",
@@ -316,20 +326,54 @@
   ],
   "validationTestData": {
     "usernames": {
-      "valid": ["user123", "testuser", "valid_user", "user_123"],
-      "invalid": ["ab", "aaaaaaaaaaaaaaaaaaaaaaaaa", "user@123", "userspace"]
+      "valid": [
+        "user123",
+        "testuser",
+        "valid_user",
+        "user_123"
+      ],
+      "invalid": [
+        "ab",
+        "aaaaaaaaaaaaaaaaaaaaaaaaa",
+        "user@123",
+        "userspace"
+      ]
     },
     "passwords": {
-      "valid": ["pass123", "validpassword", "Test123!"],
-      "invalid": ["12345", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+      "valid": [
+        "pass123",
+        "validpassword",
+        "Test123!"
+      ],
+      "invalid": [
+        "12345",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
     },
     "emails": {
-      "valid": ["test@example.com", "user.name@domain.co.uk", "test+tag@example.org"],
-      "invalid": ["invalid", "test@", "@example.com", "test.example.com"]
+      "valid": [
+        "test@example.com",
+        "user.name@domain.co.uk",
+        "test+tag@example.org"
+      ],
+      "invalid": [
+        "invalid",
+        "test@",
+        "@example.com",
+        "test.example.com"
+      ]
     },
     "phones": {
-      "valid": ["1234567890", "12345678901", "123456789012345"],
-      "invalid": ["123", "abcdefghij", "1234567890"]
+      "valid": [
+        "1234567890",
+        "12345678901",
+        "123456789012345"
+      ],
+      "invalid": [
+        "123",
+        "abcdefghij",
+        "1234567890"
+      ]
     }
   }
 }

@@ -185,13 +185,28 @@ public class DriverManager {
         // UiAutomator2 specific - Enhanced for stability
         options.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerLaunchTimeout", 60000)); // 1 minute
         options.setCapability("uiautomator2ServerInstallTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerInstallTimeout", 60000)); // 1 minute
-        options.setCapability("uiautomator2ServerReadTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerReadTimeout", 8000));
+        options.setCapability(
+    "uiautomator2ServerReadTimeout",
+    ConfigReader.getIntProperty(
+        "android.uiautomator2ServerReadTimeout",
+        60000
+    )
+);
         options.setCapability("adbExecTimeout", ConfigReader.getIntProperty("android.adbExecTimeout", 60000));
 
         // Element finding timeouts - Optimized for React Native
-        options.setCapability("waitForIdleTimeout", 50); // Critical: disable idle wait for RN
-        options.setCapability("waitForSelectorTimeout", ConfigReader.getIntProperty("android.waitForSelectorTimeout", 3000)); // Reduced to 3s
-        options.setCapability("actionAcknowledgmentTimeout", ConfigReader.getIntProperty("android.actionAcknowledgmentTimeout", 3000)); // Reduced to 3s
+        options.setCapability(
+    "waitForIdleTimeout",
+    ConfigReader.getIntProperty("android.waitForIdleTimeout", 500)
+); // Critical: disable idle wait for RN
+        options.setCapability(
+    "waitForSelectorTimeout",
+    ConfigReader.getIntProperty(
+        "android.waitForSelectorTimeout",
+        10000
+    )
+);
+        options.setCapability("actionAcknowledgmentTimeout", 5000);
         options.setCapability("scrollAcknowledgmentTimeout", ConfigReader.getIntProperty("android.scrollAcknowledgmentTimeout", 500));
 
         // Additional Android capabilities
@@ -201,9 +216,34 @@ public class DriverManager {
 
         // Turn OFF ignoreUnimportantViews when debugging accessibility issues
         boolean debugMode = ConfigReader.getBooleanProperty("android.debugMode", false);
-        options.setCapability("ignoreUnimportantViews", !debugMode); // false when debugging
-        options.setCapability("disableAndroidWatchers", true);
-        options.setCapability("skipServerInstallation", false);
+        options.setCapability(
+    "ignoreUnimportantViews",
+    ConfigReader.getBooleanProperty(
+        "android.ignoreUnimportantViews",
+        false
+    )
+); // false when debugging
+        options.setCapability(
+    "disableAndroidWatchers",
+    ConfigReader.getBooleanProperty(
+        "android.disableAndroidWatchers",
+        false
+    )
+);
+        options.setCapability(
+                "ignoreHiddenApiPolicyError",
+                ConfigReader.getBooleanProperty(
+                        "android.ignoreHiddenApiPolicyError",
+                        true
+                )
+        );
+        options.setCapability(
+                "skipServerInstallation",
+                ConfigReader.getBooleanProperty(
+                        "android.skipServerInstallation",
+                        true
+                )
+        );
 
         // Optional: disable Android window animations to reduce RN transition flakiness
         options.setCapability("disableWindowAnimation",
@@ -212,8 +252,17 @@ public class DriverManager {
         // Logging
         options.setCapability("enablePerformanceLogging", ConfigReader.getBooleanProperty("android.enablePerformanceLogging", false));
 
-        logger.info("Android options configured with stability improvements: debugMode={}, ignoreUnimportantViews={}",
-                debugMode, !debugMode);
+        boolean ignoreUnimportantViews =
+                ConfigReader.getBooleanProperty(
+                        "android.ignoreUnimportantViews",
+                        false
+                );
+
+        logger.info(
+                "Android options configured with stability improvements: debugMode={}, ignoreUnimportantViews={}",
+                debugMode,
+                ignoreUnimportantViews
+        );
         return options;
     }
 
@@ -258,11 +307,18 @@ public class DriverManager {
         if (appiumDriver instanceof AndroidDriver) {
             try {
                 HasSettings settings = (HasSettings) appiumDriver;
-                settings.setSetting(Setting.WAIT_FOR_IDLE_TIMEOUT, 50);
+                settings.setSetting(
+    Setting.WAIT_FOR_IDLE_TIMEOUT,
+    ConfigReader.getIntProperty("android.waitForIdleTimeout", 500)
+);
                 boolean debugMode = ConfigReader.getBooleanProperty("android.debugMode", false);
                 boolean ignoreUnimportantViews = ConfigReader.getBooleanProperty("android.ignoreUnimportantViews", !debugMode);
                 settings.setSetting(Setting.IGNORE_UNIMPORTANT_VIEWS, ignoreUnimportantViews);
-                logger.info("Applied Android UiAutomator2 settings: waitForIdleTimeout=0, ignoreUnimportantViews={}", ignoreUnimportantViews);
+                logger.info(
+                        "Applied Android UiAutomator2 settings: waitForIdleTimeout={}, ignoreUnimportantViews={}",
+                        ConfigReader.getIntProperty("android.waitForIdleTimeout", 500),
+                        ignoreUnimportantViews
+                );
             } catch (Exception e) {
                 logger.warn("Could not apply Android UiAutomator2 settings at runtime (non-fatal): {}", e.getMessage());
             }

@@ -18,14 +18,6 @@ import org.testng.annotations.*;
 import java.lang.reflect.Method;
 import java.time.Duration;
 
-/**
- * BaseTest theo chiến lược Android 11 real device:
- * - @BeforeClass: tạo driver 1 lần duy nhất cho cả class
- * - @BeforeMethod: nếu driver null -> tạo mới; nếu có -> terminate + activate (không clear data)
- *   rồi logout nếu đang login
- * - @AfterMethod: screenshot khi fail
- * - @AfterClass: quit driver
- */
 @Listeners({TestListener.class})
 public abstract class BaseTest {
 

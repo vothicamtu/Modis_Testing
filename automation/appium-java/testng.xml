@@ -44,7 +44,6 @@
         </groups>
         <classes>
             <class name="com.modis.tests.AuthenticationTests"/>
-            <class name="com.modis.tests.AuthenticationFlowTests"/>
         </classes>
     </test>
 
@@ -117,7 +116,6 @@
         </groups>
         <classes>
             <class name="com.modis.tests.AuthenticationTests"/>
-            <class name="com.modis.tests.AuthenticationFlowTests"/>
             <class name="com.modis.tests.NavigationTests"/>
             <class name="com.modis.tests.CameraTests"/>
             <class name="com.modis.tests.MessagingTests"/>

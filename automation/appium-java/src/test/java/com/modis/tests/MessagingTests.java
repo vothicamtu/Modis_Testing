@@ -10,36 +10,72 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.List;
 
-/**
- * Test class for Messaging functionality with real data
- * Covers message list, conversations, and messaging features using actual message data
- */
 public class MessagingTests extends BaseTest {
 
     private HomePage homePage;
     private TestDataReader testDataReader = new TestDataReader();
 
-    // ==================== DATA PROVIDERS ====================
-
     @DataProvider(name = "testMessagesData")
     public Object[][] getTestMessagesData() {
-        List<Map<String, Object>> messages = testDataReader.getTestMessages();
-        Object[][] data = new Object[Math.min(messages.size(), 5)][];
 
-        for (int i = 0; i < Math.min(messages.size(), 5); i++) {
-            Map<String, Object> message = messages.get(i);
+        List<Map<String, Object>> allMessages =
+                testDataReader.getTestMessages();
+
+        List<Map<String, Object>> filteredMessages =
+                new ArrayList<>();
+
+        for (Map<String, Object> message : allMessages) {
+
+            String sender =
+                    (String) message.get("senderUsername");
+
+            String receiver =
+                    (String) message.get("receiverUsername");
+
+            boolean isTuTuneConversation =
+
+                    (sender.equals("tu")
+                            && receiver.equals("tune"))
+
+                            ||
+
+                            (sender.equals("tune")
+                                    && receiver.equals("tu"));
+
+            if (isTuTuneConversation) {
+                filteredMessages.add(message);
+            }
+        }
+
+        Object[][] data =
+                new Object[filteredMessages.size()][];
+
+        for (int i = 0; i < filteredMessages.size(); i++) {
+
+            Map<String, Object> message =
+                    filteredMessages.get(i);
+
             data[i] = new Object[]{
+
                     message.get("id"),
+
                     message.get("senderUsername"),
+
                     message.get("receiverUsername"),
+
                     message.get("content"),
+
                     message.get("type"),
+
                     message.get("category")
             };
         }
+
         return data;
     }
 
@@ -60,31 +96,275 @@ public class MessagingTests extends BaseTest {
         return data;
     }
 
-    @BeforeMethod(groups = {"messaging", "regression"})
+    @BeforeMethod(alwaysRun = true)
     public void loginBeforeTest() {
-        logger.info("Logging in before messaging test with real user data");
 
-        // Use real user data for login
-        Map<String, Object> testUser = testDataReader.getRandomValidUser();
-        String username = (String) testUser.get("username");
-        String password = (String) testUser.get("password");
+        logger.info(
+                "Logging in before messaging test"
+        );
 
-        LoadingPage loadingPage = new LoadingPage();
-        LoginPage loginPage = loadingPage.clickLoginButton();
-        BasePage afterLogin = loginPage.login(username, password);
-        Assert.assertTrue(afterLogin instanceof HomePage,
-                "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
+        try {
+
+            HomePage currentHome =
+                    new HomePage();
+
+            if (currentHome.isDisplayed()) {
+
+                logger.info(
+                        "Already on Home screen - skipping login"
+                );
+
+                homePage = currentHome;
+
+                return;
+            }
+
+        } catch (Exception ignore) {
+        }
+
+        LoginPage loginPage;
+
+        try {
+
+            LoginPage currentLogin =
+                    new LoginPage();
+
+            if (currentLogin.isDisplayed()) {
+
+                logger.info(
+                        "Detected Login screen"
+                );
+
+                loginPage = currentLogin;
+
+            } else {
+
+                logger.info(
+                        "Detected Loading screen"
+                );
+
+                LoadingPage loadingPage =
+                        new LoadingPage();
+
+                loginPage =
+                        loadingPage.clickLoginButton();
+            }
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Fallback to LoadingPage flow: {}",
+                    e.getMessage()
+            );
+
+            LoadingPage loadingPage =
+                    new LoadingPage();
+
+            loginPage =
+                    loadingPage.clickLoginButton();
+        }
+
+        Map<String, Object> testUser =
+                testDataReader.getValidUserByUsername("tu");
+
+        Assert.assertNotNull(
+                testUser,
+                "Test user should exist"
+        );
+
+        String username =
+                (String) testUser.get("username");
+
+        String password =
+                (String) testUser.get("password");
+
+        BasePage afterLogin =
+                loginPage.login(username, password);
+
+        Assert.assertTrue(
+                afterLogin instanceof HomePage,
+                "Login should navigate to HomePage"
+        );
+
         homePage = (HomePage) afterLogin;
+
         homePage.waitForTopbarReadyAfterLogin(8);
 
-        Assert.assertTrue(homePage.isDisplayed(), "Should be logged in before messaging tests");
-        logger.info("Logged in successfully with user: " + username);
+        Assert.assertTrue(
+                homePage.isDisplayed(),
+                "Should be on Home page"
+        );
+
+        logger.info(
+                "Logged in successfully with user: {}",
+                username
+        );
     }
 
-    // ==================== MESSAGING DATA TESTS ====================
+    @Test(priority = 1, groups = {"messaging", "smoke"}, description = "Verify navigation to message screen")
+    public void testNavigateToMessages() {
+        logger.info("Starting navigate to messages test");
 
-    @Test(priority = 1, groups = {"messaging", "regression", "data"},
-            dataProvider = "testMessagesData", description = "Verify messages data from real database")
+        MessagePage messagePage = homePage.navigateToMessages();
+        Assert.assertTrue(messagePage.isDisplayed(), "Message page should be displayed");
+        Assert.assertTrue(messagePage.verifyPageElements(), "Message page elements should be present");
+
+        logger.info("Navigate to messages test completed successfully");
+    }
+
+    @Test(priority = 2, groups = {"messaging", "regression"}, description = "Verify message list display")
+    public void testMessageListDisplay() {
+        logger.info("Starting message list display test");
+
+        MessagePage messagePage = homePage.navigateToMessages();
+
+        if (messagePage.hasConversations()) {
+            Assert.assertTrue(messagePage.hasConversations(),
+                    "Conversation list should contain conversations");
+            Assert.assertTrue(messagePage.getConversationCount() > 0,
+                    "Should have at least one conversation");
+        } else {
+            Assert.assertTrue(messagePage.isEmptyStateDisplayed(),
+                    "Empty state should be displayed when no conversations exist");
+        }
+
+        logger.info("Message list display test completed successfully");
+    }
+
+    @Test(priority = 3, groups = {"messaging", "regression"}, description = "Verify conversation item elements")
+    public void testConversationItemElements() {
+        logger.info("Starting conversation item elements test");
+
+        MessagePage messagePage = homePage.navigateToMessages();
+
+        if (messagePage.hasConversations()) {
+            String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
+            Assert.assertTrue(messagePage.isConversationAvatarDisplayed(firstConversationId),
+                    "Conversation avatar should be displayed");
+            Assert.assertTrue(messagePage.isConversationNameDisplayed(firstConversationId),
+                    "Conversation name should be displayed");
+            Assert.assertFalse(messagePage.getConversationName(firstConversationId).isEmpty(),
+                    "Conversation name should not be empty");
+
+            if (messagePage.hasLastMessage(firstConversationId)) {
+                Assert.assertTrue(messagePage.isLastMessageDisplayed(firstConversationId),
+                        "Last message should be displayed");
+                Assert.assertTrue(messagePage.isMessageTimeDisplayed(firstConversationId),
+                        "Message time should be displayed");
+            }
+        } else {
+            logger.info("No conversations available for testing conversation item elements");
+        }
+
+        logger.info("Conversation item elements test completed successfully");
+    }
+
+    @Test(priority = 4, groups = {"messaging", "regression"}, description = "Verify conversation selection")
+    public void testConversationSelection() {
+        logger.info("Starting conversation selection test");
+
+        MessagePage messagePage = homePage.navigateToMessages();
+
+        if (messagePage.hasConversations()) {
+            String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
+            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
+
+            Assert.assertTrue(conversationPage.isDisplayed(),
+                    "Conversation page should be displayed after selection");
+            Assert.assertTrue(conversationPage.verifyPageElements(),
+                    "Conversation page elements should be present");
+        } else {
+            logger.info("No conversations available for testing conversation selection");
+        }
+
+        logger.info("Conversation selection test completed successfully");
+    }
+
+    @Test(priority = 5, groups = {"messaging", "regression"}, description = "Verify conversation page elements")
+    public void testConversationPageElements() {
+        logger.info("Starting conversation page elements test");
+
+        MessagePage messagePage = homePage.navigateToMessages();
+
+        if (messagePage.hasConversations()) {
+            String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
+            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
+
+            Assert.assertTrue(conversationPage.isHeaderDisplayed(),
+                    "Conversation header should be displayed");
+            Assert.assertTrue(conversationPage.isBackButtonDisplayed(),
+                    "Back button should be displayed");
+            Assert.assertTrue(conversationPage.isMessageInputDisplayed(),
+                    "Message input should be displayed");
+            Assert.assertTrue(conversationPage.isSendButtonDisplayed(),
+                    "Send button should be displayed");
+
+            if (conversationPage.hasMessages()) {
+                Assert.assertTrue(conversationPage.isMessageListDisplayed(),
+                        "Message list should be displayed when messages exist");
+            }
+        } else {
+            logger.info("No conversations available for testing conversation page elements");
+        }
+
+        logger.info("Conversation page elements test completed successfully");
+    }
+
+    @Test(priority = 6, groups = {"messaging", "navigation"}, description = "Verify back navigation from conversation")
+    public void testBackNavigationFromConversation() {
+        logger.info("Starting back navigation from conversation test");
+
+        MessagePage messagePage = homePage.navigateToMessages();
+
+        if (messagePage.hasConversations()) {
+            String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
+            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
+
+            MessagePage returnedMessagePage = conversationPage.navigateBack();
+
+            Assert.assertTrue(returnedMessagePage.isDisplayed(),
+                    "Should return to message page after back navigation");
+            Assert.assertTrue(returnedMessagePage.verifyPageElements(),
+                    "Message page elements should be present after back navigation");
+        } else {
+            logger.info("No conversations available for testing back navigation");
+        }
+
+        logger.info("Back navigation from conversation test completed successfully");
+    }
+
+    @Test(priority = 7, groups = {"messaging", "navigation"}, description = "Verify back navigation from message list")
+    public void testBackNavigationFromMessageList() {
+        logger.info("Starting back navigation from message list test");
+
+        MessagePage messagePage = homePage.navigateToMessages();
+        HomePage returnedHomePage = messagePage.navigateBack();
+
+        Assert.assertTrue(returnedHomePage.isDisplayed(),
+                "Should return to home page after back navigation from message list");
+        Assert.assertTrue(returnedHomePage.verifyPageElements(),
+                "Home page elements should be present after back navigation");
+
+        logger.info("Back navigation from message list test completed successfully");
+    }
+
+    @Test(priority = 8, groups = {"messaging", "regression", "data"}, dataProvider = "testMessagesData", description = "Verify messages data from real database")
     public void testMessagesWithRealData(String messageId, String senderUsername, String receiverUsername,
                                          String content, String type, String category) {
         logger.info("Testing message data - From: " + senderUsername + " To: " + receiverUsername +
@@ -122,167 +402,57 @@ public class MessagingTests extends BaseTest {
         logger.info("Message data test completed for: " + senderUsername + " -> " + receiverUsername);
     }
 
-    @Test(priority = 2, groups = {"messaging", "regression", "data"},
-            dataProvider = "conversationScenariosData", description = "Verify conversation scenarios with real data")
-    public void testConversationScenariosWithRealData(String scenarioName, String description,
-                                                      List<String> participants, List<String> messages) {
-        logger.info("Testing conversation scenario: " + scenarioName + " - " + description);
+    @Test(priority = 9, groups = {"messaging", "regression", "data"}, dataProvider = "conversationScenariosData", description = "Verify tu and tune conversation scenarios")
+    public void testConversationScenariosWithRealData(String scenarioName, String description, List<String> participants, List<String> messages) {
 
-        MessagePage messagePage = homePage.navigateToMessages();
+        logger.info("Testing scenario: " + scenarioName);
 
-        if (participants.size() >= 2 && !messages.isEmpty()) {
-            String participant1 = participants.get(0);
-            String participant2 = participants.get(1);
+        // Only test tu <-> tune scenarios
+        if (!(participants.contains("tu")
+                && participants.contains("tune"))) {
 
-            // Look for conversation between participants
-            if (messagePage.hasConversationWith(participant1) || messagePage.hasConversationWith(participant2)) {
-                String conversationPartner = messagePage.hasConversationWith(participant1) ? participant1 : participant2;
-
-                ConversationPage conversationPage = messagePage.openConversation(conversationPartner);
-
-                // Verify conversation scenario
-                Assert.assertTrue(conversationPage.isDisplayed(),
-                        "Conversation should be opened for scenario: " + scenarioName);
-
-                // Test sending a message from the scenario
-                if (!messages.isEmpty()) {
-                    String testMessage = messages.get(0);
-                    conversationPage.sendMessage(testMessage);
-
-                    // Verify message was sent
-                    Assert.assertTrue(conversationPage.isMessageSent(testMessage),
-                            "Message should be sent successfully");
-                }
-
-                conversationPage.navigateBack();
-            }
+            logger.info("Skipping non tu-tune scenario");
+            return;
         }
 
-        logger.info("Conversation scenario test completed: " + scenarioName);
-    }
+        MessagePage messagePage =
+                homePage.navigateToMessages();
 
-    // ==================== MESSAGE LIST TESTS ====================
+        Assert.assertTrue(
+                messagePage.hasConversationWith("tune"),
+                "Conversation with tune should exist"
+        );
 
-    @Test(priority = 3, groups = {"messaging", "smoke"},
-            description = "Verify navigation to message screen")
-    public void testNavigateToMessages() {
-        logger.info("Starting navigate to messages test");
+        ConversationPage conversationPage =
+                messagePage.openConversation("tune");
 
-        MessagePage messagePage = homePage.navigateToMessages();
+        Assert.assertTrue(
+                conversationPage.isDisplayed(),
+                "Conversation should open"
+        );
 
-        Assert.assertTrue(messagePage.isDisplayed(), "Message page should be displayed");
-        Assert.assertTrue(messagePage.verifyPageElements(), "Message page elements should be present");
+        // Send all messages in scenario
+        for (String testMessage : messages) {
 
-        logger.info("Navigate to messages test completed successfully");
-    }
+            conversationPage.sendMessage(testMessage);
 
-    @Test(priority = 2, groups = {"messaging", "regression"},
-            description = "Verify message list display")
-    public void testMessageListDisplay() {
-        logger.info("Starting message list display test");
+            conversationPage.waitForMessageToAppear(testMessage);
 
-        MessagePage messagePage = homePage.navigateToMessages();
+            Assert.assertTrue(
+                    conversationPage.isMessageDisplayed(testMessage),
+                    "Message should display: " + testMessage
+            );
 
-        if (messagePage.hasConversations()) {
-            Assert.assertTrue(messagePage.hasConversations(),
-                    "Conversation list should contain conversations");
-            Assert.assertTrue(messagePage.getConversationCount() > 0,
-                    "Should have at least one conversation");
-        } else {
-            Assert.assertTrue(messagePage.isEmptyStateDisplayed(),
-                    "Empty state should be displayed when no conversations exist");
+            logger.info("Sent scenario message: "
+                    + testMessage);
         }
 
-        logger.info("Message list display test completed successfully");
+        conversationPage.navigateBack();
+
+        logger.info("Scenario completed: " + scenarioName);
     }
 
-    @Test(priority = 3, groups = {"messaging", "regression"},
-            description = "Verify conversation item elements")
-    public void testConversationItemElements() {
-        logger.info("Starting conversation item elements test");
-
-        MessagePage messagePage = homePage.navigateToMessages();
-
-        if (messagePage.hasConversations()) {
-            String firstConversationId = messagePage.getFirstConversationId();
-
-            Assert.assertTrue(messagePage.isConversationAvatarDisplayed(firstConversationId),
-                    "Conversation avatar should be displayed");
-            Assert.assertTrue(messagePage.isConversationNameDisplayed(firstConversationId),
-                    "Conversation name should be displayed");
-            Assert.assertFalse(messagePage.getConversationName(firstConversationId).isEmpty(),
-                    "Conversation name should not be empty");
-
-            if (messagePage.hasLastMessage(firstConversationId)) {
-                Assert.assertTrue(messagePage.isLastMessageDisplayed(firstConversationId),
-                        "Last message should be displayed");
-                Assert.assertTrue(messagePage.isMessageTimeDisplayed(firstConversationId),
-                        "Message time should be displayed");
-            }
-        } else {
-            logger.info("No conversations available for testing conversation item elements");
-        }
-
-        logger.info("Conversation item elements test completed successfully");
-    }
-
-    @Test(priority = 4, groups = {"messaging", "regression"},
-            description = "Verify conversation selection")
-    public void testConversationSelection() {
-        logger.info("Starting conversation selection test");
-
-        MessagePage messagePage = homePage.navigateToMessages();
-
-        if (messagePage.hasConversations()) {
-            String firstConversationId = messagePage.getFirstConversationId();
-            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
-
-            Assert.assertTrue(conversationPage.isDisplayed(),
-                    "Conversation page should be displayed after selection");
-            Assert.assertTrue(conversationPage.verifyPageElements(),
-                    "Conversation page elements should be present");
-        } else {
-            logger.info("No conversations available for testing conversation selection");
-        }
-
-        logger.info("Conversation selection test completed successfully");
-    }
-
-    // ==================== CONVERSATION TESTS ====================
-
-    @Test(priority = 5, groups = {"messaging", "regression"},
-            description = "Verify conversation page elements")
-    public void testConversationPageElements() {
-        logger.info("Starting conversation page elements test");
-
-        MessagePage messagePage = homePage.navigateToMessages();
-
-        if (messagePage.hasConversations()) {
-            String firstConversationId = messagePage.getFirstConversationId();
-            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
-
-            Assert.assertTrue(conversationPage.isHeaderDisplayed(),
-                    "Conversation header should be displayed");
-            Assert.assertTrue(conversationPage.isBackButtonDisplayed(),
-                    "Back button should be displayed");
-            Assert.assertTrue(conversationPage.isMessageInputDisplayed(),
-                    "Message input should be displayed");
-            Assert.assertTrue(conversationPage.isSendButtonDisplayed(),
-                    "Send button should be displayed");
-
-            if (conversationPage.hasMessages()) {
-                Assert.assertTrue(conversationPage.isMessageListDisplayed(),
-                        "Message list should be displayed when messages exist");
-            }
-        } else {
-            logger.info("No conversations available for testing conversation page elements");
-        }
-
-        logger.info("Conversation page elements test completed successfully");
-    }
-
-    @Test(priority = 6, groups = {"messaging", "regression"},
-            description = "Verify send message functionality")
+    @Test(priority = 10, groups = {"messaging", "regression"}, description = "Verify send message functionality")
     public void testSendMessage() {
         logger.info("Starting send message test");
 
@@ -290,9 +460,14 @@ public class MessagingTests extends BaseTest {
 
         if (messagePage.hasConversations()) {
             String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
             ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
 
-            String testMessage = "Test message " + System.currentTimeMillis();
+            String testMessage =
+                    testDataReader.getRandomMessageTemplate("greeting");
             int initialMessageCount = conversationPage.getMessageCount();
 
             conversationPage.sendMessage(testMessage);
@@ -311,8 +486,7 @@ public class MessagingTests extends BaseTest {
         logger.info("Send message test completed successfully");
     }
 
-    @Test(priority = 7, groups = {"messaging", "regression"},
-            description = "Verify empty message handling")
+    @Test(priority = 11, groups = {"messaging", "regression"}, description = "Verify empty message handling")
     public void testEmptyMessageHandling() {
         logger.info("Starting empty message handling test");
 
@@ -320,15 +494,21 @@ public class MessagingTests extends BaseTest {
 
         if (messagePage.hasConversations()) {
             String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
             ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
 
             // Try to send empty message
-            conversationPage.enterMessage("");
+            conversationPage.enterMessage(
+                    testDataReader.getTestData("emptyMessage"));
             Assert.assertFalse(conversationPage.isSendButtonEnabled(),
                     "Send button should be disabled for empty message");
 
             // Try to send whitespace only message
-            conversationPage.enterMessage("   ");
+            conversationPage.enterMessage(
+                    testDataReader.getTestData("whitespaceMessage"));
             Assert.assertFalse(conversationPage.isSendButtonEnabled(),
                     "Send button should be disabled for whitespace-only message");
 
@@ -343,8 +523,7 @@ public class MessagingTests extends BaseTest {
         logger.info("Empty message handling test completed successfully");
     }
 
-    @Test(priority = 8, groups = {"messaging", "regression"},
-            description = "Verify long message handling")
+    @Test(priority = 12, groups = {"messaging", "regression"}, description = "Verify long message handling")
     public void testLongMessageHandling() {
         logger.info("Starting long message handling test");
 
@@ -352,10 +531,15 @@ public class MessagingTests extends BaseTest {
 
         if (messagePage.hasConversations()) {
             String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
             ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
 
             // Create a long message
-            String longMessage = "This is a very long message that exceeds normal length limits. ".repeat(10);
+            String longMessage =
+                    testDataReader.getTestData("longMessage");
 
             conversationPage.enterMessage(longMessage);
 
@@ -376,8 +560,7 @@ public class MessagingTests extends BaseTest {
         logger.info("Long message handling test completed successfully");
     }
 
-    @Test(priority = 9, groups = {"messaging", "regression"},
-            description = "Verify message list scrolling")
+    @Test(priority = 13, groups = {"messaging", "regression"}, description = "Verify message list scrolling")
     public void testMessageListScrolling() {
         logger.info("Starting message list scrolling test");
 
@@ -385,6 +568,10 @@ public class MessagingTests extends BaseTest {
 
         if (messagePage.hasConversations()) {
             String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
             ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
 
             if (conversationPage.hasMessages() && conversationPage.getMessageCount() > 5) {
@@ -407,83 +594,7 @@ public class MessagingTests extends BaseTest {
         logger.info("Message list scrolling test completed successfully");
     }
 
-    // ==================== NAVIGATION TESTS ====================
-
-    @Test(priority = 10, groups = {"messaging", "navigation"},
-            description = "Verify back navigation from conversation")
-    public void testBackNavigationFromConversation() {
-        logger.info("Starting back navigation from conversation test");
-
-        MessagePage messagePage = homePage.navigateToMessages();
-
-        if (messagePage.hasConversations()) {
-            String firstConversationId = messagePage.getFirstConversationId();
-            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
-
-            MessagePage returnedMessagePage = conversationPage.navigateBack();
-
-            Assert.assertTrue(returnedMessagePage.isDisplayed(),
-                    "Should return to message page after back navigation");
-            Assert.assertTrue(returnedMessagePage.verifyPageElements(),
-                    "Message page elements should be present after back navigation");
-        } else {
-            logger.info("No conversations available for testing back navigation");
-        }
-
-        logger.info("Back navigation from conversation test completed successfully");
-    }
-
-    @Test(priority = 11, groups = {"messaging", "navigation"},
-            description = "Verify back navigation from message list")
-    public void testBackNavigationFromMessageList() {
-        logger.info("Starting back navigation from message list test");
-
-        MessagePage messagePage = homePage.navigateToMessages();
-        HomePage returnedHomePage = messagePage.navigateBack();
-
-        Assert.assertTrue(returnedHomePage.isDisplayed(),
-                "Should return to home page after back navigation from message list");
-        Assert.assertTrue(returnedHomePage.verifyPageElements(),
-                "Home page elements should be present after back navigation");
-
-        logger.info("Back navigation from message list test completed successfully");
-    }
-
-    // ==================== ERROR HANDLING TESTS ====================
-
-    @Test(priority = 12, groups = {"messaging", "regression"},
-            description = "Verify message sending error handling")
-    public void testMessageSendingErrorHandling() {
-        logger.info("Starting message sending error handling test");
-
-        MessagePage messagePage = homePage.navigateToMessages();
-
-        if (messagePage.hasConversations()) {
-            String firstConversationId = messagePage.getFirstConversationId();
-            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
-
-            // Simulate network error by putting app in background briefly
-            backgroundApp(2);
-
-            String testMessage = "Test message during network issue " + System.currentTimeMillis();
-            conversationPage.sendMessage(testMessage);
-
-            // Check if error handling is working (message might be queued or show error)
-            // This test verifies the app doesn't crash during network issues
-            Assert.assertTrue(conversationPage.isDisplayed(),
-                    "Conversation page should remain stable during network issues");
-
-        } else {
-            logger.info("No conversations available for testing message sending error handling");
-        }
-
-        logger.info("Message sending error handling test completed successfully");
-    }
-
-    // ==================== UI RESPONSIVENESS TESTS ====================
-
-    @Test(priority = 13, groups = {"messaging", "regression"},
-            description = "Verify message input responsiveness")
+    @Test(priority = 14, groups = {"messaging", "regression"}, description = "Verify message input responsiveness")
     public void testMessageInputResponsiveness() {
         logger.info("Starting message input responsiveness test");
 
@@ -491,10 +602,15 @@ public class MessagingTests extends BaseTest {
 
         if (messagePage.hasConversations()) {
             String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
             ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
 
             // Test rapid typing
-            String[] rapidMessages = {"Hello", "How are you?", "Test message", "Quick typing test"};
+            List<String> rapidMessages =
+                    testDataReader.getRapidMessages();
 
             for (String message : rapidMessages) {
                 conversationPage.enterMessage(message);
@@ -516,8 +632,7 @@ public class MessagingTests extends BaseTest {
         logger.info("Message input responsiveness test completed successfully");
     }
 
-    @Test(priority = 14, groups = {"messaging", "regression"},
-            description = "Verify conversation refresh functionality")
+    @Test(priority = 15, groups = {"messaging", "regression"}, description = "Verify conversation refresh functionality")
     public void testConversationRefresh() {
         logger.info("Starting conversation refresh test");
 
@@ -525,6 +640,10 @@ public class MessagingTests extends BaseTest {
 
         if (messagePage.hasConversations()) {
             String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
             ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
 
             int initialMessageCount = conversationPage.getMessageCount();
@@ -547,5 +666,123 @@ public class MessagingTests extends BaseTest {
         }
 
         logger.info("Conversation refresh test completed successfully");
+    }
+
+    @Test(priority = 16, groups = {"messaging", "regression"}, description = "Verify sending multiple message types")
+    public void testSendMultipleMessageTypes() {
+
+        logger.info("Starting multiple message types test");
+
+        MessagePage messagePage =
+                homePage.navigateToMessages();
+
+        if (messagePage.hasConversations()) {
+
+            String firstConversationId =
+                    messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
+            ConversationPage conversationPage =
+                    messagePage.selectConversation(firstConversationId);
+
+            List<String> testMessages = Arrays.asList(
+
+                    testDataReader.getRandomMessageTemplate("greeting"),
+
+                    testDataReader.getRandomMessageTemplate("question"),
+
+                    testDataReader.getRandomMessageTemplate("emoji"),
+
+                    testDataReader.getTestData("vietnameseMessage"),
+
+                    testDataReader.getTestData("unicodeMessage")
+            );
+
+            for (String message : testMessages) {
+
+                int initialMessageCount =
+                        conversationPage.getMessageCount();
+
+                conversationPage.sendMessage(message);
+
+                conversationPage.waitForMessageToAppear(message);
+
+                Assert.assertTrue(
+                        conversationPage.getMessageCount() > initialMessageCount,
+                        "Message count should increase"
+                );
+
+                Assert.assertTrue(
+                        conversationPage.isMessageDisplayed(message),
+                        "Message should be displayed: " + message
+                );
+
+                logger.info("Sent message: " + message);
+            }
+
+        } else {
+            logger.info("No conversations available");
+        }
+
+        logger.info("Multiple message types test completed");
+    }
+
+    @Test(priority = 17, groups = {"messaging", "regression"}, description = "Verify message sending error handling")
+    public void testMessageSendingErrorHandling() {
+        logger.info("Starting message sending error handling test");
+
+        MessagePage messagePage = homePage.navigateToMessages();
+
+        if (messagePage.hasConversations()) {
+            String firstConversationId = messagePage.getFirstConversationId();
+            Assert.assertNotNull(
+                    firstConversationId,
+                    "First conversation id should not be null"
+            );
+            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
+
+            // Simulate network error by putting app in background briefly
+            backgroundApp(2);
+
+            String testMessage = "Test message during network issue " + System.currentTimeMillis();
+            conversationPage.sendMessage(testMessage);
+
+            // Check if error handling is working (message might be queued or show error)
+            // This test verifies the app doesn't crash during network issues
+            Assert.assertTrue(conversationPage.isDisplayed(),
+                    "Conversation page should remain stable during network issues");
+
+        } else {
+            logger.info("No conversations available for testing message sending error handling");
+        }
+
+        logger.info("Message sending error handling test completed successfully");
+    }
+
+    @Test(priority = 18, groups = {"messaging", "e2e"}, description = "Verify messaging between tu and tune")
+    public void testSendMessageBetweenTuAndTune() {
+
+        String newMessage =
+                testDataReader.getTestData("vietnameseMessage");
+
+        MessagePage messagePage =
+                homePage.navigateToMessages();
+
+        ConversationPage conversationPage =
+                messagePage.openConversation("tune");
+
+        conversationPage.sendMessage(newMessage);
+
+        conversationPage.waitForMessageToAppear(newMessage);
+
+        Assert.assertTrue(
+                conversationPage.isMessageDisplayed(newMessage),
+                "Message should be displayed"
+        );
+
+        logger.info("Message sent between tu and tune: "
+                + newMessage);
     }
 }

@@ -3,19 +3,14 @@ package com.modis.pages;
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
+import io.appium.java_client.AppiumBy;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 
 import org.openqa.selenium.WebElement;
 
 import java.util.List;
 
-/**
- * Page Object for Message Screen (Chat List)
- * Handles message conversations list and navigation
- */
 public class MessagePage extends BasePage {
-
-    // PAGE ELEMENTS
 
     @AndroidFindBy(accessibility = TestIDs.MESSAGE_SCREEN)
     private WebElement messageScreen;
@@ -28,8 +23,6 @@ public class MessagePage extends BasePage {
 
     @AndroidFindBy(accessibility = TestIDs.MESSAGE_EMPTY_STATE)
     private WebElement emptyState;
-
-    // NAVIGATION ACTIONS
 
     public HomePage navigateBack() {
 
@@ -64,28 +57,49 @@ public class MessagePage extends BasePage {
         return homePage;
     }
 
-    public ConversationPage openConversation(String conversationId) {
-        logger.info("Opening conversation: {}", conversationId);
-        String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
+    public ConversationPage openConversation(
+            String conversationId
+    ) {
 
-        WebElement conversationItem = scrollToElementByAccessibilityId(conversationItemId);
-        if (conversationItem != null) {
+        logger.info(
+                "Opening conversation: {}",
+                conversationId
+        );
+
+        try {
+
+            String xpath =
+                    "//*[@text='" + conversationId + "']";
+
+            WebElement conversationItem =
+                    findByXPath(xpath);
+
+            if (conversationItem == null) {
+
+                throw new RuntimeException(
+                        "Conversation not found: "
+                                + conversationId
+                );
+            }
+
             clickElement(conversationItem);
-            return new ConversationPage();
-        } else {
-            logger.warn("Conversation {} not found in list", conversationId);
-            return new ConversationPage(); // Return anyway for test continuity
+
+            ConversationPage conversationPage =
+                    new ConversationPage();
+
+            conversationPage.waitForPageToLoad();
+
+            return conversationPage;
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Conversation not found: "
+                            + conversationId
+            );
         }
     }
 
-    // LIST ACTIONS
-
-    /**
-     * Scroll through conversations list
-     *
-     * @param direction Direction to scroll (up/down)
-     * @return MessagePage for method chaining
-     */
     public MessagePage scrollConversationsList(String direction) {
         logger.debug("Scrolling conversations list: {}", direction);
         waitForAnimation();
@@ -116,28 +130,31 @@ public class MessagePage extends BasePage {
         return this;
     }
 
-    /**
-     * Find conversation in list
-     *
-     * @param conversationId Conversation ID to find
-     * @return true if conversation found, false otherwise
-     */
-    public boolean findConversationInList(String conversationId) {
-        logger.info("Searching for conversation in list: {}", conversationId);
-        String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
+    public boolean findConversationInList(
+            String conversationId
+    ) {
 
-        WebElement conversationElement = scrollToElementByAccessibilityId(conversationItemId);
-        return conversationElement != null;
+        logger.info(
+                "Searching for conversation in list: {}",
+                conversationId
+        );
+
+        try {
+
+            String xpath =
+                    "//*[@text='" + conversationId + "']";
+
+            WebElement element =
+                    findByXPath(xpath);
+
+            return element != null;
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 
-    // CONVERSATION ACTIONS
-
-    /**
-     * Long press on conversation for options
-     *
-     * @param conversationId Conversation ID
-     * @return MessagePage for method chaining
-     */
     public MessagePage longPressConversation(String conversationId) {
         logger.info("Long pressing conversation: {}", conversationId);
         String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
@@ -219,12 +236,12 @@ public class MessagePage extends BasePage {
         }
 
         try {
-
             List<WebElement> conversations =
-                    findElementsByXPath(
-                            "//*[contains(@resource-id,'message_conversation_item_')]"
+                    driver.findElements(
+                            AppiumBy.androidUIAutomator(
+                                    "new UiSelector().descriptionContains(\"message_conversation_item_\")"
+                            )
                     );
-
             int count =
                     conversations != null
                             ? conversations.size()
@@ -444,10 +461,24 @@ public class MessagePage extends BasePage {
 
     @Override
     public boolean isDisplayed() {
+
+        logger.info("Checking if MessagePage is displayed");
+
         try {
-            return messageScreen.isDisplayed();
+
+            waitForElementVisible(TestIDs.MESSAGE_SCREEN);
+
+            return isElementDisplayedByAccessibilityId(
+                    TestIDs.MESSAGE_SCREEN
+            );
+
         } catch (Exception e) {
-            logger.debug("Message screen not displayed", e);
+
+            logger.warn(
+                    "MessagePage not displayed: {}",
+                    e.getMessage()
+            );
+
             return false;
         }
     }
@@ -458,11 +489,22 @@ public class MessagePage extends BasePage {
     }
 
     public MessagePage waitForPageToLoad() {
+
         logger.info("Waiting for message page to load");
 
         waitForElementVisible(TestIDs.MESSAGE_SCREEN);
 
+        waitForAnimation();
+
+        if (!isDisplayed()) {
+
+            throw new RuntimeException(
+                    "Message page failed to load"
+            );
+        }
+
         logger.info("Message page loaded successfully");
+
         return this;
     }
 
@@ -485,11 +527,6 @@ public class MessagePage extends BasePage {
         }
     }
 
-    /**
-     * Get page state summary for debugging
-     *
-     * @return Page state summary
-     */
     public String getPageStateSummary() {
         StringBuilder summary = new StringBuilder();
         summary.append("Message Page State:\n");
@@ -502,15 +539,109 @@ public class MessagePage extends BasePage {
     }
 
     public boolean hasConversations() {
-        return true;
+
+        return getVisibleConversationsCount() > 0;
     }
 
     public String getFirstConversationId() {
-        return "conv_123";
+
+        logger.info("Getting first conversation id");
+
+        try {
+
+            List<WebElement> conversations =
+                    driver.findElements(
+                            AppiumBy.androidUIAutomator(
+                                    "new UiSelector().descriptionContains(\"message_conversation_item_\")"
+                            )
+                    );
+
+            if (conversations == null || conversations.isEmpty()) {
+
+                logger.warn("No conversations found");
+
+                return null;
+            }
+
+            WebElement firstConversation = conversations.get(0);
+
+            String contentDesc =
+                    firstConversation.getDomAttribute("content-desc");
+
+            if (contentDesc == null || contentDesc.isBlank()) {
+                contentDesc =
+                        firstConversation.getAttribute("contentDescription");
+            }
+
+            logger.info(
+                    "First conversation content-desc: {}",
+                    contentDesc
+            );
+
+            if (contentDesc == null || contentDesc.isEmpty()) {
+                return null;
+            }
+
+            return contentDesc.replace(
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX,
+                    ""
+            );
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed getting first conversation id: {}",
+                    e.getMessage()
+            );
+
+            return null;
+        }
     }
 
     public ConversationPage selectConversation(String id) {
-        return new ConversationPage();
+        if (id == null || id.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Conversation id cannot be null or blank"
+            );
+        }
+        logger.info(
+                "Selecting conversation: {}",
+                id
+        );
+
+        try {
+
+            String conversationItemId =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + id;
+
+            waitForElementVisible(
+                    conversationItemId
+            );
+
+            clickByAccessibilityId(
+                    conversationItemId
+            );
+
+            ConversationPage conversationPage =
+                    new ConversationPage();
+
+            conversationPage.waitForPageToLoad();
+
+            return conversationPage;
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed selecting conversation {}: {}",
+                    id,
+                    e.getMessage()
+            );
+
+            throw new RuntimeException(
+                    "Unable to open conversation: " + id
+            );
+        }
     }
 
     public MessagePage clickNewMessageIcon() {
@@ -541,43 +672,134 @@ public class MessagePage extends BasePage {
         return this;
     }
 
-    public boolean isConversationNameDisplayed(String id) {
-        return true;
+    public boolean isConversationNameDisplayed(
+            String id
+    ) {
+
+        try {
+
+            String nameId =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                            + id
+                            + "_name";
+
+            return isElementDisplayedByAccessibilityId(
+                    nameId
+            );
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 
-    public String getConversationName(String id) {
-        return "Test User";
+    public String getConversationName(
+            String id
+    ) {
+
+        try {
+
+            String nameId =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                            + id
+                            + "_name";
+
+            WebElement nameElement =
+                    findByAccessibilityId(nameId);
+
+            return nameElement.getText();
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed getting conversation name: {}",
+                    id
+            );
+
+            return "";
+        }
     }
 
-    public boolean isLastMessageDisplayed(String id) {
-        return true;
+    public boolean isLastMessageDisplayed(
+            String id
+    ) {
+
+        return hasLastMessage(id);
     }
 
-    public boolean isMessageTimeDisplayed(String id) {
-        return true;
-    }
+    public boolean isMessageTimeDisplayed(
+            String id
+    ) {
 
+        try {
+
+            String timeId =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                            + id
+                            + "_time";
+
+            return isElementDisplayedByAccessibilityId(
+                    timeId
+            );
+
+        } catch (Exception e) {
+
+            return false;
+        }
+    }
 
     public int getConversationCount() {
-        return 1;
+
+        return getVisibleConversationsCount();
     }
 
-    public boolean isConversationAvatarDisplayed(String id) {
-        return true;
+    public boolean isConversationAvatarDisplayed(
+            String id
+    ) {
+
+        try {
+
+            String avatarId =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                            + id
+                            + "_avatar";
+
+            return isElementDisplayedByAccessibilityId(
+                    avatarId
+            );
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Conversation avatar not found: {}",
+                    id
+            );
+
+            return false;
+        }
     }
 
-    public boolean hasLastMessage(String id) {
-        return true;
+    public boolean hasLastMessage(
+            String id
+    ) {
+
+        try {
+
+            String lastMessageId =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                            + id
+                            + "_last_message";
+
+            return isElementDisplayedByAccessibilityId(
+                    lastMessageId
+            );
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 
-    // CONVERSATION MANAGEMENT ACTIONS
-
-    /**
-     * Check if conversation exists with specific user
-     *
-     * @param username Username to check conversation with
-     * @return true if conversation exists
-     */
     public boolean hasConversationWith(String username) {
         logger.info("Checking if conversation exists with: " + username);
         waitForAnimation();

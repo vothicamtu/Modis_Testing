@@ -16,7 +16,7 @@ import java.util.*;
 public class TestDataReader {
     private static final Logger logger = LoggerFactory.getLogger(TestDataReader.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     private JsonNode usersData;
     private JsonNode friendsData;
     private JsonNode messagesData;
@@ -51,11 +51,12 @@ public class TestDataReader {
 
     /**
      * Get valid login credentials from test data
+     *
      * @return List of valid login credentials
      */
     public List<Map<String, Object>> getValidLoginCredentials() {
         List<Map<String, Object>> credentials = new ArrayList<>();
-        
+
         JsonNode validCredentials = usersData.get("loginTestData").get("validCredentials");
         for (JsonNode credential : validCredentials) {
             Map<String, Object> credMap = new HashMap<>();
@@ -70,17 +71,18 @@ public class TestDataReader {
             credMap.put("expectedResult", credential.get("expectedResult").asText());
             credentials.add(credMap);
         }
-        
+
         return credentials;
     }
 
     /**
      * Get invalid login credentials from test data
+     *
      * @return List of invalid login credentials
      */
     public List<Map<String, Object>> getInvalidLoginCredentials() {
         List<Map<String, Object>> credentials = new ArrayList<>();
-        
+
         JsonNode invalidCredentials = usersData.get("loginTestData").get("invalidCredentials");
         for (JsonNode credential : invalidCredentials) {
             Map<String, Object> credMap = new HashMap<>();
@@ -92,23 +94,24 @@ public class TestDataReader {
             credMap.put("description", credential.get("description").asText());
             credentials.add(credMap);
         }
-        
+
         return credentials;
     }
 
     /**
      * Get retry login scenarios from test data
+     *
      * @return List of retry login scenarios
      */
     public List<Map<String, Object>> getRetryLoginScenarios() {
         List<Map<String, Object>> scenarios = new ArrayList<>();
-        
+
         JsonNode retryScenarios = usersData.get("retryTestScenarios");
         for (JsonNode scenario : retryScenarios) {
             Map<String, Object> scenarioMap = new HashMap<>();
             scenarioMap.put("id", scenario.get("id").asText());
             scenarioMap.put("description", scenario.get("description").asText());
-            
+
             List<Map<String, Object>> attempts = new ArrayList<>();
             JsonNode attemptsNode = scenario.get("attempts");
             for (JsonNode attempt : attemptsNode) {
@@ -125,12 +128,13 @@ public class TestDataReader {
             scenarioMap.put("attempts", attempts);
             scenarios.add(scenarioMap);
         }
-        
+
         return scenarios;
     }
 
     /**
      * Get a specific valid user by username
+     *
      * @param username The username to search for
      * @return User data map or null if not found
      */
@@ -157,11 +161,12 @@ public class TestDataReader {
 
     /**
      * Get test friends data
+     *
      * @return List of test friends
      */
     public List<Map<String, Object>> getTestFriends() {
         List<Map<String, Object>> friends = new ArrayList<>();
-        
+
         JsonNode testFriends = friendsData.get("testFriends");
         for (JsonNode friend : testFriends) {
             Map<String, Object> friendMap = new HashMap<>();
@@ -176,17 +181,18 @@ public class TestDataReader {
             }
             friends.add(friendMap);
         }
-        
+
         return friends;
     }
 
     /**
      * Get friend requests data
+     *
      * @return List of friend requests
      */
     public List<Map<String, Object>> getFriendRequests() {
         List<Map<String, Object>> requests = new ArrayList<>();
-        
+
         JsonNode friendRequests = friendsData.get("friendRequests");
         for (JsonNode request : friendRequests) {
             Map<String, Object> requestMap = new HashMap<>();
@@ -199,7 +205,7 @@ public class TestDataReader {
             requestMap.put("status", request.get("status").asText());
             requests.add(requestMap);
         }
-        
+
         return requests;
     }
 
@@ -207,11 +213,12 @@ public class TestDataReader {
 
     /**
      * Get test messages data
+     *
      * @return List of test messages
      */
     public List<Map<String, Object>> getTestMessages() {
         List<Map<String, Object>> messages = new ArrayList<>();
-        
+
         JsonNode testMessages = messagesData.get("testMessages");
         for (JsonNode message : testMessages) {
             Map<String, Object> messageMap = new HashMap<>();
@@ -226,30 +233,86 @@ public class TestDataReader {
             messageMap.put("category", message.get("category").asText());
             messages.add(messageMap);
         }
-        
+
         return messages;
+    }
+
+    public String getTestData(String key) {
+
+        JsonNode testData =
+                messagesData.get("testData");
+
+        if (testData == null || !testData.has(key)) {
+            logger.warn("Test data key not found: {}", key);
+            return "";
+        }
+
+        return testData.get(key).asText();
+    }
+
+    public List<String> getRapidMessages() {
+
+        List<String> rapidMessages = new ArrayList<>();
+
+        JsonNode messages =
+                messagesData
+                        .get("performanceTestData")
+                        .get("rapidMessages");
+
+        if (messages == null || !messages.isArray()) {
+            return rapidMessages;
+        }
+
+        for (JsonNode message : messages) {
+            rapidMessages.add(message.asText());
+        }
+
+        return rapidMessages;
+    }
+    public String getRandomMessageTemplate(String category) {
+
+        JsonNode templates =
+                messagesData
+                        .get("messageTemplates")
+                        .get(category);
+
+        if (templates == null
+                || !templates.isArray()
+                || templates.size() == 0) {
+
+            logger.warn("Message category not found: {}", category);
+            return "Test message";
+        }
+
+        Random random = new Random();
+
+        int randomIndex =
+                random.nextInt(templates.size());
+
+        return templates.get(randomIndex).asText();
     }
 
     /**
      * Get conversation scenarios
+     *
      * @return List of conversation scenarios
      */
     public List<Map<String, Object>> getConversationScenarios() {
         List<Map<String, Object>> scenarios = new ArrayList<>();
-        
+
         JsonNode conversationScenarios = messagesData.get("conversationScenarios");
         for (JsonNode scenario : conversationScenarios) {
             Map<String, Object> scenarioMap = new HashMap<>();
             scenarioMap.put("name", scenario.get("name").asText());
             scenarioMap.put("description", scenario.get("description").asText());
-            
+
             List<String> participants = new ArrayList<>();
             JsonNode participantsNode = scenario.get("participants");
             for (JsonNode participant : participantsNode) {
                 participants.add(participant.asText());
             }
             scenarioMap.put("participants", participants);
-            
+
             List<String> messages = new ArrayList<>();
             JsonNode messagesNode = scenario.get("messages");
             for (JsonNode message : messagesNode) {
@@ -258,7 +321,7 @@ public class TestDataReader {
             scenarioMap.put("messages", messages);
             scenarios.add(scenarioMap);
         }
-        
+
         return scenarios;
     }
 
@@ -266,11 +329,12 @@ public class TestDataReader {
 
     /**
      * Get test photos data
+     *
      * @return List of test photos
      */
     public List<Map<String, Object>> getTestPhotos() {
         List<Map<String, Object>> photos = new ArrayList<>();
-        
+
         JsonNode testPhotos = photosData.get("testPhotos");
         for (JsonNode photo : testPhotos) {
             Map<String, Object> photoMap = new HashMap<>();
@@ -281,34 +345,35 @@ public class TestDataReader {
             photoMap.put("caption", photo.get("caption").asText());
             photoMap.put("urlImage", photo.get("urlImage").asText());
             photoMap.put("timestamp", photo.get("timestamp").asText());
-            
+
             List<String> recipients = new ArrayList<>();
             JsonNode recipientsNode = photo.get("recipients");
             for (JsonNode recipient : recipientsNode) {
                 recipients.add(recipient.asText());
             }
             photoMap.put("recipients", recipients);
-            
+
             List<String> recipientUsernames = new ArrayList<>();
             JsonNode recipientUsernamesNode = photo.get("recipientUsernames");
             for (JsonNode username : recipientUsernamesNode) {
                 recipientUsernames.add(username.asText());
             }
             photoMap.put("recipientUsernames", recipientUsernames);
-            
+
             photos.add(photoMap);
         }
-        
+
         return photos;
     }
 
     /**
      * Get photo test scenarios
+     *
      * @return Map of photo test scenarios
      */
     public Map<String, Map<String, Object>> getPhotoTestScenarios() {
         Map<String, Map<String, Object>> scenarios = new HashMap<>();
-        
+
         JsonNode testScenarios = photosData.get("testScenarios");
         testScenarios.fieldNames().forEachRemaining(scenarioName -> {
             JsonNode scenario = testScenarios.get(scenarioName);
@@ -316,7 +381,7 @@ public class TestDataReader {
             scenarioMap.put("description", scenario.get("description").asText());
             scenarioMap.put("caption", scenario.get("caption").asText());
             scenarioMap.put("expectedResult", scenario.get("expectedResult").asText());
-            
+
             if (scenario.has("recipients")) {
                 List<String> recipients = new ArrayList<>();
                 JsonNode recipientsNode = scenario.get("recipients");
@@ -325,14 +390,14 @@ public class TestDataReader {
                 }
                 scenarioMap.put("recipients", recipients);
             }
-            
+
             if (scenario.has("selectAll")) {
                 scenarioMap.put("selectAll", scenario.get("selectAll").asBoolean());
             }
-            
+
             scenarios.put(scenarioName, scenarioMap);
         });
-        
+
         return scenarios;
     }
 
@@ -340,6 +405,7 @@ public class TestDataReader {
 
     /**
      * Get random valid user credentials
+     *
      * @return Random valid user credentials
      */
     public Map<String, Object> getRandomValidUser() {
@@ -347,13 +413,14 @@ public class TestDataReader {
         if (validUsers.isEmpty()) {
             throw new RuntimeException("No valid users found in test data");
         }
-        
+
         Random random = new Random();
         return validUsers.get(random.nextInt(validUsers.size()));
     }
 
     /**
      * Get random test message
+     *
      * @return Random test message
      */
     public Map<String, Object> getRandomTestMessage() {
@@ -361,13 +428,14 @@ public class TestDataReader {
         if (messages.isEmpty()) {
             throw new RuntimeException("No test messages found in test data");
         }
-        
+
         Random random = new Random();
         return messages.get(random.nextInt(messages.size()));
     }
 
     /**
      * Get random test photo
+     *
      * @return Random test photo
      */
     public Map<String, Object> getRandomTestPhoto() {
@@ -375,113 +443,117 @@ public class TestDataReader {
         if (photos.isEmpty()) {
             throw new RuntimeException("No test photos found in test data");
         }
-        
+
         Random random = new Random();
         return photos.get(random.nextInt(photos.size()));
     }
-    
+
     // ==================== INVALID LOGIN DATA METHODS ====================
-    
+
     /**
      * Get invalid login credentials for negative testing
+     *
      * @return Array of invalid login data [username, password, expectedError]
      */
     public static Object[][] getInvalidLoginData() {
-        return new Object[][] {
-            {"invalid_user", "invalid_pass", "Tài khoản hoặc mật khẩu không chính xác"},
-            {"", "password123", "Vui lòng nhập đầy đủ thông tin!"},
-            {"username", "", "Vui lòng nhập đầy đủ thông tin!"},
-            {"", "", "Vui lòng nhập đầy đủ thông tin!"},
-            {"nonexistent@email.com", "password123", "Tên đăng nhập không chính xác!"},
-            {"admin", "wrongpassword", "Mật khẩu không chính xác!"},
-            {"test123", "123456", "Tài khoản hoặc mật khẩu không chính xác"},
-            {"user@domain", "pass", "Mật khẩu không chính xác!"},
-            {"specialchar!@#", "password", "Tên đăng nhập không chính xác!"},
-            {"verylongusernamethatexceedslimits", "password", "Tên đăng nhập không chính xác!"}
+        return new Object[][]{
+                {"invalid_user", "invalid_pass", "Tài khoản hoặc mật khẩu không chính xác"},
+                {"", "password123", "Vui lòng nhập đầy đủ thông tin!"},
+                {"username", "", "Vui lòng nhập đầy đủ thông tin!"},
+                {"", "", "Vui lòng nhập đầy đủ thông tin!"},
+                {"nonexistent@email.com", "password123", "Tên đăng nhập không chính xác!"},
+                {"admin", "wrongpassword", "Mật khẩu không chính xác!"},
+                {"test123", "123456", "Tài khoản hoặc mật khẩu không chính xác"},
+                {"user@domain", "pass", "Mật khẩu không chính xác!"},
+                {"specialchar!@#", "password", "Tên đăng nhập không chính xác!"},
+                {"verylongusernamethatexceedslimits", "password", "Tên đăng nhập không chính xác!"}
         };
     }
-    
+
     /**
      * Get common invalid username patterns
+     *
      * @return Array of invalid usernames
      */
     public static String[] getInvalidUsernames() {
-        return new String[] {
-            "",                              // Empty
-            " ",                             // Space only
-            "a",                             // Too short
-            "verylongusernamethatexceedsnormallimitsandshouldfail", // Too long
-            "user@#$%",                      // Special characters
-            "user with spaces",              // Spaces
-            "user\nwith\nnewlines",         // Newlines
-            "user'with'quotes",             // Single quotes
-            "user\"with\"doublequotes",     // Double quotes
-            "user<script>alert('xss')</script>", // XSS attempt
-            "../../etc/passwd",             // Path traversal
-            "SELECT * FROM users",          // SQL injection attempt
-            "null",                         // Null string
-            "undefined",                    // Undefined string
-            "0",                           // Numeric string
-            "false",                       // Boolean string
-            "{}",                          // JSON object
-            "[]"                           // JSON array
+        return new String[]{
+                "",                              // Empty
+                " ",                             // Space only
+                "a",                             // Too short
+                "verylongusernamethatexceedsnormallimitsandshouldfail", // Too long
+                "user@#$%",                      // Special characters
+                "user with spaces",              // Spaces
+                "user\nwith\nnewlines",         // Newlines
+                "user'with'quotes",             // Single quotes
+                "user\"with\"doublequotes",     // Double quotes
+                "user<script>alert('xss')</script>", // XSS attempt
+                "../../etc/passwd",             // Path traversal
+                "SELECT * FROM users",          // SQL injection attempt
+                "null",                         // Null string
+                "undefined",                    // Undefined string
+                "0",                           // Numeric string
+                "false",                       // Boolean string
+                "{}",                          // JSON object
+                "[]"                           // JSON array
         };
     }
-    
+
     /**
      * Get common invalid password patterns
+     *
      * @return Array of invalid passwords
      */
     public static String[] getInvalidPasswords() {
-        return new String[] {
-            "",                              // Empty
-            " ",                             // Space only
-            "1",                             // Too short
-            "12",                            // Too short
-            "123",                           // Too short
-            "password",                      // Common weak password
-            "123456",                        // Common weak password
-            "admin",                         // Common weak password
-            "test",                          // Common weak password
-            "qwerty",                        // Common weak password
-            "abc123",                        // Common weak password
-            "password123",                   // Common pattern
-            "admin123",                      // Common pattern
-            "verylongpasswordthatexceedsnormallimitsandshouldfailvalidation", // Too long
-            "pass with spaces",              // Spaces
-            "pass\nwith\nnewlines",         // Newlines
-            "pass'with'quotes",             // Single quotes
-            "pass\"with\"doublequotes",     // Double quotes
-            "<script>alert('xss')</script>", // XSS attempt
-            "../../etc/passwd",             // Path traversal
-            "DROP TABLE users",             // SQL injection attempt
-            "null",                         // Null string
-            "undefined",                    // Undefined string
-            "false",                       // Boolean string
-            "{}"                           // JSON object
+        return new String[]{
+                "",                              // Empty
+                " ",                             // Space only
+                "1",                             // Too short
+                "12",                            // Too short
+                "123",                           // Too short
+                "password",                      // Common weak password
+                "123456",                        // Common weak password
+                "admin",                         // Common weak password
+                "test",                          // Common weak password
+                "qwerty",                        // Common weak password
+                "abc123",                        // Common weak password
+                "password123",                   // Common pattern
+                "admin123",                      // Common pattern
+                "verylongpasswordthatexceedsnormallimitsandshouldfailvalidation", // Too long
+                "pass with spaces",              // Spaces
+                "pass\nwith\nnewlines",         // Newlines
+                "pass'with'quotes",             // Single quotes
+                "pass\"with\"doublequotes",     // Double quotes
+                "<script>alert('xss')</script>", // XSS attempt
+                "../../etc/passwd",             // Path traversal
+                "DROP TABLE users",             // SQL injection attempt
+                "null",                         // Null string
+                "undefined",                    // Undefined string
+                "false",                       // Boolean string
+                "{}"                           // JSON object
         };
     }
-    
+
     /**
      * Get test data for boundary value testing
+     *
      * @return Array of boundary test data [username, password, description]
      */
     public static Object[][] getBoundaryLoginData() {
-        return new Object[][] {
-            {"", "", "Both empty"},
-            {"a", "b", "Minimum length"},
-            {"ab", "cd", "Two characters"},
-            {"abc", "def", "Three characters"},
-            {"user", "pass", "Four characters"},
-            {"username", "password", "Normal length"},
-            {"verylongusername", "verylongpassword", "Long credentials"},
-            {"extremelylongusernamethatexceedsnormallimits", "extremelylongpasswordthatexceedsnormallimits", "Extremely long"},
-            {"user123", "", "Username only"},
-            {"", "pass123", "Password only"},
-            {"   ", "   ", "Whitespace only"},
-            {"user\t", "pass\t", "With tabs"},
-            {"user\n", "pass\n", "With newlines"},
-            {"user ", " pass", "With leading/trailing spaces"}
+        return new Object[][]{
+                {"", "", "Both empty"},
+                {"a", "b", "Minimum length"},
+                {"ab", "cd", "Two characters"},
+                {"abc", "def", "Three characters"},
+                {"user", "pass", "Four characters"},
+                {"username", "password", "Normal length"},
+                {"verylongusername", "verylongpassword", "Long credentials"},
+                {"extremelylongusernamethatexceedsnormallimits", "extremelylongpasswordthatexceedsnormallimits", "Extremely long"},
+                {"user123", "", "Username only"},
+                {"", "pass123", "Password only"},
+                {"   ", "   ", "Whitespace only"},
+                {"user\t", "pass\t", "With tabs"},
+                {"user\n", "pass\n", "With newlines"},
+                {"user ", " pass", "With leading/trailing spaces"}
         };
     }
 }

@@ -7,13 +7,7 @@ import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
 
-/**
- * Page Object for Home Screen
- * Handles main home screen functionality and navigation
- */
 public class HomePage extends BasePage {
-
-    // PAGE ELEMENTS
 
     @AndroidFindBy(accessibility = TestIDs.HOME_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.HOME_SCREEN)

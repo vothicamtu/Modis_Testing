@@ -44,10 +44,14 @@ public abstract class BasePage {
         return gestureUtils.getScreenSize();
     }
 
-    // ELEMENT FINDING METHODS
+    protected WebElement findByAccessibilityId(
+            String accessibilityId
+    ) {
 
-    protected WebElement findByAccessibilityId(String accessibilityId) {
-        logger.debug("Finding element by accessibility ID: {}", accessibilityId);
+        logger.debug(
+                "Finding element by accessibility ID: {}",
+                accessibilityId
+        );
 
         final long deadlineNs =
                 System.nanoTime()
@@ -58,7 +62,9 @@ public abstract class BasePage {
         // accessibility id
         WebElement element =
                 tryWaitVisible(
-                        AppiumBy.accessibilityId(accessibilityId),
+                        AppiumBy.accessibilityId(
+                                accessibilityId
+                        ),
                         deadlineNs,
                         5
                 );
@@ -79,37 +85,14 @@ public abstract class BasePage {
             return element;
         }
 
-        // LAST RESORT XPATH
-        element =
-                tryWaitVisible(
-                        By.xpath(
-                                String.format(
-                                        "//*[@content-desc='%s' or contains(@resource-id,'%s')]",
-                                        accessibilityId,
-                                        accessibilityId
-                                )
-                        ),
-                        deadlineNs,
-                        2
-                );
-
-        if (element != null) {
-            return element;
-        }
-
         logger.error(
-                "Element '{}' not found with any strategy (timeout {}s)",
-                accessibilityId,
-                AppConstants.ELEMENT_WAIT_TIMEOUT
-        );
-
-        UiDebugUtils.dumpOnFailure(
-                driver,
-                "element_not_found_" + accessibilityId
+                "Element '{}' not found",
+                accessibilityId
         );
 
         throw new RuntimeException(
-                "Element not found: " + accessibilityId
+                "Element not found: "
+                        + accessibilityId
         );
     }
 
@@ -412,28 +395,30 @@ public abstract class BasePage {
 
         try {
 
-            List<WebElement> els =
-                    DriverManager.safelyFindElements(
+            WebElement element =
+                    DriverManager.safelyFindElement(
                             AppiumBy.accessibilityId(
                                     accessibilityId
                             )
                     );
 
-            if (isAnyDisplayed(els)) {
-                return true;
-            }
+            return element != null
+                    &&
+                    element.isDisplayed();
 
         } catch (Exception ignored) {
         }
 
         try {
 
-            List<WebElement> els =
-                    DriverManager.safelyFindElements(
+            WebElement element =
+                    DriverManager.safelyFindElement(
                             AppiumBy.id(accessibilityId)
                     );
 
-            return isAnyDisplayed(els);
+            return element != null
+                    &&
+                    element.isDisplayed();
 
         } catch (Exception ignored) {
 
@@ -963,6 +948,32 @@ public abstract class BasePage {
             );
 
             return java.util.Collections.emptyList();
+        }
+    }
+
+    public List<WebElement> findElementsByAccessibilityIdPrefix(
+            String prefix
+    ) {
+
+        try {
+
+            return driver.findElements(
+                    AppiumBy.androidUIAutomator(
+                            "new UiSelector().descriptionContains(\""
+                                    + prefix +
+                                    "\")"
+                    )
+            );
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed finding elements by accessibility prefix {}: {}",
+                    prefix,
+                    e.getMessage()
+            );
+
+            return List.of();
         }
     }
 
