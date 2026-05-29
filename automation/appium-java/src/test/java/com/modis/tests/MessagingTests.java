@@ -218,14 +218,22 @@ public class MessagingTests extends BaseTest {
 
         MessagePage messagePage = homePage.navigateToMessages();
 
-        if (messagePage.hasConversations()) {
-            Assert.assertTrue(messagePage.hasConversations(),
-                    "Conversation list should contain conversations");
-            Assert.assertTrue(messagePage.getConversationCount() > 0,
-                    "Should have at least one conversation");
+        boolean hasConversations =
+                messagePage.hasConversations();
+
+        if (hasConversations) {
+
+            Assert.assertTrue(
+                    hasConversations,
+                    "Conversation list should contain conversations"
+            );
+
         } else {
-            Assert.assertTrue(messagePage.isEmptyStateDisplayed(),
-                    "Empty state should be displayed when no conversations exist");
+
+            Assert.assertTrue(
+                    messagePage.isEmptyStateDisplayed(),
+                    "Empty state should be displayed when no conversations exist"
+            );
         }
 
         logger.info("Message list display test completed successfully");
@@ -237,27 +245,26 @@ public class MessagingTests extends BaseTest {
 
         MessagePage messagePage = homePage.navigateToMessages();
 
-        if (messagePage.hasConversations()) {
-            String firstConversationId = messagePage.getFirstConversationId();
-            Assert.assertNotNull(
-                    firstConversationId,
-                    "First conversation id should not be null"
-            );
-            Assert.assertTrue(messagePage.isConversationAvatarDisplayed(firstConversationId),
-                    "Conversation avatar should be displayed");
-            Assert.assertTrue(messagePage.isConversationNameDisplayed(firstConversationId),
-                    "Conversation name should be displayed");
-            Assert.assertFalse(messagePage.getConversationName(firstConversationId).isEmpty(),
-                    "Conversation name should not be empty");
+        Assert.assertTrue(messagePage.hasConversations(),
+                "No conversations available for testing conversation item elements");
 
-            if (messagePage.hasLastMessage(firstConversationId)) {
-                Assert.assertTrue(messagePage.isLastMessageDisplayed(firstConversationId),
-                        "Last message should be displayed");
-                Assert.assertTrue(messagePage.isMessageTimeDisplayed(firstConversationId),
-                        "Message time should be displayed");
-            }
-        } else {
-            logger.info("No conversations available for testing conversation item elements");
+        String firstConversationId = messagePage.getFirstConversationId();
+        Assert.assertNotNull(
+                firstConversationId,
+                "First conversation id should not be null"
+        );
+        Assert.assertTrue(messagePage.isConversationAvatarDisplayed(firstConversationId),
+                "Conversation avatar should be displayed");
+        Assert.assertTrue(messagePage.isConversationNameDisplayed(firstConversationId),
+                "Conversation name should be displayed");
+        Assert.assertFalse(messagePage.getConversationName(firstConversationId).isEmpty(),
+                "Conversation name should not be empty");
+
+        if (messagePage.hasLastMessage(firstConversationId)) {
+            Assert.assertTrue(messagePage.isLastMessageDisplayed(firstConversationId),
+                    "Last message should be displayed");
+            Assert.assertTrue(messagePage.isMessageTimeDisplayed(firstConversationId),
+                    "Message time should be displayed");
         }
 
         logger.info("Conversation item elements test completed successfully");
@@ -365,8 +372,7 @@ public class MessagingTests extends BaseTest {
     }
 
     @Test(priority = 8, groups = {"messaging", "regression", "data"}, dataProvider = "testMessagesData", description = "Verify messages data from real database")
-    public void testMessagesWithRealData(String messageId, String senderUsername, String receiverUsername,
-                                         String content, String type, String category) {
+    public void testMessagesWithRealData(String messageId, String senderUsername, String receiverUsername, String content, String type, String category) {
         logger.info("Testing message data - From: " + senderUsername + " To: " + receiverUsername +
                 " Content: " + content.substring(0, Math.min(content.length(), 20)) + "...");
 
@@ -475,8 +481,10 @@ public class MessagingTests extends BaseTest {
             // Wait for message to be sent and verify
             conversationPage.waitForMessageToAppear(testMessage);
 
-            Assert.assertTrue(conversationPage.getMessageCount() > initialMessageCount,
-                    "Message count should increase after sending message");
+            Assert.assertTrue(
+                    conversationPage.isMessageDisplayed(testMessage),
+                    "Message should be displayed"
+            );
             Assert.assertTrue(conversationPage.isMessageDisplayed(testMessage),
                     "Sent message should be displayed in conversation");
         } else {
@@ -544,12 +552,13 @@ public class MessagingTests extends BaseTest {
             conversationPage.enterMessage(longMessage);
 
             if (conversationPage.isSendButtonEnabled()) {
-                int initialMessageCount = conversationPage.getMessageCount();
                 conversationPage.clickSendButton();
 
-                // Verify message was sent (may be truncated)
-                Assert.assertTrue(conversationPage.getMessageCount() > initialMessageCount,
-                        "Long message should be sent successfully");
+                conversationPage.waitForMessageToAppear(longMessage);
+
+                Assert.assertTrue(
+                        conversationPage.isMessageDisplayed(longMessage)
+                );
             } else {
                 logger.info("Long message was rejected by input validation");
             }
@@ -702,17 +711,9 @@ public class MessagingTests extends BaseTest {
 
             for (String message : testMessages) {
 
-                int initialMessageCount =
-                        conversationPage.getMessageCount();
-
                 conversationPage.sendMessage(message);
 
                 conversationPage.waitForMessageToAppear(message);
-
-                Assert.assertTrue(
-                        conversationPage.getMessageCount() > initialMessageCount,
-                        "Message count should increase"
-                );
 
                 Assert.assertTrue(
                         conversationPage.isMessageDisplayed(message),

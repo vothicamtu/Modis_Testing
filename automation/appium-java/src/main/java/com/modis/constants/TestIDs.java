@@ -99,18 +99,18 @@ public class TestIDs {
 
     //  MESSAGE SCREEN 
     public static final String MESSAGE_SCREEN = "message_screen";
-    public static final String MESSAGE_BACK_BUTTON = "message_back_button";
-    public static final String MESSAGE_CONVERSATION_LIST = "message_conversation_list";
+    public static final String MESSAGE_BACK_BUTTON = "messages-header-back-button";
+    public static final String MESSAGE_CONVERSATION_LIST = "messages_list";
     public static final String MESSAGE_CONVERSATION_ITEM_PREFIX = "message_conversation_item_"; // + conversationId
-    public static final String MESSAGE_EMPTY_STATE = "message_empty_state";
+    public static final String MESSAGE_EMPTY_STATE = "messages_list_empty";
 
     //  CONVERSATION SCREEN 
     public static final String CONVERSATION_SCREEN = "conversation_screen";
     public static final String CONVERSATION_BACK_BUTTON = "conversation_back_button";
     public static final String CONVERSATION_HEADER = "conversation_header";
     public static final String CONVERSATION_MESSAGES_LIST = "conversation_messages_list";
-    public static final String CONVERSATION_INPUT = "conversation_input";
-    public static final String CONVERSATION_SEND_BUTTON = "conversation_send_button";
+    public static final String CONVERSATION_INPUT = "chat_input";
+    public static final String CONVERSATION_SEND_BUTTON = "chat_send_button";
     public static final String CONVERSATION_MESSAGE_PREFIX = "conversation_message_"; // + messageId
 
     //  ALL IMAGES SCREEN 

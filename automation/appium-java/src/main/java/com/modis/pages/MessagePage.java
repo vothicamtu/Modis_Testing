@@ -7,8 +7,11 @@ import io.appium.java_client.AppiumBy;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.By;
 
 import java.util.List;
+
+import static com.modis.drivers.DriverManager.getDriver;
 
 public class MessagePage extends BasePage {
 
@@ -32,7 +35,7 @@ public class MessagePage extends BasePage {
 
         try {
 
-            waitForElementClickable(
+            waitForElementVisible(
                     TestIDs.MESSAGE_BACK_BUTTON
             );
 
@@ -44,9 +47,9 @@ public class MessagePage extends BasePage {
 
         } catch (Exception e) {
 
-            logger.warn(
-                    "Message back navigation failed: {}",
-                    e.getMessage()
+            throw new RuntimeException(
+                    "Message back navigation failed",
+                    e
             );
         }
 
@@ -57,32 +60,24 @@ public class MessagePage extends BasePage {
         return homePage;
     }
 
-    public ConversationPage openConversation(
-            String conversationId
-    ) {
+    public ConversationPage openConversation(String username) {
 
         logger.info(
-                "Opening conversation: {}",
-                conversationId
+                "Opening conversation with user: {}",
+                username
         );
 
         try {
+            String conversationItemId =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                            + username;
+            waitForElementVisible(
+                    conversationItemId
+            );
 
-            String xpath =
-                    "//*[@text='" + conversationId + "']";
-
-            WebElement conversationItem =
-                    findByXPath(xpath);
-
-            if (conversationItem == null) {
-
-                throw new RuntimeException(
-                        "Conversation not found: "
-                                + conversationId
-                );
-            }
-
-            clickElement(conversationItem);
+            clickByAccessibilityId(
+                    conversationItemId
+            );
 
             ConversationPage conversationPage =
                     new ConversationPage();
@@ -94,8 +89,9 @@ public class MessagePage extends BasePage {
         } catch (Exception e) {
 
             throw new RuntimeException(
-                    "Conversation not found: "
-                            + conversationId
+                    "Conversation not found for username: "
+                            + username,
+                    e
             );
         }
     }
@@ -107,11 +103,6 @@ public class MessagePage extends BasePage {
         return this;
     }
 
-    /**
-     * Refresh conversations list
-     *
-     * @return MessagePage for method chaining
-     */
     public MessagePage refreshConversations() {
         logger.info("Refreshing conversations list");
         pullToRefresh();
@@ -119,90 +110,30 @@ public class MessagePage extends BasePage {
         return this;
     }
 
-    /**
-     * Scroll to top of conversations
-     *
-     * @return MessagePage for method chaining
-     */
     public MessagePage scrollToTop() {
         logger.info("Scrolling to top of conversations");
         scrollToTopBase();
         return this;
     }
 
-    public boolean findConversationInList(
-            String conversationId
-    ) {
+    public boolean findConversationInList(String conversationId) {
+        logger.info("Searching for conversation in list: {}", conversationId);
+        String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
 
-        logger.info(
-                "Searching for conversation in list: {}",
-                conversationId
-        );
-
-        try {
-
-            String xpath =
-                    "//*[@text='" + conversationId + "']";
-
-            WebElement element =
-                    findByXPath(xpath);
-
-            return element != null;
-
-        } catch (Exception e) {
-
-            return false;
-        }
+        return isElementDisplayedByAccessibilityId(conversationItemId);
     }
 
     public MessagePage longPressConversation(String conversationId) {
         logger.info("Long pressing conversation: {}", conversationId);
         String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
-
         WebElement conversationItem = scrollToElementByAccessibilityId(conversationItemId);
         if (conversationItem != null) {
             longPressElement(conversationItem, AppConstants.LONG_PRESS_DURATION_MS);
         } else {
             logger.warn("Conversation {} not found for long press", conversationId);
         }
-
         return this;
     }
-
-    /**
-     * Delete conversation (if option available)
-     *
-     * @param conversationId Conversation ID
-     * @return MessagePage for method chaining
-     */
-    public MessagePage deleteConversation(String conversationId) {
-        logger.info("Deleting conversation: {}", conversationId);
-
-        // Long press to show options
-        longPressConversation(conversationId);
-
-        // Handle delete option if it appears
-        // Implementation depends on actual UI flow
-
-        return this;
-    }
-
-    /**
-     * Mark conversation as read
-     *
-     * @param conversationId Conversation ID
-     * @return MessagePage for method chaining
-     */
-    public MessagePage markConversationAsRead(String conversationId) {
-        logger.info("Marking conversation as read: {}", conversationId);
-
-        // Implementation depends on how read/unread state is managed
-        // This could be automatic when opening conversation or manual action
-
-        return this;
-    }
-
-    // VALIDATION METHODS
 
     public boolean isConversationsListDisplayed() {
         try {
@@ -227,39 +158,17 @@ public class MessagePage extends BasePage {
 
     public int getVisibleConversationsCount() {
 
-        logger.info(
-                "Getting visible conversations count"
-        );
-
-        if (isEmptyStateDisplayed()) {
-            return 0;
-        }
-
         try {
-            List<WebElement> conversations =
-                    driver.findElements(
+
+            return getDriver()
+                    .findElements(
                             AppiumBy.androidUIAutomator(
                                     "new UiSelector().descriptionContains(\"message_conversation_item_\")"
                             )
-                    );
-            int count =
-                    conversations != null
-                            ? conversations.size()
-                            : 0;
-
-            logger.info(
-                    "Visible conversations count: {}",
-                    count
-            );
-
-            return count;
+                    )
+                    .size();
 
         } catch (Exception e) {
-
-            logger.warn(
-                    "Failed to get visible conversations count: {}",
-                    e.getMessage()
-            );
 
             return 0;
         }
@@ -279,12 +188,6 @@ public class MessagePage extends BasePage {
         }
     }
 
-    /**
-     * Get last message preview for conversation
-     *
-     * @param conversationId Conversation ID
-     * @return Last message preview text
-     */
     public String getLastMessagePreview(String conversationId) {
         String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
 
@@ -540,71 +443,83 @@ public class MessagePage extends BasePage {
 
     public boolean hasConversations() {
 
-        return getVisibleConversationsCount() > 0;
-    }
-
-    public String getFirstConversationId() {
-
-        logger.info("Getting first conversation id");
-
         try {
 
-            List<WebElement> conversations =
-                    driver.findElements(
-                            AppiumBy.androidUIAutomator(
-                                    "new UiSelector().descriptionContains(\"message_conversation_item_\")"
+            List<WebElement> conversationItems =
+                    getDriver().findElements(
+                            By.xpath(
+                                    "//*[contains(@content-desc,'message_conversation_item_')]"
                             )
                     );
 
-            if (conversations == null || conversations.isEmpty()) {
-
-                logger.warn("No conversations found");
-
-                return null;
-            }
-
-            WebElement firstConversation = conversations.get(0);
-
-            String contentDesc =
-                    firstConversation.getDomAttribute("content-desc");
-
-            if (contentDesc == null || contentDesc.isBlank()) {
-                contentDesc =
-                        firstConversation.getAttribute("contentDescription");
-            }
-
             logger.info(
-                    "First conversation content-desc: {}",
-                    contentDesc
+                    "Conversation count: {}",
+                    conversationItems.size()
             );
 
-            if (contentDesc == null || contentDesc.isEmpty()) {
-                return null;
-            }
-
-            return contentDesc.replace(
-                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX,
-                    ""
-            );
+            return !conversationItems.isEmpty();
 
         } catch (Exception e) {
 
             logger.warn(
-                    "Failed getting first conversation id: {}",
+                    "Unable to determine conversation count: {}",
                     e.getMessage()
             );
 
-            return null;
+            return false;
         }
     }
 
-    public ConversationPage selectConversation(String id) {
-        if (id == null || id.isBlank()) {
+    public String getFirstConversationId() {
 
-            throw new IllegalArgumentException(
-                    "Conversation id cannot be null or blank"
+        try {
+
+            List<WebElement> elements =
+                    getDriver().findElements(
+                            By.xpath(
+                                    "//*[contains(@content-desc,'message_conversation_item_')]"
+                            )
+                    );
+
+            logger.info(
+                    "Found {} conversation items",
+                    elements.size()
+            );
+
+            for (WebElement element : elements) {
+
+                String desc =
+                        element.getAttribute("content-desc");
+
+                logger.info(
+                        "Conversation node: [{}]",
+                        desc
+                );
+
+                if (desc != null
+                        && desc.startsWith(
+                        TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                )) {
+
+                    return desc.substring(
+                            TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX.length()
+                    );
+                }
+            }
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed to get first conversation ID: {}",
+                    e.getMessage()
             );
         }
+
+        return null;
+    }
+
+    public ConversationPage selectConversation(String id) {
+
         logger.info(
                 "Selecting conversation: {}",
                 id
@@ -645,30 +560,126 @@ public class MessagePage extends BasePage {
     }
 
     public MessagePage clickNewMessageIcon() {
+
+        logger.info(
+                "Clicking new message icon"
+        );
+
+        clickByAccessibilityId(
+                "new_message_button"
+        );
+
+        waitForAnimation();
+
         return this;
     }
 
     public boolean isNewMessageScreenDisplayed() {
-        return true;
+
+        return isElementDisplayedByAccessibilityId(
+                "new_message_screen"
+        );
     }
 
     public MessagePage enterSearchTerm(String term) {
+
+        logger.info(
+                "Entering search term: {}",
+                term
+        );
+
+        waitForElementVisible(
+                TestIDs.SEARCH_INPUT
+        );
+
+        enterTextByAccessibilityId(
+                TestIDs.SEARCH_INPUT,
+                term
+        );
+
         return this;
     }
 
-    public boolean isUserInSearchResults(String username) {
-        return true;
+    public boolean isUserInSearchResults(
+            String username
+    ) {
+
+        try {
+
+            String xpath =
+                    String.format(
+                            "//android.widget.TextView[contains(@text,'%s')]",
+                            username
+                    );
+
+            WebElement element =
+                    findByXPath(xpath);
+
+            return element != null;
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 
-    public ConversationPage selectUserFromSearchResults(String username) {
-        return new ConversationPage();
+    public ConversationPage selectUserFromSearchResults(
+            String username
+    ) {
+
+        logger.info(
+                "Selecting user from search: {}",
+                username
+        );
+
+        String xpath =
+                String.format(
+                        "//android.widget.TextView[contains(@text,'%s')]",
+                        username
+                );
+
+        WebElement element =
+                findByXPath(xpath);
+
+        if (element == null) {
+
+            throw new RuntimeException(
+                    "User not found in search: " + username
+            );
+        }
+
+        clickElement(element);
+
+        ConversationPage conversationPage =
+                new ConversationPage();
+
+        conversationPage.waitForPageToLoad();
+
+        return conversationPage;
     }
 
     public boolean isSearchInputDisplayed() {
-        return true;
+
+        return isElementDisplayedByAccessibilityId(
+                TestIDs.SEARCH_INPUT
+        );
     }
 
     public MessagePage clearSearch() {
+
+        logger.info(
+                "Clearing search"
+        );
+
+        if (isElementDisplayedByAccessibilityId(
+                TestIDs.SEARCH_CLEAR_BUTTON
+        )) {
+
+            clickByAccessibilityId(
+                    TestIDs.SEARCH_CLEAR_BUTTON
+            );
+        }
+
         return this;
     }
 
@@ -801,20 +812,16 @@ public class MessagePage extends BasePage {
     }
 
     public boolean hasConversationWith(String username) {
-        logger.info("Checking if conversation exists with: " + username);
-        waitForAnimation();
-
-        // Check if there are any conversations first
-        if (!hasConversations()) {
-            return false;
-        }
-
-        // Look for conversation with the specific username
-        String conversationXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
         try {
-            WebElement element = findByXPath(conversationXpath);
-            return element != null;
+            String locator =
+                    TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                            + username;
+            return isElementDisplayedByAccessibilityId(
+                    locator
+            );
+
         } catch (Exception e) {
+
             return false;
         }
     }

@@ -565,25 +565,8 @@ public class HomePage extends BasePage {
         logger.info("Checking HomePage display state");
 
         try {
-
-            // RN transition sau login cần settle
-            waitFor(3);
-
-            // ưu tiên check stable element
-            boolean visible =
-                    isElementDisplayedByAccessibilityId(
-                            TestIDs.TOPBAR_AVATAR_BUTTON
-                    );
-
-            if (!visible) {
-
-                waitFor(2);
-
-                visible =
-                        isElementDisplayedByAccessibilityId(
-                                TestIDs.TOPBAR_CONTAINER
-                        );
-            }
+            waitForElementVisible(TestIDs.HOME_SCREEN);
+            boolean visible = isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN);
 
             logger.info(
                     "HomePage visible: {}",
@@ -639,7 +622,7 @@ public class HomePage extends BasePage {
 
             ready =
                     isElementDisplayedByAccessibilityId(
-                            TestIDs.TOPBAR_AVATAR_BUTTON
+                            TestIDs.HOME_SCREEN
                     );
 
             if (!ready) {
@@ -678,9 +661,7 @@ public class HomePage extends BasePage {
 
         boolean homeVisible =
                 isElementDisplayedByAccessibilityId(
-                        TestIDs.TOPBAR_AVATAR_BUTTON
-                ) || isElementDisplayedByAccessibilityId(
-                        TestIDs.TOPBAR_CONTAINER
+                        TestIDs.HOME_SCREEN
                 );
 
         logger.info(

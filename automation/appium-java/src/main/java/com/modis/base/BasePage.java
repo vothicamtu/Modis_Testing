@@ -125,7 +125,7 @@ public abstract class BasePage {
             }
 
             try {
-                Thread.sleep(500);
+                Thread.sleep(250);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;

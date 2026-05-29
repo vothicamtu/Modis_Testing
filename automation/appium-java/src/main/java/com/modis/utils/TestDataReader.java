@@ -157,6 +157,28 @@ public class TestDataReader {
         return null;
     }
 
+    /**
+     * Get a test user by username from the testUsers array
+     *
+     * @param username The username to search for
+     * @return User data map or null if not found
+     */
+    public Map<String, Object> getTestUserByUsername(String username) {
+        JsonNode testUsers = usersData.get("testUsers");
+        if (testUsers != null) {
+            for (JsonNode user : testUsers) {
+                if (user.get("username").asText().equals(username)) {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.get("id").asText());
+                    userMap.put("username", user.get("username").asText());
+                    userMap.put("fullname", user.get("fullname").asText());
+                    return userMap;
+                }
+            }
+        }
+        return null;
+    }
+
     // ==================== FRIENDS DATA METHODS ====================
 
     /**

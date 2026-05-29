@@ -3,43 +3,40 @@ package com.modis.pages;
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
+import io.appium.java_client.AppiumBy;
 import io.appium.java_client.pagefactory.AndroidFindBy;
-import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
 
 import java.util.List;
 
+import static com.modis.drivers.DriverManager.getDriver;
+
 public class ConversationPage extends BasePage {
 
     // PAGE ELEMENTS
-    @AndroidFindBy(id = TestIDs.CONVERSATION_SCREEN)
-    @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_SCREEN)
+    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_SCREEN)
     private WebElement conversationScreen;
 
-    @AndroidFindBy(id = TestIDs.CONVERSATION_BACK_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_BACK_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_BACK_BUTTON)
     private WebElement backButton;
 
-    @AndroidFindBy(id = TestIDs.CONVERSATION_HEADER)
-    @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_HEADER)
+    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_HEADER)
     private WebElement conversationHeader;
 
-    @AndroidFindBy(id = TestIDs.CONVERSATION_MESSAGES_LIST)
-    @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_MESSAGES_LIST)
+    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_MESSAGES_LIST)
     private WebElement messagesList;
 
-    @AndroidFindBy(id = TestIDs.CONVERSATION_INPUT)
-    @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_INPUT)
+    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_INPUT)
     private WebElement messageInput;
 
-    @AndroidFindBy(id = TestIDs.CONVERSATION_SEND_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.CONVERSATION_SEND_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.CONVERSATION_SEND_BUTTON)
     private WebElement sendButton;
 
     // NAVIGATION ACTIONS
     public MessagePage navigateBack() {
         logger.info("Navigating back from conversation screen");
-        waitForElementClickable(TestIDs.CONVERSATION_BACK_BUTTON);
+        waitForElementVisible(TestIDs.CONVERSATION_BACK_BUTTON);
+        waitFor(1);
         clickByAccessibilityId(
                 TestIDs.CONVERSATION_BACK_BUTTON
         );
@@ -53,7 +50,13 @@ public class ConversationPage extends BasePage {
         logger.info("Sending message: {}", messageText);
 
         waitForElementVisible(TestIDs.CONVERSATION_INPUT);
-        enterText(messageInput, messageText);
+
+        clearMessageInput();
+
+        enterText(
+                messageInput,
+                messageText
+        );
 
         waitForElementClickable(TestIDs.CONVERSATION_SEND_BUTTON);
         clickElement(sendButton);
@@ -88,7 +91,13 @@ public class ConversationPage extends BasePage {
     public ConversationPage typeMessage(String messageText) {
         logger.debug("Typing message: {}", messageText);
         waitForElementVisible(TestIDs.CONVERSATION_INPUT);
-        enterText(messageInput, messageText);
+
+        clearMessageInput();
+
+        enterText(
+                messageInput,
+                messageText
+        );
         return this;
     }
 
@@ -168,14 +177,49 @@ public class ConversationPage extends BasePage {
         return inputText == null || inputText.trim().isEmpty();
     }
 
-    public boolean isMessageDisplayed(String messageId) {
-        String messageTestId = TestIDs.CONVERSATION_MESSAGE_PREFIX + messageId;
-        return isElementDisplayedByAccessibilityId(messageTestId);
+    public boolean isMessageDisplayed(String messageText) {
+        return hasMessageWithContent(messageText);
     }
 
     public int getVisibleMessagesCount() {
-        List<WebElement> messages = findElementsByAccessibilityId(TestIDs.CONVERSATION_MESSAGE_PREFIX + "*");
-        return messages.size();
+
+        try {
+
+            waitForElementVisible(
+                    TestIDs.CONVERSATION_MESSAGES_LIST
+            );
+
+            List<WebElement> messages =
+                    getDriver().findElements(
+                            AppiumBy.xpath(
+                                    "//android.widget.TextView"
+                            )
+                    );
+
+            int count = 0;
+
+            for (WebElement element : messages) {
+
+                String text = element.getText();
+
+                if (text != null
+                        && !text.trim().isEmpty()) {
+
+                    count++;
+                }
+            }
+
+            return count;
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed getting visible messages count: {}",
+                    e.getMessage()
+            );
+
+            return 0;
+        }
     }
 
     public String getConversationHeaderText() {
@@ -187,16 +231,14 @@ public class ConversationPage extends BasePage {
 
     // MESSAGE TIMING
     public void waitForMessageToSend() {
-        logger.debug("Waiting for message to send");
+
+        logger.debug(
+                "Waiting for message to send"
+        );
+
         waitForAnimation();
 
-        // Additional wait for message to appear in list
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("Message send wait interrupted", e);
-        }
+        waitFor(2);
     }
 
     public boolean waitForNewMessage(int timeoutSeconds) {
@@ -384,61 +426,195 @@ public class ConversationPage extends BasePage {
     }
 
     public boolean hasMessages() {
-        return true;
+
+        try {
+
+            waitForElementVisible(
+                    TestIDs.CONVERSATION_MESSAGES_LIST
+            );
+
+            List<WebElement> textViews =
+                    getDriver().findElements(
+                            AppiumBy.className(
+                                    "android.widget.TextView"
+                            )
+                    );
+
+            return !textViews.isEmpty();
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 
     public int getMessageCount() {
-        return 1;
+        return getVisibleMessagesCount();
     }
 
-    public ConversationPage waitForMessageToAppear(String msg) {
-        return this;
+    public ConversationPage waitForMessageToAppear(
+            String messageText
+    ) {
+
+        logger.info(
+                "Waiting for message: {}",
+                messageText
+        );
+
+        String expectedText =
+                messageText.length() > 20
+                        ? messageText.substring(0, 20)
+                        : messageText;
+
+        for (int i = 0; i < 15; i++) {
+
+            if (hasMessageWithContent(expectedText)) {
+
+                logger.info(
+                        "Message appeared: {}",
+                        expectedText
+                );
+
+                return this;
+            }
+
+            waitFor(1);
+        }
+
+        throw new RuntimeException(
+                "Message did not appear: "
+                        + expectedText
+        );
     }
 
     public ConversationPage enterMessage(String msg) {
+
+        logger.info(
+                "Entering message: {}",
+                msg
+        );
+
+        waitForElementVisible(
+                TestIDs.CONVERSATION_INPUT
+        );
+
+        clearMessageInput();
+
+        enterText(
+                messageInput,
+                msg
+        );
+
         return this;
     }
 
-    public boolean isMessageTimeDisplayed(String msgId) {
-        return true;
+    public boolean isMessageTimeDisplayed(
+            String msgId
+    ) {
+
+        try {
+
+            String timeId =
+                    TestIDs.CONVERSATION_MESSAGE_PREFIX
+                            + msgId
+                            + "_time";
+
+            return isElementDisplayedByAccessibilityId(
+                    timeId
+            );
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 
     public boolean isHeaderDisplayed() {
-        return true;
+
+        return isElementDisplayedByAccessibilityId(
+                TestIDs.CONVERSATION_HEADER
+        );
     }
 
     public boolean isBackButtonDisplayed() {
-        return true;
+
+        return isElementDisplayedByAccessibilityId(
+                TestIDs.CONVERSATION_BACK_BUTTON
+        );
     }
 
     public boolean isMessageListDisplayed() {
-        return true;
+
+        return isElementDisplayedByAccessibilityId(
+                TestIDs.CONVERSATION_MESSAGES_LIST
+        );
     }
 
     public ConversationPage clickSendButton() {
+
+        waitForElementClickable(
+                TestIDs.CONVERSATION_SEND_BUTTON
+        );
+
+        clickElement(sendButton);
+
         return this;
     }
 
     public ConversationPage refreshConversation() {
+
+        logger.info(
+                "Refreshing conversation"
+        );
+
+        pullToRefresh();
+
+        waitForAnimation();
+
         return this;
     }
 
     // MESSAGE VALIDATION ACTIONS
-    public boolean hasMessageWithContent(String content) {
-        logger.info("Checking if message exists with content: " + content);
-        waitForElementVisible(TestIDs.CONVERSATION_MESSAGES_LIST);
+    public boolean hasMessageWithContent(
+            String content
+    ) {
 
-        // Check if there are any messages first
-        if (!hasMessages()) {
-            return false;
-        }
-
-        // Look for message containing the specific content
-        String messageXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", content);
         try {
-            WebElement element = findByXPath(messageXpath);
-            return element != null;
+
+            waitForElementVisible(
+                    TestIDs.CONVERSATION_MESSAGES_LIST
+            );
+
+            List<WebElement> textViews =
+                    getDriver().findElements(
+                            AppiumBy.className(
+                                    "android.widget.TextView"
+                            )
+                    );
+
+            for (WebElement element : textViews) {
+
+                String text =
+                        element.getText();
+
+                if (text == null) {
+                    continue;
+                }
+
+                if (text.contains(content)) {
+                    return true;
+                }
+            }
+
+            return false;
+
         } catch (Exception e) {
+
+            logger.warn(
+                    "Failed checking message content: {}",
+                    e.getMessage()
+            );
+
             return false;
         }
     }

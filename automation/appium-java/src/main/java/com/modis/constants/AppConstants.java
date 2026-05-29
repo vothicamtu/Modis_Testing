@@ -34,23 +34,23 @@ public class AppConstants {
     public static final int RN_ELEMENT_WAIT = 8; // React Native element wait timeout
     public static final int MAX_APP_LAUNCH_TIME_MS = 20000; // 20s for React Native apps
     public static final int RN_BRIDGE_RETRY_ATTEMPTS = 3; // Max retry attempts for RN bridge
-    public static final int RN_BRIDGE_RETRY_DELAY_MS = 2000; // Delay between RN bridge retries
+    public static final int RN_BRIDGE_RETRY_DELAY_MS = 500; // Delay between RN bridge retries
 
     // UIAUTOMATOR2 STABILITY IMPROVEMENTS 
     // Element finding optimization
     public static final int MAX_ELEMENT_FIND_ATTEMPTS = 2;        // Reduced from 3
     public static final int ELEMENT_FIND_TIMEOUT_SEC = 10;         // Reduced from 15
-    public static final int ELEMENT_OPERATION_RETRY_DELAY_MS = 1000; // Reduced from 2000
+    public static final int ELEMENT_OPERATION_RETRY_DELAY_MS = 500; // Reduced from 2000
 
     // React Native bridge check optimization
     public static final boolean USE_ACTIVITY_BASED_BRIDGE_CHECK = true;   // Fast method
     public static final int BRIDGE_ACTIVITY_CHECK_TIMEOUT_SEC = 8;
 
     // Recovery configuration
-    public static final int UIAUTOMATOR2_RECOVERY_WAIT_MS = 8000;   // Increased from 3000
-    public static final int UIAUTOMATOR2_RECOVERY_MAX_ATTEMPTS = 3;
-    public static final int UIAUTOMATOR2_HEALTH_CHECK_TIMEOUT_MS = 5000;
-    public static final int ADB_CLEANUP_WAIT_MS = 8000;
+    public static final int UIAUTOMATOR2_RECOVERY_WAIT_MS = 5000;   // Increased from 3000
+    public static final int UIAUTOMATOR2_RECOVERY_MAX_ATTEMPTS = 2;
+    public static final int UIAUTOMATOR2_HEALTH_CHECK_TIMEOUT_MS = 8000;
+    public static final int ADB_CLEANUP_WAIT_MS = 5000;
 
     // Disable expensive operations that crash UiAutomator2
     public static final boolean SKIP_PAGE_SOURCE_CHECKS = true;    // Never call getPageSource()
