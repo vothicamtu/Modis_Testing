@@ -8,11 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-
-/**
- * Utility class for reading test data from JSON files
- * Provides methods to access login credentials, user data, and test scenarios
- */
 public class TestDataReader {
     private static final Logger logger = LoggerFactory.getLogger(TestDataReader.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -48,13 +43,7 @@ public class TestDataReader {
     }
 
     // ==================== LOGIN DATA METHODS ====================
-
-    /**
-     * Get valid login credentials from test data
-     *
-     * @return List of valid login credentials
-     */
-    public List<Map<String, Object>> getValidLoginCredentials() {
+public List<Map<String, Object>> getValidLoginCredentials() {
         List<Map<String, Object>> credentials = new ArrayList<>();
 
         JsonNode validCredentials = usersData.get("loginTestData").get("validCredentials");
@@ -74,13 +63,7 @@ public class TestDataReader {
 
         return credentials;
     }
-
-    /**
-     * Get invalid login credentials from test data
-     *
-     * @return List of invalid login credentials
-     */
-    public List<Map<String, Object>> getInvalidLoginCredentials() {
+public List<Map<String, Object>> getInvalidLoginCredentials() {
         List<Map<String, Object>> credentials = new ArrayList<>();
 
         JsonNode invalidCredentials = usersData.get("loginTestData").get("invalidCredentials");
@@ -97,13 +80,7 @@ public class TestDataReader {
 
         return credentials;
     }
-
-    /**
-     * Get retry login scenarios from test data
-     *
-     * @return List of retry login scenarios
-     */
-    public List<Map<String, Object>> getRetryLoginScenarios() {
+public List<Map<String, Object>> getRetryLoginScenarios() {
         List<Map<String, Object>> scenarios = new ArrayList<>();
 
         JsonNode retryScenarios = usersData.get("retryTestScenarios");
@@ -131,14 +108,7 @@ public class TestDataReader {
 
         return scenarios;
     }
-
-    /**
-     * Get a specific valid user by username
-     *
-     * @param username The username to search for
-     * @return User data map or null if not found
-     */
-    public Map<String, Object> getValidUserByUsername(String username) {
+public Map<String, Object> getValidUserByUsername(String username) {
         JsonNode validCredentials = usersData.get("loginTestData").get("validCredentials");
         for (JsonNode credential : validCredentials) {
             if (credential.get("username").asText().equals(username)) {
@@ -156,14 +126,7 @@ public class TestDataReader {
         }
         return null;
     }
-
-    /**
-     * Get a test user by username from the testUsers array
-     *
-     * @param username The username to search for
-     * @return User data map or null if not found
-     */
-    public Map<String, Object> getTestUserByUsername(String username) {
+public Map<String, Object> getTestUserByUsername(String username) {
         JsonNode testUsers = usersData.get("testUsers");
         if (testUsers != null) {
             for (JsonNode user : testUsers) {
@@ -180,13 +143,7 @@ public class TestDataReader {
     }
 
     // ==================== FRIENDS DATA METHODS ====================
-
-    /**
-     * Get test friends data
-     *
-     * @return List of test friends
-     */
-    public List<Map<String, Object>> getTestFriends() {
+public List<Map<String, Object>> getTestFriends() {
         List<Map<String, Object>> friends = new ArrayList<>();
 
         JsonNode testFriends = friendsData.get("testFriends");
@@ -206,13 +163,7 @@ public class TestDataReader {
 
         return friends;
     }
-
-    /**
-     * Get friend requests data
-     *
-     * @return List of friend requests
-     */
-    public List<Map<String, Object>> getFriendRequests() {
+public List<Map<String, Object>> getFriendRequests() {
         List<Map<String, Object>> requests = new ArrayList<>();
 
         JsonNode friendRequests = friendsData.get("friendRequests");
@@ -232,13 +183,7 @@ public class TestDataReader {
     }
 
     // ==================== MESSAGES DATA METHODS ====================
-
-    /**
-     * Get test messages data
-     *
-     * @return List of test messages
-     */
-    public List<Map<String, Object>> getTestMessages() {
+public List<Map<String, Object>> getTestMessages() {
         List<Map<String, Object>> messages = new ArrayList<>();
 
         JsonNode testMessages = messagesData.get("testMessages");
@@ -313,13 +258,7 @@ public class TestDataReader {
 
         return templates.get(randomIndex).asText();
     }
-
-    /**
-     * Get conversation scenarios
-     *
-     * @return List of conversation scenarios
-     */
-    public List<Map<String, Object>> getConversationScenarios() {
+public List<Map<String, Object>> getConversationScenarios() {
         List<Map<String, Object>> scenarios = new ArrayList<>();
 
         JsonNode conversationScenarios = messagesData.get("conversationScenarios");
@@ -348,13 +287,7 @@ public class TestDataReader {
     }
 
     // ==================== PHOTOS DATA METHODS ====================
-
-    /**
-     * Get test photos data
-     *
-     * @return List of test photos
-     */
-    public List<Map<String, Object>> getTestPhotos() {
+public List<Map<String, Object>> getTestPhotos() {
         List<Map<String, Object>> photos = new ArrayList<>();
 
         JsonNode testPhotos = photosData.get("testPhotos");
@@ -387,13 +320,7 @@ public class TestDataReader {
 
         return photos;
     }
-
-    /**
-     * Get photo test scenarios
-     *
-     * @return Map of photo test scenarios
-     */
-    public Map<String, Map<String, Object>> getPhotoTestScenarios() {
+public Map<String, Map<String, Object>> getPhotoTestScenarios() {
         Map<String, Map<String, Object>> scenarios = new HashMap<>();
 
         JsonNode testScenarios = photosData.get("testScenarios");
@@ -424,13 +351,7 @@ public class TestDataReader {
     }
 
     // ==================== UTILITY METHODS ====================
-
-    /**
-     * Get random valid user credentials
-     *
-     * @return Random valid user credentials
-     */
-    public Map<String, Object> getRandomValidUser() {
+public Map<String, Object> getRandomValidUser() {
         List<Map<String, Object>> validUsers = getValidLoginCredentials();
         if (validUsers.isEmpty()) {
             throw new RuntimeException("No valid users found in test data");
@@ -439,13 +360,7 @@ public class TestDataReader {
         Random random = new Random();
         return validUsers.get(random.nextInt(validUsers.size()));
     }
-
-    /**
-     * Get random test message
-     *
-     * @return Random test message
-     */
-    public Map<String, Object> getRandomTestMessage() {
+public Map<String, Object> getRandomTestMessage() {
         List<Map<String, Object>> messages = getTestMessages();
         if (messages.isEmpty()) {
             throw new RuntimeException("No test messages found in test data");
@@ -454,13 +369,7 @@ public class TestDataReader {
         Random random = new Random();
         return messages.get(random.nextInt(messages.size()));
     }
-
-    /**
-     * Get random test photo
-     *
-     * @return Random test photo
-     */
-    public Map<String, Object> getRandomTestPhoto() {
+public Map<String, Object> getRandomTestPhoto() {
         List<Map<String, Object>> photos = getTestPhotos();
         if (photos.isEmpty()) {
             throw new RuntimeException("No test photos found in test data");
@@ -471,33 +380,21 @@ public class TestDataReader {
     }
 
     // ==================== INVALID LOGIN DATA METHODS ====================
-
-    /**
-     * Get invalid login credentials for negative testing
-     *
-     * @return Array of invalid login data [username, password, expectedError]
-     */
-    public static Object[][] getInvalidLoginData() {
+public static Object[][] getInvalidLoginData() {
         return new Object[][]{
-                {"invalid_user", "invalid_pass", "Tài khoản hoặc mật khẩu không chính xác"},
-                {"", "password123", "Vui lòng nhập đầy đủ thông tin!"},
-                {"username", "", "Vui lòng nhập đầy đủ thông tin!"},
-                {"", "", "Vui lòng nhập đầy đủ thông tin!"},
-                {"nonexistent@email.com", "password123", "Tên đăng nhập không chính xác!"},
-                {"admin", "wrongpassword", "Mật khẩu không chính xác!"},
-                {"test123", "123456", "Tài khoản hoặc mật khẩu không chính xác"},
-                {"user@domain", "pass", "Mật khẩu không chính xác!"},
-                {"specialchar!@#", "password", "Tên đăng nhập không chính xác!"},
-                {"verylongusernamethatexceedslimits", "password", "Tên đăng nhập không chính xác!"}
+                {"invalid_user", "invalid_pass", "TÃ i khoáº£n hoáº·c máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c"},
+                {"", "password123", "Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ thÃ´ng tin!"},
+                {"username", "", "Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ thÃ´ng tin!"},
+                {"", "", "Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ thÃ´ng tin!"},
+                {"nonexistent@email.com", "password123", "TÃªn Ä‘Äƒng nháº­p khÃ´ng chÃ­nh xÃ¡c!"},
+                {"admin", "wrongpassword", "Máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c!"},
+                {"test123", "123456", "TÃ i khoáº£n hoáº·c máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c"},
+                {"user@domain", "pass", "Máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c!"},
+                {"specialchar!@#", "password", "TÃªn Ä‘Äƒng nháº­p khÃ´ng chÃ­nh xÃ¡c!"},
+                {"verylongusernamethatexceedslimits", "password", "TÃªn Ä‘Äƒng nháº­p khÃ´ng chÃ­nh xÃ¡c!"}
         };
     }
-
-    /**
-     * Get common invalid username patterns
-     *
-     * @return Array of invalid usernames
-     */
-    public static String[] getInvalidUsernames() {
+public static String[] getInvalidUsernames() {
         return new String[]{
                 "",                              // Empty
                 " ",                             // Space only
@@ -519,13 +416,7 @@ public class TestDataReader {
                 "[]"                           // JSON array
         };
     }
-
-    /**
-     * Get common invalid password patterns
-     *
-     * @return Array of invalid passwords
-     */
-    public static String[] getInvalidPasswords() {
+public static String[] getInvalidPasswords() {
         return new String[]{
                 "",                              // Empty
                 " ",                             // Space only
@@ -554,13 +445,7 @@ public class TestDataReader {
                 "{}"                           // JSON object
         };
     }
-
-    /**
-     * Get test data for boundary value testing
-     *
-     * @return Array of boundary test data [username, password, description]
-     */
-    public static Object[][] getBoundaryLoginData() {
+public static Object[][] getBoundaryLoginData() {
         return new Object[][]{
                 {"", "", "Both empty"},
                 {"a", "b", "Minimum length"},

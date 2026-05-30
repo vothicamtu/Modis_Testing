@@ -1,13 +1,11 @@
 package com.modis.base;
 
 import com.modis.constants.AppConstants;
-import com.modis.constants.TestIDs;
 import com.modis.drivers.DriverManager;
 import com.modis.utils.GestureUtils;
 import com.modis.utils.LoggerUtil;
 import com.modis.utils.ScreenshotUtils;
 import com.modis.utils.SmartWaitUtils;
-import com.modis.utils.UiDebugUtils;
 import com.modis.utils.WaitUtils;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
@@ -15,7 +13,6 @@ import io.appium.java_client.pagefactory.AppiumFieldDecorator;
 import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
-import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 import org.slf4j.Logger;
@@ -394,43 +391,67 @@ public abstract class BasePage {
     ) {
 
         try {
+            // Strategy 1: Try accessibility ID with safe finding
+            WebElement element = DriverManager.safelyFindElement(
+                    AppiumBy.accessibilityId(accessibilityId)
+            );
 
-            WebElement element =
-                    DriverManager.safelyFindElement(
-                            AppiumBy.accessibilityId(
-                                    accessibilityId
-                            )
-                    );
-
-            return element != null
-                    &&
-                    element.isDisplayed();
+            if (element != null && element.isDisplayed()) {
+                return true;
+            }
 
         } catch (Exception ignored) {
+            logger.debug("Accessibility ID strategy failed for: {}", accessibilityId);
         }
 
         try {
+            // Strategy 2: Try Android resource ID with safe finding
+            WebElement element = DriverManager.safelyFindElement(
+                    AppiumBy.id(accessibilityId)
+            );
 
-            WebElement element =
-                    DriverManager.safelyFindElement(
-                            AppiumBy.id(accessibilityId)
-                    );
-
-            return element != null
-                    &&
-                    element.isDisplayed();
+            if (element != null && element.isDisplayed()) {
+                return true;
+            }
 
         } catch (Exception ignored) {
-
-            return false;
+            logger.debug("Resource ID strategy failed for: {}", accessibilityId);
         }
-    }
 
-    private boolean isAnyDisplayed(List<WebElement> els) {
-        if (els == null || els.isEmpty()) return false;
-        for (WebElement el : els) {
-            if (el != null && isElementDisplayed(el)) return true;
+        try {
+            // Strategy 3: Try XPath with content-desc attribute
+            WebElement element = DriverManager.safelyFindElement(
+                    By.xpath("//*[@content-desc='" + accessibilityId + "']")
+            );
+
+            if (element != null && element.isDisplayed()) {
+                return true;
+            }
+
+        } catch (Exception ignored) {
+            logger.debug("XPath content-desc strategy failed for: {}", accessibilityId);
         }
+
+        try {
+            // Strategy 4: Try text-based search for common elements
+            if (accessibilityId.contains("button") || accessibilityId.contains("login") || 
+                accessibilityId.contains("message") || accessibilityId.contains("home")) {
+                
+                String searchText = accessibilityId.replace("_", " ").toLowerCase();
+                WebElement element = DriverManager.safelyFindElement(
+                    By.xpath("//*[contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '" + searchText + "')]")
+                );
+
+                if (element != null && element.isDisplayed()) {
+                    logger.debug("Text-based strategy succeeded for: {}", accessibilityId);
+                    return true;
+                }
+            }
+
+        } catch (Exception ignored) {
+            logger.debug("Text-based strategy failed for: {}", accessibilityId);
+        }
+
         return false;
     }
 

@@ -52,11 +52,11 @@ show_help() {
     echo "  smoke                   Critical path tests"
     echo "  regression              All regression tests"
     echo "  authentication          Authentication tests only"
-    echo "  navigation              Navigation tests only"
-    echo "  camera                  Camera tests only"
+    echo "  friends                 Friend management tests only"
+    echo "  photo-sharing           Photo sharing tests only"
+    echo "  feed                    Feed tests only"
+    echo "  search                  Search tests only"
     echo "  messaging               Messaging tests only"
-    echo "  friends                 Friends tests only"
-    echo "  profile                 Profile tests only"
     echo "  full                    All tests"
     echo ""
     echo "Examples:"
@@ -204,20 +204,20 @@ case $TEST_SUITE in
     authentication)
         mvn clean test -Dtest=AuthenticationTests $MAVEN_OPTS
         ;;
-    navigation)
-        mvn clean test -Dtest=NavigationTests $MAVEN_OPTS
-        ;;
-    camera)
-        mvn clean test -Dtest=CameraTests $MAVEN_OPTS
-        ;;
-    messaging)
-        mvn clean test -Dtest=MessagingTests $MAVEN_OPTS
-        ;;
     friends)
         mvn clean test -Dtest=FriendsTests $MAVEN_OPTS
         ;;
-    profile)
-        mvn clean test -Dtest=ProfileTests $MAVEN_OPTS
+    photo-sharing)
+        mvn clean test -Dtest=PhotoSharingTests $MAVEN_OPTS
+        ;;
+    feed)
+        mvn clean test -Dtest=FeedTests $MAVEN_OPTS
+        ;;
+    search)
+        mvn clean test -Dtest=SearchTests $MAVEN_OPTS
+        ;;
+    messaging)
+        mvn clean test -Dtest=MessagingTests $MAVEN_OPTS
         ;;
     full)
         mvn clean test $MAVEN_OPTS

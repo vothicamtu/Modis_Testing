@@ -6,11 +6,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-/**
- * Utility class for reading configuration properties
- * Supports multiple configuration sources with priority order
- */
 public class ConfigReader {
     
     private static final Logger logger = LoggerUtil.getLogger(ConfigReader.class);
@@ -29,11 +24,7 @@ public class ConfigReader {
     // Environment-specific configuration
     private static final String ENV_CONFIG_PREFIX = "src/test/resources/config/";
     private static final String ENV_CONFIG_SUFFIX = ".properties";
-    
-    /**
-     * Load configuration from properties files
-     */
-    public static synchronized void loadConfiguration() {
+public static synchronized void loadConfiguration() {
         if (isLoaded) {
             return;
         }
@@ -52,39 +43,19 @@ public class ConfigReader {
         isLoaded = true;
         logger.info("Configuration loaded successfully");
     }
-    
-    /**
-     * Get property value
-     * @param key Property key
-     * @return Property value or null if not found
-     */
-    public static String getProperty(String key) {
+public static String getProperty(String key) {
         ensureConfigurationLoaded();
         String value = properties.getProperty(key);
         logger.debug("Retrieved property: {} = {}", key, value);
         return value;
     }
-    
-    /**
-     * Get property value with default fallback
-     * @param key Property key
-     * @param defaultValue Default value if property not found
-     * @return Property value or default value
-     */
-    public static String getProperty(String key, String defaultValue) {
+public static String getProperty(String key, String defaultValue) {
         ensureConfigurationLoaded();
         String value = properties.getProperty(key, defaultValue);
         logger.debug("Retrieved property: {} = {} (default: {})", key, value, defaultValue);
         return value;
     }
-    
-    /**
-     * Get boolean property value
-     * @param key Property key
-     * @param defaultValue Default value if property not found
-     * @return Boolean property value
-     */
-    public static boolean getBooleanProperty(String key, boolean defaultValue) {
+public static boolean getBooleanProperty(String key, boolean defaultValue) {
         String value = getProperty(key);
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
@@ -97,14 +68,7 @@ public class ConfigReader {
             return defaultValue;
         }
     }
-    
-    /**
-     * Get integer property value
-     * @param key Property key
-     * @param defaultValue Default value if property not found
-     * @return Integer property value
-     */
-    public static int getIntProperty(String key, int defaultValue) {
+public static int getIntProperty(String key, int defaultValue) {
         String value = getProperty(key);
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
@@ -117,14 +81,7 @@ public class ConfigReader {
             return defaultValue;
         }
     }
-    
-    /**
-     * Get long property value
-     * @param key Property key
-     * @param defaultValue Default value if property not found
-     * @return Long property value
-     */
-    public static long getLongProperty(String key, long defaultValue) {
+public static long getLongProperty(String key, long defaultValue) {
         String value = getProperty(key);
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
@@ -137,14 +94,7 @@ public class ConfigReader {
             return defaultValue;
         }
     }
-    
-    /**
-     * Get double property value
-     * @param key Property key
-     * @param defaultValue Default value if property not found
-     * @return Double property value
-     */
-    public static double getDoubleProperty(String key, double defaultValue) {
+public static double getDoubleProperty(String key, double defaultValue) {
         String value = getProperty(key);
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
@@ -157,14 +107,7 @@ public class ConfigReader {
             return defaultValue;
         }
     }
-    
-    /**
-     * Get array property value (comma-separated)
-     * @param key Property key
-     * @param defaultValue Default array if property not found
-     * @return String array
-     */
-    public static String[] getArrayProperty(String key, String[] defaultValue) {
+public static String[] getArrayProperty(String key, String[] defaultValue) {
         String value = getProperty(key);
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
@@ -177,52 +120,26 @@ public class ConfigReader {
             return defaultValue;
         }
     }
-    
-    /**
-     * Set property value (runtime override)
-     * @param key Property key
-     * @param value Property value
-     */
-    public static void setProperty(String key, String value) {
+public static void setProperty(String key, String value) {
         ensureConfigurationLoaded();
         properties.setProperty(key, value);
         logger.debug("Set property: {} = {}", key, value);
     }
-    
-    /**
-     * Check if property exists
-     * @param key Property key
-     * @return true if property exists, false otherwise
-     */
-    public static boolean hasProperty(String key) {
+public static boolean hasProperty(String key) {
         ensureConfigurationLoaded();
         return properties.containsKey(key);
     }
-    
-    /**
-     * Get all properties
-     * @return Properties object
-     */
-    public static Properties getAllProperties() {
+public static Properties getAllProperties() {
         ensureConfigurationLoaded();
         return new Properties(properties);
     }
-    
-    /**
-     * Reload configuration (useful for dynamic config changes)
-     */
-    public static synchronized void reloadConfiguration() {
+public static synchronized void reloadConfiguration() {
         isLoaded = false;
         properties = null;
         loadConfiguration();
         logger.info("Configuration reloaded");
     }
-    
-    /**
-     * Get configuration summary for logging
-     * @return Configuration summary string
-     */
-    public static String getConfigurationSummary() {
+public static String getConfigurationSummary() {
         ensureConfigurationLoaded();
         StringBuilder summary = new StringBuilder();
         summary.append("Configuration Summary:\n");
@@ -249,29 +166,17 @@ public class ConfigReader {
     }
     
     // ==================== PRIVATE HELPER METHODS ====================
-    
-    /**
-     * Ensure configuration is loaded
-     */
-    private static void ensureConfigurationLoaded() {
+private static void ensureConfigurationLoaded() {
         if (!isLoaded) {
             loadConfiguration();
         }
     }
-    
-    /**
-     * Load default configuration files
-     */
-    private static void loadDefaultConfigurations() {
+private static void loadDefaultConfigurations() {
         for (String configPath : CONFIG_PATHS) {
             loadPropertiesFile(configPath, false);
         }
     }
-    
-    /**
-     * Load environment-specific configuration
-     */
-    private static void loadEnvironmentConfiguration() {
+private static void loadEnvironmentConfiguration() {
         String environment = System.getProperty("test.environment", 
                                                System.getenv("TEST_ENVIRONMENT"));
         
@@ -281,11 +186,7 @@ public class ConfigReader {
             logger.info("Loaded environment-specific configuration: {}", environment);
         }
     }
-    
-    /**
-     * Load system properties (highest priority)
-     */
-    private static void loadSystemProperties() {
+private static void loadSystemProperties() {
         // Override with system properties
         System.getProperties().forEach((key, value) -> {
             if (key instanceof String && value instanceof String) {
@@ -300,13 +201,7 @@ public class ConfigReader {
             properties.setProperty(propertyKey, value);
         });
     }
-    
-    /**
-     * Load properties from file
-     * @param filePath Path to properties file
-     * @param required Whether the file is required
-     */
-    private static void loadPropertiesFile(String filePath, boolean required) {
+private static void loadPropertiesFile(String filePath, boolean required) {
         try (InputStream inputStream = getInputStream(filePath)) {
             if (inputStream != null) {
                 Properties fileProperties = new Properties();
@@ -331,13 +226,7 @@ public class ConfigReader {
             }
         }
     }
-    
-    /**
-     * Get input stream for configuration file
-     * @param filePath Path to configuration file
-     * @return InputStream or null if file not found
-     */
-    private static InputStream getInputStream(String filePath) {
+private static InputStream getInputStream(String filePath) {
         try {
             // Try as file path first
             java.io.File file = new java.io.File(filePath);
@@ -360,46 +249,14 @@ public class ConfigReader {
             return null;
         }
     }
-    
-    /**
-     * Validate configuration after loading
-     */
-    private static void validateConfiguration() {
-        // Add validation logic for required properties
-        String[] requiredProperties = {
-            "platform"
-        };
-        
-        for (String required : requiredProperties) {
-            if (!hasProperty(required) || getProperty(required).trim().isEmpty()) {
-                logger.warn("Required property not set: {}", required);
-            }
-        }
-    }
-    
-    /**
-     * Get property with environment variable fallback
-     * @param key Property key
-     * @param envKey Environment variable key
-     * @param defaultValue Default value
-     * @return Property value
-     */
-    public static String getPropertyWithEnvFallback(String key, String envKey, String defaultValue) {
+public static String getPropertyWithEnvFallback(String key, String envKey, String defaultValue) {
         String value = getProperty(key);
         if (value == null || value.trim().isEmpty()) {
             value = System.getenv(envKey);
         }
         return value != null ? value : defaultValue;
     }
-    
-    /**
-     * Get platform-specific property
-     * @param baseKey Base property key
-     * @param platform Platform name (android/ios)
-     * @param defaultValue Default value
-     * @return Platform-specific property value
-     */
-    public static String getPlatformProperty(String baseKey, String platform, String defaultValue) {
+public static String getPlatformProperty(String baseKey, String platform, String defaultValue) {
         // Try platform-specific property first
         String platformKey = platform.toLowerCase() + "." + baseKey;
         String value = getProperty(platformKey);

@@ -5,15 +5,6 @@ import com.modis.constants.TestIDs;
 import org.openqa.selenium.WebElement;
 
 public class LoginPage extends BasePage {
-
-    private WebElement usernameInput;
-    private WebElement passwordInput;
-    private WebElement loginButton;
-    private WebElement titleText;
-    private WebElement signupLink;
-    private WebElement forgotPasswordLink;
-    private WebElement loadingSpinner;
-
     private String lastLoginErrorDialogMessage = "";
 
     public LoginPage enterUsername(String username) {

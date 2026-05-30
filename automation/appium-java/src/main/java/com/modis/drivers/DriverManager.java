@@ -183,31 +183,31 @@ public class DriverManager {
         options.setCapability("androidInstallTimeout", ConfigReader.getIntProperty("android.androidInstallTimeout", 90000));
 
         // UiAutomator2 specific - Enhanced for stability
-        options.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerLaunchTimeout", 60000)); // 1 minute
-        options.setCapability("uiautomator2ServerInstallTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerInstallTimeout", 60000)); // 1 minute
+        options.setCapability("uiautomator2ServerLaunchTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerLaunchTimeout", 30000)); // 30 seconds
+        options.setCapability("uiautomator2ServerInstallTimeout", ConfigReader.getIntProperty("android.uiautomator2ServerInstallTimeout", 30000)); // 30 seconds
         options.setCapability(
     "uiautomator2ServerReadTimeout",
     ConfigReader.getIntProperty(
         "android.uiautomator2ServerReadTimeout",
         60000
     )
-);
-        options.setCapability("adbExecTimeout", ConfigReader.getIntProperty("android.adbExecTimeout", 60000));
+); // Reduced from 60s to 15s
+        options.setCapability("adbExecTimeout", ConfigReader.getIntProperty("android.adbExecTimeout", 60000)); // Reduced from 60s to 20s
 
         // Element finding timeouts - Optimized for React Native
         options.setCapability(
     "waitForIdleTimeout",
-    ConfigReader.getIntProperty("android.waitForIdleTimeout", 500)
+    ConfigReader.getIntProperty("android.waitForIdleTimeout", 0)
 ); // Critical: disable idle wait for RN
         options.setCapability(
     "waitForSelectorTimeout",
     ConfigReader.getIntProperty(
         "android.waitForSelectorTimeout",
-        10000
+        7000
     )
-);
+); // Reduced from 10s to 7s
         options.setCapability("actionAcknowledgmentTimeout", 5000);
-        options.setCapability("scrollAcknowledgmentTimeout", ConfigReader.getIntProperty("android.scrollAcknowledgmentTimeout", 500));
+        options.setCapability("scrollAcknowledgmentTimeout", ConfigReader.getIntProperty("android.scrollAcknowledgmentTimeout", 1200));
 
         // Additional Android capabilities
         options.setCapability("skipUnlock", ConfigReader.getBooleanProperty("android.skipUnlock", true));

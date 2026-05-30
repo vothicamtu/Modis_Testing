@@ -8,7 +8,6 @@ import com.modis.pages.LoadingPage;
 import com.modis.pages.LoginPage;
 import com.modis.pages.ProfilePage;
 import com.modis.pages.SignupPage;
-import com.modis.pages.TakePage;
 
 import com.modis.utils.LoggerUtil;
 import com.modis.utils.LogoutHelper;
@@ -42,13 +41,14 @@ public class AuthenticationTests extends BaseTest {
     private static final int P_LOGIN_EMPTY_USERNAME = 6;
     private static final int P_LOGIN_EMPTY_PASSWORD = 7;
     private static final int P_LOGIN_VALID_FLOW = 8;
+    private static final int P_LOGOUT_FLOW = 9;
 
-    private static final int P_SIGNUP_DISABLED = 9;
-    private static final int P_SIGNUP_INVALID_EMAIL = 10;
-    private static final int P_SIGNUP_PASSWORD_MISMATCH = 11;
-    private static final int P_SIGNUP_VALID = 12;
+    private static final int P_SIGNUP_DISABLED = 10;
+    private static final int P_SIGNUP_INVALID_EMAIL = 11;
+    private static final int P_SIGNUP_PASSWORD_MISMATCH = 12;
+    private static final int P_SIGNUP_VALID = 13;
 
-    @Test(priority = P_LOADING_SCREEN, groups = {"authentication", "flow", "regression"}, description = "Verify Loading/Welcome screen appears first")
+    @Test(priority = P_LOADING_SCREEN, groups = {"authentication", "flow", "smoke", "regression"}, description = "Verify Loading/Welcome screen appears first")
     public void testLoadingScreenAppearsFirst() {
 
         logger.info("Testing that Loading/Welcome screen appears first after app launch");
@@ -76,11 +76,7 @@ public class AuthenticationTests extends BaseTest {
     }
 
 
-    @Test(
-            priority = P_LOGIN_DISABLED,
-            groups = {"authentication", "regression"},
-            description = "Login submit must stay disabled until both fields are filled"
-    )
+    @Test(priority = P_LOGIN_DISABLED, groups = {"authentication", "regression"}, description = "Login submit must stay disabled until both fields are filled")
     public void testLoginButtonDisabledWhenFieldsMissing() {
 
         LoginPage loginPage = navigateToLoginFromLoading();
@@ -100,11 +96,7 @@ public class AuthenticationTests extends BaseTest {
         );
     }
 
-    @Test(
-            priority = P_LOGIN_UNKNOWN_USERNAME,
-            groups = {"authentication", "regression"},
-            description = "Login invalid username should show auth dialog"
-    )
+    @Test(priority = P_LOGIN_UNKNOWN_USERNAME, groups = {"authentication", "regression"}, description = "Login invalid username should show auth dialog")
     public void testLoginShowsDialogForUnknownUsername() {
 
         LoginPage loginPage = navigateToLoginFromLoading();
@@ -151,11 +143,7 @@ public class AuthenticationTests extends BaseTest {
         ScreenshotUtils.takeScreenshot("INVALID_USERNAME_DIALOG");
     }
 
-    @Test(
-            priority = P_LOGIN_WRONG_PASSWORD,
-            groups = {"authentication", "regression"},
-            description = "Login wrong password should show auth dialog"
-    )
+    @Test(priority = P_LOGIN_WRONG_PASSWORD, groups = {"authentication", "regression"}, description = "Login wrong password should show auth dialog")
     public void testLoginShowsDialogForWrongPassword() {
 
         LoginPage loginPage = navigateToLoginFromLoading();
@@ -202,11 +190,7 @@ public class AuthenticationTests extends BaseTest {
         ScreenshotUtils.takeScreenshot("WRONG_PASSWORD_DIALOG");
     }
 
-    @Test(
-            priority = P_LOGIN_EMPTY_CREDENTIALS,
-            groups = {"authentication", "regression"},
-            description = "Empty credentials should show validation error"
-    )
+    @Test(priority = P_LOGIN_EMPTY_CREDENTIALS, groups = {"authentication", "regression"}, description = "Empty credentials should show validation error")
     public void testLoginWithEmptyCredentials() {
 
         LoginPage loginPage = navigateToLoginFromLoading();
@@ -232,11 +216,7 @@ public class AuthenticationTests extends BaseTest {
         ScreenshotUtils.takeScreenshot("EMPTY_CREDENTIALS_VALIDATION");
     }
 
-    @Test(
-            priority = P_LOGIN_EMPTY_USERNAME,
-            groups = {"authentication", "regression"},
-            description = "Empty username should show validation error"
-    )
+    @Test(priority = P_LOGIN_EMPTY_USERNAME, groups = {"authentication", "regression"}, description = "Empty username should show validation error")
     public void testLoginWithEmptyUsername() {
 
         LoginPage loginPage = navigateToLoginFromLoading();
@@ -262,11 +242,7 @@ public class AuthenticationTests extends BaseTest {
         ScreenshotUtils.takeScreenshot("EMPTY_USERNAME_VALIDATION");
     }
 
-    @Test(
-            priority = P_LOGIN_EMPTY_PASSWORD,
-            groups = {"authentication", "regression"},
-            description = "Empty password should show validation error"
-    )
+    @Test(priority = P_LOGIN_EMPTY_PASSWORD, groups = {"authentication", "regression"}, description = "Empty password should show validation error")
     public void testLoginWithEmptyPassword() {
 
         LoginPage loginPage = navigateToLoginFromLoading();
@@ -292,19 +268,13 @@ public class AuthenticationTests extends BaseTest {
         ScreenshotUtils.takeScreenshot("EMPTY_PASSWORD_VALIDATION");
     }
 
-    @Test(
-            priority = P_LOGIN_VALID_FLOW,
-            groups = {"authentication", "flow", "smoke", "regression"},
-            description = "Valid login -> AUTHENTICATED state -> Home/Take -> Profile -> Logout"
-    )
-    public void testLoginSuccessfullyNavigateToHomeAndTake() {
+    @Test(priority = P_LOGIN_VALID_FLOW, groups = {"authentication", "smoke", "regression"}, description = "Valid login should navigate to Home page")
+    public void testLoginSuccessfully() {
 
         LoginPage loginPage = navigateToLoginFromLoading();
 
-        List<Map<String, Object>> validCredentials =
-                testDataReader.getValidLoginCredentials();
-
-        Map<String, Object> validUser = validCredentials.get(0);
+        Map<String, Object> validUser =
+                testDataReader.getValidLoginCredentials().get(0);
 
         String username = (String) validUser.get("username");
         String password = (String) validUser.get("password");
@@ -320,13 +290,11 @@ public class AuthenticationTests extends BaseTest {
 
         HomePage homePage = (HomePage) afterLogin;
 
-        logger.info("Waiting for authenticated Home screen");
-
         homePage.waitForTopbarReadyAfterLogin(8);
 
         Assert.assertTrue(
                 homePage.isTopbarAvatarDisplayed(),
-                "Topbar avatar should be visible after successful login"
+                "Avatar should be visible after login"
         );
 
         Assert.assertTrue(
@@ -336,57 +304,60 @@ public class AuthenticationTests extends BaseTest {
 
         ScreenshotUtils.takeScreenshot("LOGIN_SUCCESS_HOME");
 
-        logger.info("Navigating to Take screen");
+        logger.info("Login successful - Home page displayed");
+    }
 
-        try {
+    @Test(priority = P_LOGOUT_FLOW, groups = {"authentication", "smoke", "regression"}, description = "Logout successfully from authenticated state")
+    public void testLogoutSuccessfully() {
 
-            TakePage takePage = homePage.navigateToCamera();
+        LoginPage loginPage = navigateToLoginFromLoading();
 
-            Assert.assertNotNull(
-                    takePage,
-                    "TakePage should not be null"
-            );
+        Map<String, Object> validUser =
+                testDataReader.getValidLoginCredentials().get(0);
 
-            takePage.waitForPageToLoad();
+        BasePage afterLogin = loginPage.login(
+                (String) validUser.get("username"),
+                (String) validUser.get("password")
+        );
 
-            Assert.assertTrue(
-                    takePage.isDisplayed(),
-                    "Take screen should display"
-            );
+        Assert.assertTrue(
+                afterLogin instanceof HomePage,
+                "Login should navigate to HomePage"
+        );
 
-            ScreenshotUtils.takeScreenshot("LOGIN_SUCCESS_TAKE");
+        HomePage homePage = (HomePage) afterLogin;
 
-            homePage = takePage.navigateBack();
+        homePage.waitForTopbarReadyAfterLogin(8);
 
-            homePage.waitForTopbarReadyAfterLogin(6);
+        Assert.assertTrue(
+                homePage.isDisplayed(),
+                "Home page should display"
+        );
 
-        } catch (Exception e) {
-
-            logger.warn("Skip TakeScreen (non-fatal): {}", e.getMessage());
-        }
+        logger.info("Navigating to Profile for logout");
 
         ProfilePage profilePage = homePage.navigateToProfile();
 
         Assert.assertTrue(
                 profilePage.isDisplayed(),
-                "Profile page should be accessible in authenticated state"
+                "Profile page should display"
         );
 
-        LoginPage afterLogout = profilePage.logout();
+        logger.info("Searching logout button");
+
+        LoadingPage afterLogout = profilePage.logout();
 
         Assert.assertTrue(
                 afterLogout.isDisplayed(),
-                "Should return to Login page after logout"
+                "Should return to Loading page after logout"
         );
 
-        logger.info("Authentication login flow completed successfully");
+        ScreenshotUtils.takeScreenshot("LOGOUT_SUCCESS");
+
+        logger.info("Logout completed successfully");
     }
 
-    @Test(
-            priority = P_SIGNUP_DISABLED,
-            groups = {"authentication", "regression"},
-            description = "Signup submit must stay disabled until all required fields are filled"
-    )
+    @Test(priority = P_SIGNUP_DISABLED, groups = {"authentication", "regression"}, description = "Signup submit must stay disabled until all required fields are filled")
     public void testSignupButtonDisabledWhenRequiredFieldsMissing() {
 
         SignupPage signupPage = navigateToSignupFromLoading();
@@ -402,11 +373,7 @@ public class AuthenticationTests extends BaseTest {
         );
     }
 
-    @Test(
-            priority = P_SIGNUP_INVALID_EMAIL,
-            groups = {"authentication", "flow", "regression"},
-            description = "Signup invalid (invalid email)"
-    )
+    @Test(priority = P_SIGNUP_INVALID_EMAIL, groups = {"authentication", "flow", "regression"}, description = "Signup invalid (invalid email)")
     public void testSignupInvalidEmail() {
 
         SignupPage signupPage = navigateToSignupFromLoading();
@@ -440,11 +407,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info("Invalid signup test PASSED - still in unauthenticated state");
     }
 
-    @Test(
-            priority = P_SIGNUP_PASSWORD_MISMATCH,
-            groups = {"authentication", "regression"},
-            description = "Signup mismatched passwords should show auth dialog"
-    )
+    @Test(priority = P_SIGNUP_PASSWORD_MISMATCH, groups = {"authentication", "regression"}, description = "Signup mismatched passwords should show auth dialog")
     public void testSignupShowsDialogWhenPasswordsMismatch() {
 
         SignupPage signupPage = navigateToSignupFromLoading();
@@ -488,11 +451,7 @@ public class AuthenticationTests extends BaseTest {
         ScreenshotUtils.takeScreenshot("SIGNUP_PASSWORD_MISMATCH");
     }
 
-    @Test(
-            priority = P_SIGNUP_VALID,
-            groups = {"authentication", "flow", "smoke", "regression"},
-            description = "Valid signup -> AUTHENTICATED state -> Home -> Profile -> Logout"
-    )
+    @Test(priority = P_SIGNUP_VALID, groups = {"authentication", "flow", "regression"}, description = "Valid signup -> AUTHENTICATED state -> Home -> Profile -> Logout")
     public void testSignupSuccessfully() {
 
         SignupPage signupPage = navigateToSignupFromLoading();
@@ -539,23 +498,13 @@ public class AuthenticationTests extends BaseTest {
                 "Home screen should be displayed after successful signup"
         );
 
-        ScreenshotUtils.takeScreenshot("flow_signup_valid_home_authenticated");
-
-        ProfilePage profilePage = homePage.navigateToProfile();
-
-        Assert.assertTrue(
-                profilePage.isDisplayed(),
-                "Profile page should be accessible in authenticated state"
+        ScreenshotUtils.takeScreenshot(
+                "SIGNUP_SUCCESS_HOME"
         );
 
-        LoginPage afterLogout = profilePage.logout();
-
-        Assert.assertTrue(
-                afterLogout.isDisplayed(),
-                "Should return to Login page after logout"
+        logger.info(
+                "Signup successful - Home page displayed"
         );
-
-        logger.info("Authentication signup flow completed successfully");
     }
 
     @AfterMethod(alwaysRun = true)
@@ -624,8 +573,11 @@ public class AuthenticationTests extends BaseTest {
             case "testLoginWithEmptyPassword":
                 return "System correctly validated empty password";
 
-            case "testLoginSuccessfullyNavigateToHomeAndTake":
-                return "System successfully authenticated user and navigated through authenticated flow";
+            case "testLoginSuccessfully":
+                return "System successfully authenticated user";
+
+            case "testLogoutSuccessfully":
+                return "System successfully logged out authenticated user";
 
             case "testSignupButtonDisabledWhenRequiredFieldsMissing":
                 return "System correctly prevented incomplete signup";

@@ -84,56 +84,19 @@ public class ProfilePage extends BasePage {
         return homePage;
     }
 
-    public LoginPage logout() {
+    public LoadingPage logout() {
+
         logger.info("Logging out from profile screen");
+
         WebElement logoutTarget = ensureLogoutButtonVisible();
-        waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
+
         clickElement(logoutTarget);
 
-        // Handle logout confirmation if it appears
         handleLogoutConfirmation();
 
-        // Wait for navigation to login screen
-        waitForElementVisible(TestIDs.LOGIN_SCREEN);
-        return new LoginPage();
-    }
+        waitForElementVisible(TestIDs.LOADING_SCREEN);
 
-    /**
-     * Logout with confirmation
-     *
-     * @return LoginPage
-     */
-    public LoginPage logoutWithConfirmation() {
-        logger.info("Logging out with confirmation");
-        WebElement logoutTarget = ensureLogoutButtonVisible();
-        waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
-        clickElement(logoutTarget);
-
-        // Confirm logout in modal
-        if (isModalDisplayed()) {
-            confirmAction();
-        }
-
-        return new LoginPage();
-    }
-
-    /**
-     * Cancel logout
-     *
-     * @return ProfilePage for method chaining
-     */
-    public ProfilePage cancelLogout() {
-        logger.info("Canceling logout");
-        WebElement logoutTarget = ensureLogoutButtonVisible();
-        waitForElementClickable(TestIDs.PROFILE_LOGOUT_BUTTON);
-        clickElement(logoutTarget);
-
-        // Cancel logout in modal
-        if (isModalDisplayed()) {
-            cancelAction();
-        }
-
-        return this;
+        return new LoadingPage();
     }
 
     private WebElement ensureLogoutButtonVisible() {
@@ -157,12 +120,6 @@ public class ProfilePage extends BasePage {
     }
 
     // PROFILE EDIT ACTIONS 
-
-    /**
-     * Edit username
-     *
-     * @return ProfilePage for method chaining (or edit screen if implemented)
-     */
     public ProfilePage editUsername() {
         logger.info("Opening edit username");
         waitForElementClickable(TestIDs.PROFILE_EDIT_USERNAME_ITEM);
@@ -171,11 +128,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Edit phone number
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage editPhone() {
         logger.info("Opening edit phone");
         waitForElementClickable(TestIDs.PROFILE_EDIT_PHONE_ITEM);
@@ -184,11 +136,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Edit email
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage editEmail() {
         logger.info("Opening edit email");
         waitForElementClickable(TestIDs.PROFILE_EDIT_EMAIL_ITEM);
@@ -197,11 +144,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Change password
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage changePassword() {
         logger.info("Opening change password");
         waitForElementClickable(TestIDs.PROFILE_CHANGE_PASSWORD_ITEM);
@@ -210,11 +152,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Change avatar/profile picture
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage changeAvatar() {
         logger.info("Changing avatar");
         waitForElementClickable(TestIDs.PROFILE_AVATAR);
@@ -224,12 +161,6 @@ public class ProfilePage extends BasePage {
     }
 
     // SETTINGS ACTIONS 
-
-    /**
-     * Toggle theme (light/dark)
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage toggleTheme() {
         logger.info("Toggling theme");
         waitForElementClickable(TestIDs.PROFILE_THEME_TOGGLE);
@@ -238,11 +169,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Share app
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage shareApp() {
         logger.info("Sharing app");
         waitForElementClickable(TestIDs.PROFILE_SHARE_APP);
@@ -251,11 +177,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Delete account
-     *
-     * @return LoginPage if confirmed, ProfilePage if cancelled
-     */
     public BasePage deleteAccount() {
         logger.info("Initiating delete account");
         waitForElementClickable(TestIDs.PROFILE_DELETE_ACCOUNT);
@@ -272,11 +193,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Delete account with confirmation (dangerous operation)
-     *
-     * @return LoginPage
-     */
     public LoginPage deleteAccountWithConfirmation() {
         logger.warn("Deleting account with confirmation - DANGEROUS OPERATION");
         clickElement(deleteAccountItem);
@@ -292,10 +208,6 @@ public class ProfilePage extends BasePage {
     }
 
     // MODAL HANDLING 
-
-    /**
-     * Handle logout confirmation modal
-     */
     private void handleLogoutConfirmation() {
         logger.debug("Handling logout confirmation");
 
@@ -306,20 +218,10 @@ public class ProfilePage extends BasePage {
         waitForAnimation();
     }
 
-    /**
-     * Check if modal is displayed
-     *
-     * @return true if modal is visible, false otherwise
-     */
     public boolean isModalDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.MODAL_CONTAINER);
     }
 
-    /**
-     * Confirm action in modal
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage confirmAction() {
         logger.info("Confirming action in modal");
         waitForElementClickable(TestIDs.MODAL_CONFIRM_BUTTON);
@@ -328,11 +230,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Cancel action in modal
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage cancelAction() {
         logger.info("Canceling action in modal");
         waitForElementClickable(TestIDs.MODAL_CANCEL_BUTTON);
@@ -341,11 +238,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Close modal by tapping outside
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage closeModal() {
         logger.info("Closing modal by tapping outside");
 
@@ -376,49 +268,24 @@ public class ProfilePage extends BasePage {
         return isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON);
     }
 
-    /**
-     * Check if edit username item is displayed
-     *
-     * @return true if edit username item is visible, false otherwise
-     */
     public boolean isEditUsernameItemDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.PROFILE_EDIT_USERNAME_ITEM);
     }
 
-    /**
-     * Check if theme toggle is displayed
-     *
-     * @return true if theme toggle is visible, false otherwise
-     */
     public boolean isThemeToggleDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.PROFILE_THEME_TOGGLE);
     }
 
-    /**
-     * Check if delete account item is displayed
-     *
-     * @return true if delete account item is visible, false otherwise
-     */
     public boolean isDeleteAccountItemDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.PROFILE_DELETE_ACCOUNT);
     }
 
-    /**
-     * Get current theme state
-     *
-     * @return true if dark theme, false if light theme
-     */
     public boolean isDarkThemeEnabled() {
         waitForElementVisible(TestIDs.PROFILE_THEME_TOGGLE);
         String themeState = themeToggle.getAttribute("checked");
         return "true".equals(themeState);
     }
 
-    /**
-     * Check if all profile edit options are available
-     *
-     * @return true if all edit options are visible, false otherwise
-     */
     public boolean areAllEditOptionsAvailable() {
         return isElementDisplayedByAccessibilityId(TestIDs.PROFILE_EDIT_USERNAME_ITEM) &&
                 isElementDisplayedByAccessibilityId(TestIDs.PROFILE_EDIT_PHONE_ITEM) &&
@@ -427,35 +294,18 @@ public class ProfilePage extends BasePage {
     }
 
     // SCROLL ACTIONS 
-
-    /**
-     * Scroll down in profile screen
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage scrollDown() {
         logger.debug("Scrolling down in profile screen");
         scrollDownBase();
         return this;
     }
 
-    /**
-     * Scroll up in profile screen
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage scrollUp() {
         logger.debug("Scrolling up in profile screen");
         scrollUpBase();
         return this;
     }
 
-    /**
-     * Scroll to find and click element
-     *
-     * @param elementId Element accessibility ID
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage scrollToAndClickElement(String elementId) {
         logger.info("Scrolling to and clicking element: {}", elementId);
 
@@ -470,12 +320,6 @@ public class ProfilePage extends BasePage {
     }
 
     // NEGATIVE TEST METHODS 
-
-    /**
-     * Attempt to access restricted settings (if any)
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage attemptRestrictedAccess() {
         logger.info("Attempting to access restricted settings");
 
@@ -485,11 +329,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /**
-     * Test logout cancellation
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage testLogoutCancellation() {
         logger.info("Testing logout cancellation");
 
@@ -519,11 +358,6 @@ public class ProfilePage extends BasePage {
         return "Profile Screen";
     }
 
-    /**
-     * Wait for profile page to be fully loaded
-     *
-     * @return ProfilePage for method chaining
-     */
     public ProfilePage clickAccountSettingsItem() {
         return this;
     }

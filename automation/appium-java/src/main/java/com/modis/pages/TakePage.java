@@ -322,15 +322,6 @@ public class TakePage extends BasePage {
         }
     }
 
-    private boolean safeCheckTakeElement(String accessibilityId) {
-        try {
-            return isElementDisplayedByAccessibilityId(accessibilityId);
-        } catch (Exception e) {
-            logger.debug("Take element check failed for {}: {}", accessibilityId, e.getMessage());
-            return false;
-        }
-    }
-
     @Override
     public String getPageTitle() {
         return "Take/Camera Screen";

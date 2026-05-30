@@ -10,7 +10,6 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
@@ -23,26 +22,15 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
-
-/**
- * Smart waiting utilities optimized for React Native apps
- * Provides robust element waiting with UiAutomator2 crash protection
- */
 public class SmartWaitUtils {
     
     private static final Logger logger = LoggerUtil.getLogger(SmartWaitUtils.class);
     
     // Optimized timeouts for React Native
     private static final int DEFAULT_TIMEOUT_SECONDS = 30;
-    private static final int QUICK_TIMEOUT_SECONDS = 5;
     private static final int POLLING_INTERVAL_MS = 500;
-    
-    /**
-     * SIMPLIFIED: Wait for any screen với timeout ngắn và logic đơn giản
-     */
-    public static ScreenDetectionResult waitForAnyScreen(int timeoutSeconds) {
+public static ScreenDetectionResult waitForAnyScreen(int timeoutSeconds) {
         AppiumDriver driver = DriverManager.getDriver();
         if (driver == null) {
             logger.error("No driver available for screen detection");
@@ -88,11 +76,7 @@ public class SmartWaitUtils {
         logger.warn("No screen detected after {}s", timeoutSeconds);
         return new ScreenDetectionResult(ScreenType.UNKNOWN, null);
     }
-    
-    /**
-     * Wait for specific element with UiAutomator2 crash protection
-     */
-    public static WebElement waitForElement(By locator, int timeoutSeconds) {
+public static WebElement waitForElement(By locator, int timeoutSeconds) {
         AppiumDriver driver = DriverManager.getDriver();
         if (driver == null) {
             logger.error("No driver available for element waiting");
@@ -142,11 +126,7 @@ public class SmartWaitUtils {
             return null;
         }
     }
-    
-    /**
-     * Wait for element to be clickable with crash protection
-     */
-    public static WebElement waitForClickableElement(By locator, int timeoutSeconds) {
+public static WebElement waitForClickableElement(By locator, int timeoutSeconds) {
         AppiumDriver driver = DriverManager.getDriver();
         if (driver == null) {
             return null;
@@ -163,11 +143,7 @@ public class SmartWaitUtils {
             return null;
         }
     }
-    
-    /**
-     * SIMPLIFIED: Quick element check - chỉ dùng 1 giây timeout
-     */
-    public static boolean isElementPresent(By locator) {
+public static boolean isElementPresent(By locator) {
         try {
             List<WebElement> elements = DriverManager.safelyFindElements(locator);
             if (elements == null || elements.isEmpty()) return false;
@@ -196,77 +172,7 @@ public class SmartWaitUtils {
         }
         return false;
     }
-    
-    /**
-     * Identify screen type from found element
-     */
-    private static ScreenType identifyScreenFromElement(WebElement element) {
-        try {
-            String accessibilityId = element.getAttribute("content-desc");
-            if (accessibilityId == null) {
-                accessibilityId = element.getAttribute("name"); // iOS fallback
-            }
-            
-            if (accessibilityId != null) {
-                // Home screen elements
-                if (accessibilityId.equals(TestIDs.HOME_SCREEN) ||
-                    accessibilityId.equals(TestIDs.TOPBAR_AVATAR_BUTTON) ||
-                    accessibilityId.equals(TestIDs.TAKE_SCREEN) ||
-                    accessibilityId.equals(TestIDs.FEED_SCREEN)) {
-                    return ScreenType.HOME;
-                }
-                
-                // Login screen elements
-                if (accessibilityId.equals(TestIDs.LOGIN_USERNAME_INPUT) ||
-                    accessibilityId.equals(TestIDs.LOGIN_SUBMIT_BUTTON)) {
-                    return ScreenType.LOGIN;
-                }
-                
-                // Signup screen elements
-                if (accessibilityId.equals(TestIDs.SIGNUP_USERNAME_INPUT) ||
-                    accessibilityId.equals(TestIDs.SIGNUP_SUBMIT_BUTTON)) {
-                    return ScreenType.SIGNUP;
-                }
-                
-                // Loading screen elements
-                if (accessibilityId.equals(TestIDs.LOADING_LOGIN_BUTTON) ||
-                    accessibilityId.equals(TestIDs.LOADING_SIGNUP_BUTTON)) {
-                    return ScreenType.LOADING;
-                }
-            }
-            
-        } catch (Exception e) {
-            logger.debug("Could not identify screen from element: {}", e.getMessage());
-        }
-        
-        return ScreenType.UNKNOWN;
-    }
-    
-    /**
-     * Get element description for logging
-     */
-    private static String getElementDescription(WebElement element) {
-        try {
-            String accessibilityId = element.getAttribute("content-desc");
-            if (accessibilityId != null && !accessibilityId.isEmpty()) {
-                return "accessibilityId=" + accessibilityId;
-            }
-            
-            String resourceId = element.getAttribute("resource-id");
-            if (resourceId != null && !resourceId.isEmpty()) {
-                return "resource-id=" + resourceId;
-            }
-            
-            return element.getTagName();
-        } catch (Exception e) {
-            return "unknown";
-        }
-    }
-    
-    /**
-     * Capture debug information when things go wrong
-     */
-    public static void captureDebugInfo(String reason) {
+public static void captureDebugInfo(String reason) {
         AppiumDriver driver = DriverManager.getDriver();
         if (driver == null) {
             logger.warn("Cannot capture debug info - no driver available");
@@ -319,11 +225,7 @@ public class SmartWaitUtils {
             logger.error("Failed to create debug directory: {}", e.getMessage());
         }
     }
-    
-    /**
-     * Screen detection result
-     */
-    public static class ScreenDetectionResult {
+public static class ScreenDetectionResult {
         private final ScreenType screenType;
         private final WebElement element;
         
@@ -344,12 +246,7 @@ public class SmartWaitUtils {
             return screenType != ScreenType.UNKNOWN && element != null;
         }
     }
-    
-    /**
-     * SIMPLIFIED: Auto-dismiss error dialogs với strategy đơn giản
-     * Chỉ dùng accessibility ID chính xác, không dùng xpath phức tạp
-     */
-    public static boolean autoDismissErrorDialogs() {
+public static boolean autoDismissErrorDialogs() {
         AppiumDriver driver = DriverManager.getDriver();
         if (driver == null) {
             return false;
@@ -366,7 +263,7 @@ public class SmartWaitUtils {
                 return true;
             }
 
-            // STRATEGY 1: Chỉ check accessibility ID chính xác
+            // STRATEGY 1: Chá»‰ check accessibility ID chÃ­nh xÃ¡c
             if (isElementPresent(AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON))) {
                 By ok = AppiumBy.accessibilityId(TestIDs.ERROR_DIALOG_OK_BUTTON);
                 driver.findElements(ok).get(0).click();
@@ -391,7 +288,7 @@ public class SmartWaitUtils {
                 return true;
             }
 
-            // STRATEGY 2: Chỉ check resource-id chuẩn (không xpath)
+            // STRATEGY 2: Chá»‰ check resource-id chuáº©n (khÃ´ng xpath)
             try {
                 By ok = By.id("android:id/button1");
                 List<WebElement> okButtons = driver.findElements(ok);
@@ -539,11 +436,7 @@ public class SmartWaitUtils {
         } catch (Exception ignored) {
         }
     }
-    
-    /**
-     * Screen types for navigation
-     */
-    public enum ScreenType {
+public enum ScreenType {
         HOME,
         LOGIN,
         SIGNUP,

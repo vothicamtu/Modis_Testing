@@ -69,15 +69,9 @@ public class HomePage extends BasePage {
     private WebElement feedLoadingIndicator;
 
     // NAVIGATION ACTIONS
-
-    /**
-     * Navigate to Profile screen by clicking avatar
-     *
-     * @return ProfilePage
-     */
-    public ProfilePage navigateToProfile() {
+public ProfilePage navigateToProfile() {
         logger.info("Navigating to profile screen");
-        // Dùng locator theo testID/accessibilityId để tránh kẹt do @AndroidFindBy(id=...) không match RN
+        // DÃ¹ng locator theo testID/accessibilityId Ä‘á»ƒ trÃ¡nh káº¹t do @AndroidFindBy(id=...) khÃ´ng match RN
         clickByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON);
         return new ProfilePage();
     }
@@ -105,12 +99,32 @@ public class HomePage extends BasePage {
         logger.info("Navigating to messages screen");
 
         try {
+            // Ensure we're on home screen first
+            if (!isDisplayed()) {
+                logger.warn("Not on home screen, attempting to navigate back");
+                goBack();
+                waitForAnimation();
+            }
 
-            findByAccessibilityId(
-                    TestIDs.TOPBAR_MESSAGE_BUTTON
-            ).click();
+            // Wait for topbar to be ready
+            waitForElementVisible(TestIDs.TOPBAR_MESSAGE_BUTTON);
+            
+            // Click message button
+            findByAccessibilityId(TestIDs.TOPBAR_MESSAGE_BUTTON).click();
 
             waitForAnimation();
+
+            // Create and wait for message page to load
+            MessagePage messagePage = new MessagePage();
+            messagePage.waitForPageToLoad();
+            
+            // Verify navigation was successful
+            if (!messagePage.isDisplayed()) {
+                throw new RuntimeException("Failed to navigate to messages screen");
+            }
+            
+            logger.info("Successfully navigated to messages screen");
+            return messagePage;
 
         } catch (Exception e) {
 
@@ -119,16 +133,30 @@ public class HomePage extends BasePage {
                     e.getMessage()
             );
 
-            goBack();
-
-            waitFor(2);
-
-            findByAccessibilityId(
-                    TestIDs.TOPBAR_MESSAGE_BUTTON
-            ).click();
+            // Retry once
+            try {
+                goBack();
+                waitFor(2);
+                
+                waitForElementVisible(TestIDs.TOPBAR_MESSAGE_BUTTON);
+                findByAccessibilityId(TestIDs.TOPBAR_MESSAGE_BUTTON).click();
+                waitForAnimation();
+                
+                MessagePage messagePage = new MessagePage();
+                messagePage.waitForPageToLoad();
+                
+                if (!messagePage.isDisplayed()) {
+                    throw new RuntimeException("Failed to navigate to messages screen after retry");
+                }
+                
+                logger.info("Successfully navigated to messages screen after retry");
+                return messagePage;
+                
+            } catch (Exception retryException) {
+                logger.error("Navigation to messages failed even after retry: {}", retryException.getMessage());
+                throw new RuntimeException("Unable to navigate to messages screen", retryException);
+            }
         }
-
-        return new MessagePage();
     }
 
     public TakePage navigateToCamera() {
@@ -160,13 +188,7 @@ public class HomePage extends BasePage {
 
         return new TakePage();
     }
-
-    /**
-     * Navigate to Take/Camera screen using alternative method
-     *
-     * @return TakePage
-     */
-    public TakePage navigateToCameraAlternative() {
+public TakePage navigateToCameraAlternative() {
         logger.info("Navigating to camera screen using alternative method");
 
         // Alternative navigation method (if available)
@@ -178,24 +200,12 @@ public class HomePage extends BasePage {
     public boolean isPhotoSentSuccessMessageDisplayed() {
         return true;
     }
-
-    /**
-     * Open filter dropdown
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage openFilterDropdown() {
+public HomePage openFilterDropdown() {
         logger.info("Opening filter dropdown");
         clickByAccessibilityId(TestIDs.TOPBAR_FILTER_BUTTON);
         return this;
     }
-
-    /**
-     * Close filter dropdown
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage closeFilterDropdown() {
+public HomePage closeFilterDropdown() {
         logger.info("Closing filter dropdown");
         // Click outside the dropdown or on filter button again
         clickByAccessibilityId(TestIDs.TOPBAR_FILTER_BUTTON);
@@ -203,147 +213,71 @@ public class HomePage extends BasePage {
     }
 
     // FEED ACTIONS
-
-    /**
-     * Refresh the feed by pulling down
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage refreshFeed() {
+public HomePage refreshFeed() {
         logger.info("Refreshing feed");
         pullToRefresh();
         waitForFeedToLoad();
         return this;
     }
-
-    /**
-     * Scroll down in feed
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage scrollFeedDown() {
+public HomePage scrollFeedDown() {
         logger.debug("Scrolling feed down");
         scrollInElement(feedScrollView, "down");
         return this;
     }
-
-    /**
-     * Scroll up in feed
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage scrollFeedUp() {
+public HomePage scrollFeedUp() {
         logger.debug("Scrolling feed up");
         scrollInElement(feedScrollView, "up");
         return this;
     }
-
-    /**
-     * Scroll to top of feed
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage scrollToTopOfFeed() {
+public HomePage scrollToTopOfFeed() {
         logger.info("Scrolling to top of feed");
         scrollToTopBase();
         return this;
     }
-
-    /**
-     * Scroll to bottom of feed
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage scrollToBottomOfFeed() {
+public HomePage scrollToBottomOfFeed() {
         logger.info("Scrolling to bottom of feed");
         scrollToBottomBase();
         return this;
     }
-
-    /**
-     * Wait for feed to load
-     */
-    public void waitForFeedToLoad() {
+public void waitForFeedToLoad() {
         logger.debug("Waiting for feed to load");
         waitForElementToDisappear(TestIDs.FEED_LOADING_INDICATOR);
         waitForAnimation();
     }
-
-    /**
-     * Check if feed is loading
-     *
-     * @return true if feed is loading, false otherwise
-     */
-    public boolean isFeedLoading() {
+public boolean isFeedLoading() {
         return isElementDisplayedByAccessibilityId(TestIDs.FEED_LOADING_INDICATOR);
     }
 
     // FEED POST INTERACTIONS
-
-    /**
-     * Click on a feed post by post ID
-     *
-     * @param postId Post ID
-     * @return HomePage for method chaining
-     */
-    public HomePage clickFeedPost(String postId) {
+public HomePage clickFeedPost(String postId) {
         logger.info("Clicking on feed post: {}", postId);
         String postTestId = TestIDs.getFeedPostItemId(postId);
         waitForElementClickable(postTestId);
         clickByAccessibilityId(postTestId);
         return this;
     }
-
-    /**
-     * Click on feed post image by post ID
-     *
-     * @param postId Post ID
-     * @return HomePage for method chaining
-     */
-    public HomePage clickFeedPostImage(String postId) {
+public HomePage clickFeedPostImage(String postId) {
         logger.info("Clicking on feed post image: {}", postId);
         String imageTestId = TestIDs.getFeedPostImageId(postId);
         waitForElementClickable(imageTestId);
         clickByAccessibilityId(imageTestId);
         return this;
     }
-
-    /**
-     * Click emoji reaction on a post
-     *
-     * @param emoji  Emoji type
-     * @param postId Post ID
-     * @return HomePage for method chaining
-     */
-    public HomePage clickEmojiReaction(String emoji, String postId) {
+public HomePage clickEmojiReaction(String emoji, String postId) {
         logger.info("Clicking emoji reaction '{}' on post: {}", emoji, postId);
         String emojiTestId = TestIDs.getFeedEmojiId(emoji, postId);
         waitForElementClickable(emojiTestId);
         clickByAccessibilityId(emojiTestId);
         return this;
     }
-
-    /**
-     * Click comment button on a post
-     *
-     * @param postId Post ID
-     * @return HomePage for method chaining
-     */
-    public HomePage clickCommentButton(String postId) {
+public HomePage clickCommentButton(String postId) {
         logger.info("Clicking comment button on post: {}", postId);
         String commentButtonId = TestIDs.FEED_COMMENT_BUTTON_PREFIX + postId;
         waitForElementClickable(commentButtonId);
         clickByAccessibilityId(commentButtonId);
         return this;
     }
-
-    /**
-     * Long press on a feed post
-     *
-     * @param postId Post ID
-     * @return HomePage for method chaining
-     */
-    public HomePage longPressFeedPost(String postId) {
+public HomePage longPressFeedPost(String postId) {
         logger.info("Long pressing on feed post: {}", postId);
         String postTestId = TestIDs.getFeedPostItemId(postId);
         WebElement postElement = findByAccessibilityId(postTestId);
@@ -352,135 +286,57 @@ public class HomePage extends BasePage {
     }
 
     // VALIDATION METHODS
-
-    /**
-     * Check if top bar is displayed
-     *
-     * @return true if top bar is visible, false otherwise
-     */
-    public boolean isTopBarDisplayed() {
+public boolean isTopBarDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_CONTAINER);
     }
-
-    /**
-     * Check if bottom bar is displayed
-     *
-     * @return true if bottom bar is visible, false otherwise
-     */
-    public boolean isBottomBarDisplayed() {
+public boolean isBottomBarDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.BOTTOMBAR_CONTAINER);
     }
-
-    /**
-     * Check if feed is displayed
-     *
-     * @return true if feed is visible, false otherwise
-     */
-    public boolean isFeedDisplayed() {
+public boolean isFeedDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.FEED_SCROLL_VIEW);
     }
-
-    /**
-     * Get top bar title text
-     *
-     * @return Top bar title text
-     */
-    public String getTopBarTitle() {
+public String getTopBarTitle() {
         if (isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_TITLE)) {
             return getTextByAccessibilityId(TestIDs.TOPBAR_TITLE);
         }
         return "";
     }
-
-    /**
-     * Check if avatar button is displayed
-     *
-     * @return true if avatar button is visible, false otherwise
-     */
-    public boolean isAvatarButtonDisplayed() {
+public boolean isAvatarButtonDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON);
     }
-
-    /**
-     * Check if friends button is displayed
-     *
-     * @return true if friends button is visible, false otherwise
-     */
-    public boolean isFriendsButtonDisplayed() {
+public boolean isFriendsButtonDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_FRIENDS_BUTTON);
     }
-
-    /**
-     * Check if message button is displayed
-     *
-     * @return true if message button is visible, false otherwise
-     */
-    public boolean isMessageButtonDisplayed() {
+public boolean isMessageButtonDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_MESSAGE_BUTTON);
     }
-
-    /**
-     * Check if filter button is displayed
-     *
-     * @return true if filter button is visible, false otherwise
-     */
-    public boolean isFilterButtonDisplayed() {
+public boolean isFilterButtonDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.TOPBAR_FILTER_BUTTON);
     }
-
-    /**
-     * Check if gesture container is displayed
-     *
-     * @return true if gesture container is visible, false otherwise
-     */
-    public boolean isGestureContainerDisplayed() {
+public boolean isGestureContainerDisplayed() {
         // The gesture container may not be exposed as an accessibility node; use home screen as a stable signal instead.
         return isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN);
     }
-
-    /**
-     * Check if a specific feed post exists
-     *
-     * @param postId Post ID
-     * @return true if post exists, false otherwise
-     */
-    public boolean isFeedPostDisplayed(String postId) {
+public boolean isFeedPostDisplayed(String postId) {
         String postTestId = TestIDs.getFeedPostItemId(postId);
         return isElementDisplayedByAccessibilityId(postTestId);
     }
-
-    /**
-     * Check if feed post image exists
-     *
-     * @param postId Post ID
-     * @return true if post image exists, false otherwise
-     */
-    public boolean isFeedPostImageDisplayed(String postId) {
+public boolean isFeedPostImageDisplayed(String postId) {
         String imageTestId = TestIDs.getFeedPostImageId(postId);
         return isElementDisplayedByAccessibilityId(imageTestId);
     }
-
-    /**
-     * Check if emoji reaction exists on a post
-     *
-     * @param emoji  Emoji type
-     * @param postId Post ID
-     * @return true if emoji reaction exists, false otherwise
-     */
-    public boolean isEmojiReactionDisplayed(String emoji, String postId) {
+public boolean isEmojiReactionDisplayed(String emoji, String postId) {
         String emojiTestId = TestIDs.getFeedEmojiId(emoji, postId);
         return isElementDisplayedByAccessibilityId(emojiTestId);
     }
 
-    // GESTURE ACTIONS
+    public boolean isFeedCommentButtonDisplayed(String postId) {
+        String commentButtonId = TestIDs.FEED_COMMENT_BUTTON_PREFIX + postId;
+        return isElementDisplayedByAccessibilityId(commentButtonId);
+    }
 
-    /**
-     * Perform swipe gesture to navigate
-     *
-     * @param direction Direction to swipe (left, right, up, down)
-     * @return HomePage for method chaining
-     */
-    public HomePage performSwipeGesture(String direction) {
+    // GESTURE ACTIONS
+public HomePage performSwipeGesture(String direction) {
         logger.info("Performing swipe gesture: {}", direction);
 
         switch (direction.toLowerCase()) {
@@ -502,25 +358,13 @@ public class HomePage extends BasePage {
 
         return this;
     }
-
-    /**
-     * Perform tap gesture on screen center
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage performTapGesture() {
+public HomePage performTapGesture() {
         logger.info("Performing tap gesture on screen center");
         var size = getScreenSize();
         tapAtCoordinates(size.width / 2, size.height / 2);
         return this;
     }
-
-    /**
-     * Perform double tap gesture
-     *
-     * @return HomePage for method chaining
-     */
-    public HomePage performDoubleTapGesture() {
+public HomePage performDoubleTapGesture() {
         logger.info("Performing double tap gesture");
         var size = getScreenSize();
         int centerX = size.width / 2;
@@ -534,14 +378,7 @@ public class HomePage extends BasePage {
     }
 
     // SEARCH AND FILTER
-
-    /**
-     * Apply filter (if filter dropdown is open)
-     *
-     * @param filterOption Filter option to select
-     * @return HomePage for method chaining
-     */
-    public HomePage applyFilter(String filterOption) {
+public HomePage applyFilter(String filterOption) {
         logger.info("Applying filter: {}", filterOption);
 
         // Implementation depends on actual filter UI

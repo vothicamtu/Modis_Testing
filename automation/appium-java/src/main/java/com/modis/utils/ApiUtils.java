@@ -10,9 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * API utilities for backend API interactions during testing
- */
 public class ApiUtils {
     
     private static final Logger logger = LoggerUtil.getLogger(ApiUtils.class);
@@ -35,11 +32,7 @@ public class ApiUtils {
     }
     
     // ==================== INITIALIZATION ====================
-    
-    /**
-     * Initialize HTTP client with default configuration
-     */
-    private static void initializeHttpClient() {
+private static void initializeHttpClient() {
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -47,11 +40,7 @@ public class ApiUtils {
                 .retryOnConnectionFailure(true)
                 .build();
     }
-    
-    /**
-     * Load API configuration from properties
-     */
-    private static void loadApiConfiguration() {
+private static void loadApiConfiguration() {
         baseUrl = ConfigReader.getProperty("api.baseUrl", "http://localhost:8080/api");
         
         // Set default headers
@@ -59,44 +48,22 @@ public class ApiUtils {
         defaultHeaders.put("Accept", "application/json");
         defaultHeaders.put("User-Agent", "Modis-Automation-Tests/1.0");
     }
-    
-    /**
-     * Set authentication token
-     * @param token The authentication token
-     */
-    public static void setAuthToken(String token) {
+public static void setAuthToken(String token) {
         authToken = token;
         defaultHeaders.put("Authorization", "Bearer " + token);
         logger.info("Authentication token set");
     }
-    
-    /**
-     * Clear authentication token
-     */
-    public static void clearAuthToken() {
+public static void clearAuthToken() {
         authToken = null;
         defaultHeaders.remove("Authorization");
         logger.info("Authentication token cleared");
     }
     
     // ==================== HTTP METHODS ====================
-    
-    /**
-     * Perform GET request
-     * @param endpoint The API endpoint
-     * @return ApiResponse object
-     */
-    public static ApiResponse get(String endpoint) {
+public static ApiResponse get(String endpoint) {
         return get(endpoint, new HashMap<>());
     }
-    
-    /**
-     * Perform GET request with query parameters
-     * @param endpoint The API endpoint
-     * @param queryParams Query parameters
-     * @return ApiResponse object
-     */
-    public static ApiResponse get(String endpoint, Map<String, String> queryParams) {
+public static ApiResponse get(String endpoint, Map<String, String> queryParams) {
         try {
             HttpUrl.Builder urlBuilder = HttpUrl.parse(baseUrl + endpoint).newBuilder();
             
@@ -118,14 +85,7 @@ public class ApiUtils {
             return new ApiResponse(500, "Request failed: " + e.getMessage(), null);
         }
     }
-    
-    /**
-     * Perform POST request
-     * @param endpoint The API endpoint
-     * @param requestBody The request body as JSON string
-     * @return ApiResponse object
-     */
-    public static ApiResponse post(String endpoint, String requestBody) {
+public static ApiResponse post(String endpoint, String requestBody) {
         try {
             RequestBody body = RequestBody.create(requestBody, MediaType.parse("application/json"));
             
@@ -142,14 +102,7 @@ public class ApiUtils {
             return new ApiResponse(500, "Request failed: " + e.getMessage(), null);
         }
     }
-    
-    /**
-     * Perform POST request with object
-     * @param endpoint The API endpoint
-     * @param requestObject The request object
-     * @return ApiResponse object
-     */
-    public static ApiResponse post(String endpoint, Object requestObject) {
+public static ApiResponse post(String endpoint, Object requestObject) {
         try {
             String jsonBody = objectMapper.writeValueAsString(requestObject);
             return post(endpoint, jsonBody);
@@ -158,14 +111,7 @@ public class ApiUtils {
             return new ApiResponse(500, "Serialization failed: " + e.getMessage(), null);
         }
     }
-    
-    /**
-     * Perform PUT request
-     * @param endpoint The API endpoint
-     * @param requestBody The request body as JSON string
-     * @return ApiResponse object
-     */
-    public static ApiResponse put(String endpoint, String requestBody) {
+public static ApiResponse put(String endpoint, String requestBody) {
         try {
             RequestBody body = RequestBody.create(requestBody, MediaType.parse("application/json"));
             
@@ -182,14 +128,7 @@ public class ApiUtils {
             return new ApiResponse(500, "Request failed: " + e.getMessage(), null);
         }
     }
-    
-    /**
-     * Perform PUT request with object
-     * @param endpoint The API endpoint
-     * @param requestObject The request object
-     * @return ApiResponse object
-     */
-    public static ApiResponse put(String endpoint, Object requestObject) {
+public static ApiResponse put(String endpoint, Object requestObject) {
         try {
             String jsonBody = objectMapper.writeValueAsString(requestObject);
             return put(endpoint, jsonBody);
@@ -198,13 +137,7 @@ public class ApiUtils {
             return new ApiResponse(500, "Serialization failed: " + e.getMessage(), null);
         }
     }
-    
-    /**
-     * Perform DELETE request
-     * @param endpoint The API endpoint
-     * @return ApiResponse object
-     */
-    public static ApiResponse delete(String endpoint) {
+public static ApiResponse delete(String endpoint) {
         try {
             Request request = new Request.Builder()
                     .url(baseUrl + endpoint)
@@ -221,13 +154,7 @@ public class ApiUtils {
     }
     
     // ==================== REQUEST EXECUTION ====================
-    
-    /**
-     * Execute HTTP request
-     * @param request The HTTP request
-     * @return ApiResponse object
-     */
-    private static ApiResponse executeRequest(Request request) {
+private static ApiResponse executeRequest(Request request) {
         try (Response response = httpClient.newCall(request).execute()) {
             
             int statusCode = response.code();
@@ -253,14 +180,6 @@ public class ApiUtils {
         }
     }
     
-    // ==================== AUTHENTICATION HELPERS ====================
-    
-    /**
-     * Login user and set authentication token
-     * @param username The username
-     * @param password The password
-     * @return true if login successful, false otherwise
-     */
     public static boolean loginUser(String username, String password) {
         try {
             Map<String, String> loginData = new HashMap<>();
@@ -288,10 +207,6 @@ public class ApiUtils {
         }
     }
     
-    /**
-     * Logout user and clear authentication token
-     * @return true if logout successful, false otherwise
-     */
     public static boolean logoutUser() {
         try {
             ApiResponse response = post("/auth/logout", "{}");
@@ -308,142 +223,59 @@ public class ApiUtils {
     }
     
     // ==================== USER MANAGEMENT ====================
-    
-    /**
-     * Create test user
-     * @param userData User data map
-     * @return ApiResponse object
-     */
-    public static ApiResponse createUser(Map<String, String> userData) {
+public static ApiResponse createUser(Map<String, String> userData) {
         return post("/users", userData);
     }
-    
-    /**
-     * Get user profile
-     * @param userId The user ID
-     * @return ApiResponse object
-     */
-    public static ApiResponse getUserProfile(String userId) {
+public static ApiResponse getUserProfile(String userId) {
         return get("/users/" + userId);
     }
-    
-    /**
-     * Update user profile
-     * @param userId The user ID
-     * @param userData Updated user data
-     * @return ApiResponse object
-     */
-    public static ApiResponse updateUserProfile(String userId, Map<String, String> userData) {
+public static ApiResponse updateUserProfile(String userId, Map<String, String> userData) {
         return put("/users/" + userId, userData);
     }
-    
-    /**
-     * Delete user
-     * @param userId The user ID
-     * @return ApiResponse object
-     */
-    public static ApiResponse deleteUser(String userId) {
+public static ApiResponse deleteUser(String userId) {
         return delete("/users/" + userId);
     }
     
     // ==================== FRIENDS MANAGEMENT ====================
-    
-    /**
-     * Send friend request
-     * @param targetUserId The target user ID
-     * @return ApiResponse object
-     */
-    public static ApiResponse sendFriendRequest(String targetUserId) {
+public static ApiResponse sendFriendRequest(String targetUserId) {
         Map<String, String> requestData = new HashMap<>();
         requestData.put("targetUserId", targetUserId);
         return post("/friends/request", requestData);
     }
-    
-    /**
-     * Accept friend request
-     * @param requestId The friend request ID
-     * @return ApiResponse object
-     */
-    public static ApiResponse acceptFriendRequest(String requestId) {
+public static ApiResponse acceptFriendRequest(String requestId) {
         return put("/friends/request/" + requestId + "/accept", "{}");
     }
-    
-    /**
-     * Decline friend request
-     * @param requestId The friend request ID
-     * @return ApiResponse object
-     */
-    public static ApiResponse declineFriendRequest(String requestId) {
+public static ApiResponse declineFriendRequest(String requestId) {
         return put("/friends/request/" + requestId + "/decline", "{}");
     }
-    
-    /**
-     * Get friends list
-     * @return ApiResponse object
-     */
-    public static ApiResponse getFriendsList() {
+public static ApiResponse getFriendsList() {
         return get("/friends");
     }
     
     // ==================== MESSAGING ====================
-    
-    /**
-     * Send message
-     * @param conversationId The conversation ID
-     * @param messageText The message text
-     * @return ApiResponse object
-     */
-    public static ApiResponse sendMessage(String conversationId, String messageText) {
+public static ApiResponse sendMessage(String conversationId, String messageText) {
         Map<String, String> messageData = new HashMap<>();
         messageData.put("conversationId", conversationId);
         messageData.put("text", messageText);
         return post("/messages", messageData);
     }
-    
-    /**
-     * Get conversation messages
-     * @param conversationId The conversation ID
-     * @return ApiResponse object
-     */
-    public static ApiResponse getConversationMessages(String conversationId) {
+public static ApiResponse getConversationMessages(String conversationId) {
         return get("/conversations/" + conversationId + "/messages");
     }
-    
-    /**
-     * Get conversations list
-     * @return ApiResponse object
-     */
-    public static ApiResponse getConversationsList() {
+public static ApiResponse getConversationsList() {
         return get("/conversations");
     }
     
     // ==================== PHOTOS ====================
-    
-    /**
-     * Upload photo
-     * @param photoData Photo data map
-     * @return ApiResponse object
-     */
-    public static ApiResponse uploadPhoto(Map<String, Object> photoData) {
+public static ApiResponse uploadPhoto(Map<String, Object> photoData) {
         return post("/photos", photoData);
     }
-    
-    /**
-     * Get user photos
-     * @param userId The user ID
-     * @return ApiResponse object
-     */
-    public static ApiResponse getUserPhotos(String userId) {
+public static ApiResponse getUserPhotos(String userId) {
         return get("/users/" + userId + "/photos");
     }
     
     // ==================== TEST DATA CLEANUP ====================
-    
-    /**
-     * Clean up test data
-     * @param testUserId The test user ID to clean up
-     */
-    public static void cleanupTestData(String testUserId) {
+public static void cleanupTestData(String testUserId) {
         try {
             logger.info("Cleaning up test data for user: {}", testUserId);
             
@@ -470,12 +302,7 @@ public class ApiUtils {
     }
     
     // ==================== UTILITY METHODS ====================
-    
-    /**
-     * Check API health
-     * @return true if API is healthy, false otherwise
-     */
-    public static boolean isApiHealthy() {
+public static boolean isApiHealthy() {
         try {
             ApiResponse response = get("/health");
             return response.isSuccessful();
@@ -484,13 +311,7 @@ public class ApiUtils {
             return false;
         }
     }
-    
-    /**
-     * Wait for API to be ready
-     * @param timeoutSeconds Timeout in seconds
-     * @return true if API is ready, false if timeout
-     */
-    public static boolean waitForApiReady(int timeoutSeconds) {
+public static boolean waitForApiReady(int timeoutSeconds) {
         long startTime = System.currentTimeMillis();
         long timeout = timeoutSeconds * 1000L;
         
@@ -513,11 +334,7 @@ public class ApiUtils {
     }
     
     // ==================== INNER CLASS ====================
-    
-    /**
-     * API Response wrapper class
-     */
-    public static class ApiResponse {
+public static class ApiResponse {
         private final int statusCode;
         private final String responseBody;
         private final JsonNode jsonResponse;

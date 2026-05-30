@@ -5,7 +5,6 @@ import com.modis.constants.TestIDs;
 import com.modis.drivers.DriverManager;
 import com.modis.utils.SmartWaitUtils;
 import io.appium.java_client.AppiumBy;
-import org.openqa.selenium.WebElement;
 
 public class LoadingPage extends BasePage {
 
@@ -38,26 +37,6 @@ public class LoadingPage extends BasePage {
         waitForLoadingScreenVisible();
         waitForLoginSignupButtonsVisible();
         return this;
-    }
-
-    private BasePage handleLoadingScreenNavigation() {
-        try {
-            // Chỉ thử click login button 1 lần, không retry
-            if (SmartWaitUtils.isElementPresent(AppiumBy.accessibilityId(TestIDs.LOADING_LOGIN_BUTTON))) {
-                logger.info("Clicking loading login button");
-                clickByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
-                LoginPage loginPage = new LoginPage();
-                loginPage.waitForPageToLoad();
-                return loginPage;
-            }
-
-            logger.warn("No loading login button found - assuming LoginPage");
-            return new LoginPage();
-
-        } catch (Exception e) {
-            logger.error("Loading screen navigation failed: {}", e.getMessage());
-            return new LoginPage();
-        }
     }
 
     public LoadingPage waitForLoadingScreenVisible() {
@@ -204,7 +183,6 @@ public class LoadingPage extends BasePage {
         }
     }
 
-    //  VALIDATION METHODS 
     public boolean isLoading() {
         return isElementDisplayedByAccessibilityId(TestIDs.LOADING_SPINNER);
     }
@@ -221,7 +199,6 @@ public class LoadingPage extends BasePage {
         return isElementDisplayedByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON);
     }
 
-    //  INHERITED METHODS 
     @Override
     public boolean isDisplayed() {
         try {

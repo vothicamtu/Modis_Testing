@@ -39,7 +39,6 @@ public abstract class BaseTest {
 
         ConfigReader.loadConfiguration();
 
-        // Tạo driver 1 lần duy nhất cho class
         driver = initializeDriver(platform);
     }
 
@@ -53,7 +52,6 @@ public abstract class BaseTest {
             driver = current;
         }
 
-        // SIMPLIFIED: Chỉ tạo driver mới nếu null, không restart app mỗi test
         if (driver == null || !DriverManager.isSessionAlive()) {
             logger.info("Creating new driver for test method");
             driver = initializeDriver(platform);
@@ -62,7 +60,6 @@ public abstract class BaseTest {
             relaunchApp();
         }
 
-        // SIMPLIFIED: Chỉ logout nếu cần, không force restart
         try {
             LogoutHelper.logoutIfLoggedIn(driver);
         } catch (Exception e) {
@@ -128,16 +125,11 @@ public abstract class BaseTest {
         }
     }
 
-    /**
-     * Terminate + Activate để về màn hình đầu (không clear data).
-     * Nếu relaunch fail hoặc UiAutomator2 không khỏe -> attempt recovery/recreate.
-     */
     protected void relaunchApp() {
         if (driver == null) return;
 
         String platform = System.getProperty("platform", "android");
 
-        // Nếu Android và UiAutomator2 đã die -> recover trước khi relaunch
         if ("android".equalsIgnoreCase(platform) && !DriverManager.isUiAutomator2Healthy()) {
             logger.warn("UiAutomator2 không khỏe trước relaunch -> attempt recover");
             boolean ok = DriverManager.recoverFromUiAutomator2Crash();
@@ -156,7 +148,6 @@ public abstract class BaseTest {
                 android.terminateApp(AppConstants.APP_PACKAGE);
                 android.activateApp(AppConstants.APP_PACKAGE);
 
-                // Wait bounded cho app lên foreground
                 new WebDriverWait(android, Duration.ofSeconds(10)).until(d -> {
                     try {
                         return AppConstants.APP_PACKAGE.equals(android.getCurrentPackage());
@@ -170,7 +161,6 @@ public abstract class BaseTest {
                 ios.terminateApp(AppConstants.APP_BUNDLE_ID);
                 ios.activateApp(AppConstants.APP_BUNDLE_ID);
             } else {
-                // Nếu driver type khác, vẫn cố gắng không crash (best-effort)
                 logger.warn("Driver type không xác định cho relaunch, skip");
             }
         } catch (Exception e) {
@@ -179,9 +169,6 @@ public abstract class BaseTest {
         }
     }
 
-    /**
-     * Đưa app xuống background rồi đưa lên lại (một số test case đang dùng).
-     */
     protected void backgroundApp(int seconds) {
         try {
             DriverManager.backgroundApp(seconds);

@@ -47,7 +47,7 @@ echo "2. Authentication Tests Only"
 echo "3. Login Retry Flow Tests Only"
 echo "4. Friends Tests with Real Data"
 echo "5. Messaging Tests with Real Data"
-echo "6. Camera Tests with Real Data"
+echo "6. Photo Sharing Tests with Real Data"
 echo "7. Smoke Tests Only"
 echo "8. Custom Test Selection"
 echo "========================================"
@@ -64,8 +64,8 @@ case $choice in
         mvn clean test -Dtest=AuthenticationTests -Dgroups=authentication,data
         ;;
     3)
-        echo -e "${BLUE}Running login retry flow tests...${NC}"
-        mvn clean test -Dtest=AuthenticationTests -Dmethods=testLoginRetryFlow,testValidLoginWithRealData,testInvalidLoginWithRealData
+        echo -e "${BLUE}Running authentication regression tests...${NC}"
+        mvn clean test -Dtest=AuthenticationTests -Dgroups=authentication,regression
         ;;
     4)
         echo -e "${BLUE}Running friends tests with real data...${NC}"
@@ -76,8 +76,8 @@ case $choice in
         mvn clean test -Dtest=MessagingTests -Dgroups=messaging,data
         ;;
     6)
-        echo -e "${BLUE}Running camera tests with real data...${NC}"
-        mvn clean test -Dtest=CameraTests -Dgroups=camera,data
+        echo -e "${BLUE}Running photo sharing tests with real data...${NC}"
+        mvn clean test -Dtest=PhotoSharingTests -Dgroups=photo-sharing,regression
         ;;
     7)
         echo -e "${BLUE}Running smoke tests only...${NC}"
@@ -89,9 +89,9 @@ case $choice in
         echo "- AuthenticationTests"
         echo "- FriendsTests"
         echo "- MessagingTests"
-        echo "- CameraTests"
-        echo "- NavigationTests"
-        echo "- ProfileTests"
+        echo "- PhotoSharingTests"
+        echo "- FeedTests"
+        echo "- SearchTests"
         echo
         read -p "Enter test class name: " testclass
         read -p "Enter groups (comma-separated, e.g., regression,data): " testgroups

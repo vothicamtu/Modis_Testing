@@ -10,10 +10,6 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
-
-/**
- * Device utilities for device-specific operations and information
- */
 public class DeviceUtils {
     
     private static final Logger logger = LoggerUtil.getLogger(DeviceUtils.class);
@@ -24,20 +20,11 @@ public class DeviceUtils {
     }
     
     // ==================== DEVICE INFORMATION ====================
-    
-    /**
-     * Get device screen size
-     * @return Dimension object with width and height
-     */
-    public static Dimension getScreenSize() {
+public static Dimension getScreenSize() {
         AppiumDriver driver = DriverManager.getDriver();
         return getScreenSize(driver);
     }
-
-    /**
-     * Safer overload (capability-first, avoids hanging getCurrentWindowSize calls).
-     */
-    public static Dimension getScreenSize(AppiumDriver driver) {
+public static Dimension getScreenSize(AppiumDriver driver) {
         // 1) Capability-first: deviceScreenSize (e.g. "720x1604")
         try {
             if (driver != null && driver.getCapabilities() != null) {
@@ -90,28 +77,13 @@ public class DeviceUtils {
 
         return new Dimension(1080, 1920);
     }
-    
-    /**
-     * Get device screen width
-     * @return Screen width in pixels
-     */
-    public static int getScreenWidth() {
+public static int getScreenWidth() {
         return getScreenSize().width;
     }
-    
-    /**
-     * Get device screen height
-     * @return Screen height in pixels
-     */
-    public static int getScreenHeight() {
+public static int getScreenHeight() {
         return getScreenSize().height;
     }
-    
-    /**
-     * Get device orientation
-     * @return Current screen orientation
-     */
-    public static ScreenOrientation getOrientation() {
+public static ScreenOrientation getOrientation() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             // org.openqa.selenium.Rotatable was removed in Selenium 4
@@ -123,53 +95,24 @@ public class DeviceUtils {
             return ScreenOrientation.PORTRAIT;
         }
     }
-    
-    /**
-     * Check if device is in portrait mode
-     * @return true if portrait, false otherwise
-     */
-    public static boolean isPortrait() {
+public static boolean isPortrait() {
         return getOrientation() == ScreenOrientation.PORTRAIT;
     }
-    
-    /**
-     * Check if device is in landscape mode
-     * @return true if landscape, false otherwise
-     */
-    public static boolean isLandscape() {
+public static boolean isLandscape() {
         return getOrientation() == ScreenOrientation.LANDSCAPE;
     }
-    
-    /**
-     * Get device platform
-     * @return Platform name (android/ios)
-     */
-    public static String getPlatform() {
+public static String getPlatform() {
         return DriverManager.getCurrentPlatform();
     }
-    
-    /**
-     * Check if running on Android
-     * @return true if Android, false otherwise
-     */
-    public static boolean isAndroid() {
+public static boolean isAndroid() {
         return "android".equalsIgnoreCase(getPlatform());
     }
-    
-    /**
-     * Check if running on iOS
-     * @return true if iOS, false otherwise
-     */
-    public static boolean isIOS() {
+public static boolean isIOS() {
         return "ios".equalsIgnoreCase(getPlatform());
     }
     
     // ==================== DEVICE OPERATIONS ====================
-    
-    /**
-     * Rotate device to portrait
-     */
-    public static void rotateToPortrait() {
+public static void rotateToPortrait() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (getOrientation() != ScreenOrientation.PORTRAIT) {
@@ -182,11 +125,7 @@ public class DeviceUtils {
             logger.error("Failed to rotate device to portrait", e);
         }
     }
-    
-    /**
-     * Rotate device to landscape
-     */
-    public static void rotateToLandscape() {
+public static void rotateToLandscape() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (getOrientation() != ScreenOrientation.LANDSCAPE) {
@@ -199,11 +138,7 @@ public class DeviceUtils {
             logger.error("Failed to rotate device to landscape", e);
         }
     }
-    
-    /**
-     * Lock device (Android only)
-     */
-    public static void lockDevice() {
+public static void lockDevice() {
         try {
             if (isAndroid()) {
                 DriverManager.getDriver().executeScript("mobile: lock");
@@ -215,11 +150,7 @@ public class DeviceUtils {
             logger.error("Failed to lock device", e);
         }
     }
-    
-    /**
-     * Unlock device (Android only)
-     */
-    public static void unlockDevice() {
+public static void unlockDevice() {
         try {
             if (isAndroid()) {
                 DriverManager.getDriver().executeScript("mobile: unlock");
@@ -231,12 +162,7 @@ public class DeviceUtils {
             logger.error("Failed to unlock device", e);
         }
     }
-    
-    /**
-     * Check if device is locked (Android only)
-     * @return true if locked, false otherwise
-     */
-    public static boolean isDeviceLocked() {
+public static boolean isDeviceLocked() {
         try {
             if (isAndroid()) {
                 return (Boolean) DriverManager.getDriver().executeScript("mobile: isLocked");
@@ -249,11 +175,7 @@ public class DeviceUtils {
     }
     
     // ==================== NETWORK OPERATIONS ====================
-    
-    /**
-     * Toggle airplane mode (Android only)
-     */
-    public static void toggleAirplaneMode() {
+public static void toggleAirplaneMode() {
         try {
             if (isAndroid()) {
                 // Mocked since toggle airplane requires specific adb shell command via executeScript
@@ -265,11 +187,7 @@ public class DeviceUtils {
             logger.error("Failed to toggle airplane mode", e);
         }
     }
-    
-    /**
-     * Toggle WiFi (Android only)
-     */
-    public static void toggleWiFi() {
+public static void toggleWiFi() {
         try {
             if (isAndroid()) {
                 // Mocked
@@ -281,11 +199,7 @@ public class DeviceUtils {
             logger.error("Failed to toggle WiFi", e);
         }
     }
-    
-    /**
-     * Toggle mobile data (Android only)
-     */
-    public static void toggleMobileData() {
+public static void toggleMobileData() {
         try {
             if (isAndroid()) {
                 // Mocked
@@ -299,12 +213,7 @@ public class DeviceUtils {
     }
     
     // ==================== KEYBOARD OPERATIONS ====================
-    
-    /**
-     * Check if keyboard is shown
-     * @return true if keyboard is visible, false otherwise
-     */
-    public static boolean isKeyboardShown() {
+public static boolean isKeyboardShown() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             return (Boolean) driver.executeScript("mobile: isKeyboardShown");
@@ -313,11 +222,7 @@ public class DeviceUtils {
             return false;
         }
     }
-    
-    /**
-     * Hide keyboard if shown
-     */
-    public static void hideKeyboard() {
+public static void hideKeyboard() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (isKeyboardShown()) {
@@ -330,12 +235,7 @@ public class DeviceUtils {
     }
     
     // ==================== DEVICE CAPABILITIES ====================
-    
-    /**
-     * Get device capabilities
-     * @return Map of device capabilities
-     */
-    public static Map<String, Object> getDeviceCapabilities() {
+public static Map<String, Object> getDeviceCapabilities() {
         Map<String, Object> capabilities = new HashMap<>();
         
         try {
@@ -365,34 +265,19 @@ public class DeviceUtils {
         
         return capabilities;
     }
-    
-    /**
-     * Check if device supports multiple cameras
-     * @return true if multiple cameras available, false otherwise
-     */
-    public static boolean hasMultipleCameras() {
+public static boolean hasMultipleCameras() {
         // This is a simplified check - in real implementation,
         // you might need to check device specifications or capabilities
         return true; // Most modern devices have front and back cameras
     }
-    
-    /**
-     * Check if device supports flash
-     * @return true if flash available, false otherwise
-     */
-    public static boolean hasFlash() {
+public static boolean hasFlash() {
         // This is a simplified check - in real implementation,
         // you might need to check device specifications
         return true; // Most devices with cameras have flash
     }
     
     // ==================== PERFORMANCE UTILITIES ====================
-    
-    /**
-     * Get device performance info
-     * @return Map containing performance metrics
-     */
-    public static Map<String, Object> getPerformanceInfo() {
+public static Map<String, Object> getPerformanceInfo() {
         Map<String, Object> perfInfo = new HashMap<>();
         
         try {
@@ -413,12 +298,7 @@ public class DeviceUtils {
     }
     
     // ==================== UTILITY METHODS ====================
-    
-    /**
-     * Wait for device to be ready
-     * @param timeoutSeconds Timeout in seconds
-     */
-    public static void waitForDeviceReady(int timeoutSeconds) {
+public static void waitForDeviceReady(int timeoutSeconds) {
         try {
             long startTime = System.currentTimeMillis();
             long timeout = timeoutSeconds * 1000L;
@@ -445,13 +325,7 @@ public class DeviceUtils {
             logger.warn("Wait for device ready interrupted", e);
         }
     }
-    
-    /**
-     * Take device screenshot
-     * @param fileName Screenshot file name
-     * @return true if screenshot taken successfully, false otherwise
-     */
-    public static boolean takeScreenshot(String fileName) {
+public static boolean takeScreenshot(String fileName) {
         try {
             String path = ScreenshotUtils.takeScreenshot(fileName);
             return path != null && !path.isEmpty();
@@ -460,12 +334,7 @@ public class DeviceUtils {
             return false;
         }
     }
-    
-    /**
-     * Get safe area coordinates (avoiding notches, status bars, etc.)
-     * @return Map with safe area coordinates
-     */
-    public static Map<String, Integer> getSafeAreaCoordinates() {
+public static Map<String, Integer> getSafeAreaCoordinates() {
         Map<String, Integer> safeArea = new HashMap<>();
         
         Dimension screenSize = getScreenSize();
@@ -481,11 +350,7 @@ public class DeviceUtils {
         
         return safeArea;
     }
-    
-    /**
-     * Log device information
-     */
-    public static void logDeviceInfo() {
+public static void logDeviceInfo() {
         try {
             logger.info("=== Device Information ===");
             logger.info("Platform: {}", getPlatform());

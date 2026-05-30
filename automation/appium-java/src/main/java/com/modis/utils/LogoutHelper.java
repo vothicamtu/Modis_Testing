@@ -11,12 +11,6 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.List;
 
-/**
- * Helper logout theo chiến lược "không clear data" (Android 11 real device).
- * Mục tiêu: nếu app đang ở trạng thái logged-in thì logout về Login/Loading.
- *
- * Lưu ý: Method này không được phép làm crash suite nếu element không tồn tại.
- */
 public final class LogoutHelper {
 
     private static final Logger logger = LoggerUtil.getLogger(LogoutHelper.class);

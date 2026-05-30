@@ -30,7 +30,7 @@ echo 2. Authentication Tests Only
 echo 3. Login Retry Flow Tests Only
 echo 4. Friends Tests with Real Data
 echo 5. Messaging Tests with Real Data
-echo 6. Camera Tests with Real Data
+echo 6. Photo Sharing Tests with Real Data
 echo 7. Smoke Tests Only
 echo 8. Custom Test Selection
 echo ========================================
@@ -44,8 +44,8 @@ if "%choice%"=="1" (
     echo Running authentication tests with real data...
     mvn clean test -Dtest=AuthenticationTests -Dgroups=authentication,data
 ) else if "%choice%"=="3" (
-    echo Running login retry flow tests...
-    mvn clean test -Dtest=AuthenticationTests -Dmethods=testLoginRetryFlow,testValidLoginWithRealData,testInvalidLoginWithRealData
+    echo Running authentication regression tests...
+    mvn clean test -Dtest=AuthenticationTests -Dgroups=authentication,regression
 ) else if "%choice%"=="4" (
     echo Running friends tests with real data...
     mvn clean test -Dtest=FriendsTests -Dgroups=friends,data
@@ -53,8 +53,8 @@ if "%choice%"=="1" (
     echo Running messaging tests with real data...
     mvn clean test -Dtest=MessagingTests -Dgroups=messaging,data
 ) else if "%choice%"=="6" (
-    echo Running camera tests with real data...
-    mvn clean test -Dtest=CameraTests -Dgroups=camera,data
+    echo Running photo sharing tests with real data...
+    mvn clean test -Dtest=PhotoSharingTests -Dgroups=photo-sharing,regression
 ) else if "%choice%"=="7" (
     echo Running smoke tests only...
     mvn clean test -Dgroups=smoke
@@ -64,9 +64,9 @@ if "%choice%"=="1" (
     echo - AuthenticationTests
     echo - FriendsTests  
     echo - MessagingTests
-    echo - CameraTests
-    echo - NavigationTests
-    echo - ProfileTests
+    echo - PhotoSharingTests
+    echo - FeedTests
+    echo - SearchTests
     echo.
     set /p testclass="Enter test class name: "
     set /p testgroups="Enter groups (comma-separated, e.g., regression,data): "

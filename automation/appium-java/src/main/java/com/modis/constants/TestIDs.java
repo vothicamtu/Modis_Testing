@@ -94,7 +94,7 @@ public class TestIDs {
     public static final String PROFILE_CHANGE_PASSWORD_ITEM = "profile_change_password_item";
     public static final String PROFILE_THEME_TOGGLE = "profile_theme_toggle";
     public static final String PROFILE_DELETE_ACCOUNT = "profile_delete_account";
-    public static final String PROFILE_LOGOUT_BUTTON = "profile_logout_button";
+    public static final String PROFILE_LOGOUT_BUTTON = "profile_logout_item";
     public static final String PROFILE_SHARE_APP = "profile_share_app";
 
     //  MESSAGE SCREEN 

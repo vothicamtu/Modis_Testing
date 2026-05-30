@@ -66,11 +66,11 @@ echo Available test suites:
 echo   smoke                   Critical path tests
 echo   regression              All regression tests
 echo   authentication          Authentication tests only
-echo   navigation              Navigation tests only
-echo   camera                  Camera tests only
+echo   friends                 Friend management tests only
+echo   photo-sharing           Photo sharing tests only
+echo   feed                    Feed tests only
+echo   search                  Search tests only
 echo   messaging               Messaging tests only
-echo   friends                 Friends tests only
-echo   profile                 Profile tests only
 echo   full                    All tests
 echo.
 echo Examples:
@@ -158,16 +158,16 @@ if /i "%TEST_SUITE%"=="smoke" (
     mvn clean test -Dgroups=regression %MAVEN_OPTS%
 ) else if /i "%TEST_SUITE%"=="authentication" (
     mvn clean test -Dtest=AuthenticationTests %MAVEN_OPTS%
-) else if /i "%TEST_SUITE%"=="navigation" (
-    mvn clean test -Dtest=NavigationTests %MAVEN_OPTS%
-) else if /i "%TEST_SUITE%"=="camera" (
-    mvn clean test -Dtest=CameraTests %MAVEN_OPTS%
-) else if /i "%TEST_SUITE%"=="messaging" (
-    mvn clean test -Dtest=MessagingTests %MAVEN_OPTS%
 ) else if /i "%TEST_SUITE%"=="friends" (
     mvn clean test -Dtest=FriendsTests %MAVEN_OPTS%
-) else if /i "%TEST_SUITE%"=="profile" (
-    mvn clean test -Dtest=ProfileTests %MAVEN_OPTS%
+) else if /i "%TEST_SUITE%"=="photo-sharing" (
+    mvn clean test -Dtest=PhotoSharingTests %MAVEN_OPTS%
+) else if /i "%TEST_SUITE%"=="feed" (
+    mvn clean test -Dtest=FeedTests %MAVEN_OPTS%
+) else if /i "%TEST_SUITE%"=="search" (
+    mvn clean test -Dtest=SearchTests %MAVEN_OPTS%
+) else if /i "%TEST_SUITE%"=="messaging" (
+    mvn clean test -Dtest=MessagingTests %MAVEN_OPTS%
 ) else if /i "%TEST_SUITE%"=="full" (
     mvn clean test %MAVEN_OPTS%
 ) else (

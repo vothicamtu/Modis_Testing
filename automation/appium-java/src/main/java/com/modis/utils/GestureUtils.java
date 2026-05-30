@@ -31,16 +31,11 @@ public class GestureUtils {
     private static final double SWIPE_ANCHOR_PERCENTAGE = 0.5;
     private static final int SWIPE_DURATION_MS = 1000;
     private static final int SCROLL_DURATION_MS = 800;
-    private static final int MAX_SCROLL_ATTEMPTS = 8;
+    private static final int MAX_SCROLL_ATTEMPTS = 15;
 
     public GestureUtils() {
     }
 
-    /**
-     * Get screen size with a SAFE strategy:
-     * 1) Prefer capabilities (deviceScreenSize / viewportRect) - zero extra Appium calls
-     * 2) Fallback to getDriver().manage().window().getSize() only if needed
-     */
     public Dimension getScreenSize() {
         if (cachedScreenSize != null) {
             return cachedScreenSize;
@@ -94,12 +89,6 @@ public class GestureUtils {
     }
 
     // ==================== BASIC GESTURES ====================
-
-    /**
-     * Tap on element
-     *
-     * @param element Element to tap
-     */
     public void tapElement(WebElement element) {
         try {
             Point location = element.getLocation();
@@ -223,9 +212,6 @@ public class GestureUtils {
         logger.info("Swiped left from ({}, {}) to ({}, {})", startX, y, endX, y);
     }
 
-    /**
-     * Swipe right on screen
-     */
     public void swipeRight() {
         Dimension screenSize = getScreenSize();
         int startX = (int) (screenSize.width * SWIPE_END_PERCENTAGE);
@@ -236,9 +222,6 @@ public class GestureUtils {
         logger.info("Swiped right from ({}, {}) to ({}, {})", startX, y, endX, y);
     }
 
-    /**
-     * Swipe up on screen
-     */
     public void swipeUp() {
         Dimension screenSize = getScreenSize();
         int x = (int) (screenSize.width * SWIPE_ANCHOR_PERCENTAGE);
@@ -249,9 +232,6 @@ public class GestureUtils {
         logger.info("Swiped up from ({}, {}) to ({}, {})", x, startY, x, endY);
     }
 
-    /**
-     * Swipe down on screen
-     */
     public void swipeDown() {
         Dimension screenSize = getScreenSize();
         int x = (int) (screenSize.width * SWIPE_ANCHOR_PERCENTAGE);
@@ -262,12 +242,6 @@ public class GestureUtils {
         logger.info("Swiped down from ({}, {}) to ({}, {})", x, startY, x, endY);
     }
 
-    /**
-     * Swipe on specific element
-     *
-     * @param element   Element to swipe on
-     * @param direction Direction (left, right, up, down)
-     */
     public void swipeOnElement(WebElement element, String direction) {
         Point location = element.getLocation();
         Dimension size = element.getSize();
@@ -305,69 +279,22 @@ public class GestureUtils {
         logger.info("Swiped {} on element from ({}, {}) to ({}, {})", direction, startX, startY, endX, endY);
     }
 
-    public void swipe(
-            int startX,
-            int startY,
-            int endX,
-            int endY,
-            int durationMs
-    ) {
-
+    public void swipe(int startX, int startY, int endX, int endY, int durationMs) {
         try {
-
-            AppiumDriver driver =
-                    DriverManager.getDriver();
-
-            Map<String, Object> params =
-                    new HashMap<>();
-
+            Map<String, Object> params = new HashMap<>();
             params.put("startX", startX);
             params.put("startY", startY);
             params.put("endX", endX);
             params.put("endY", endY);
+            params.put("speed", Math.max(100, (int) (Math.hypot(endX - startX, endY - startY) / (durationMs / 1000.0))));
 
-            // convert duration -> speed
-            int distance =
-                    Math.abs(endY - startY)
-                            +
-                            Math.abs(endX - startX);
+            getDriver().executeScript("mobile: dragGesture", params);
 
-            int speed =
-                    Math.max(
-                            300,
-                            distance / Math.max(1, durationMs / 100)
-                    );
-
-            params.put("speed", speed);
-
-            driver.executeScript(
-                    "mobile: dragGesture",
-                    params
-            );
-
-            logger.debug(
-                    "Swiped from ({}, {}) to ({}, {})",
-                    startX,
-                    startY,
-                    endX,
-                    endY
-            );
+            logger.debug("Swiped from ({}, {}) to ({}, {})", startX, startY, endX, endY);
 
         } catch (Exception e) {
-
-            logger.error(
-                    "Failed to swipe from ({}, {}) to ({}, {})",
-                    startX,
-                    startY,
-                    endX,
-                    endY,
-                    e
-            );
-
-            throw new RuntimeException(
-                    "Swipe gesture failed",
-                    e
-            );
+            logger.error("Failed to swipe from ({}, {}) to ({}, {})", startX, startY, endX, endY, e);
+            throw new RuntimeException("Swipe gesture failed", e);
         }
     }
 
@@ -415,12 +342,6 @@ public class GestureUtils {
         return null;
     }
 
-    /**
-     * Scroll to element by accessibility ID
-     *
-     * @param accessibilityId Accessibility ID to scroll to
-     * @return WebElement if found, null otherwise
-     */
     public WebElement scrollToElementByAccessibilityId(String accessibilityId) {
         logger.info("Scrolling to element with accessibility ID: {}", accessibilityId);
 
@@ -456,27 +377,21 @@ public class GestureUtils {
         return null;
     }
 
-    /**
-     * Scroll down on screen
-     */
     public void scrollDown() {
         Dimension screenSize = getScreenSize();
         int x = screenSize.width / 2;
-        int startY = (int) (screenSize.height * 0.7);
-        int endY = (int) (screenSize.height * 0.3);
+        int startY = (int) (screenSize.height * 0.75);
+        int endY   = (int) (screenSize.height * 0.25);
 
         swipe(x, startY, x, endY, SCROLL_DURATION_MS);
         logger.debug("Scrolled down");
     }
 
-    /**
-     * Scroll up on screen
-     */
     public void scrollUp() {
         Dimension screenSize = getScreenSize();
         int x = screenSize.width / 2;
-        int startY = (int) (screenSize.height * 0.3);
-        int endY = (int) (screenSize.height * 0.7);
+        int startY = (int) (screenSize.height * 0.25);
+        int endY   = (int) (screenSize.height * 0.75);
 
         swipe(x, startY, x, endY, SCROLL_DURATION_MS);
         logger.debug("Scrolled up");
@@ -526,10 +441,6 @@ public class GestureUtils {
     }
 
     // ==================== PULL TO REFRESH ====================
-
-    /**
-     * Pull to refresh gesture
-     */
     public void pullToRefresh() {
         logger.info("Performing pull to refresh");
         Dimension screenSize = getScreenSize();
@@ -548,47 +459,24 @@ public class GestureUtils {
     }
 
     // ==================== PINCH AND ZOOM ====================
-
-    /**
-     * Pinch to zoom out
-     *
-     * @param element Element to pinch on
-     */
     public void pinchOut(WebElement element) {
         logger.warn(
                 "Pinch out temporarily disabled for Android 15 stability"
         );
     }
 
-    /**
-     * Pinch to zoom out at coordinates
-     *
-     * @param centerX Center X coordinate
-     * @param centerY Center Y coordinate
-     */
     public void pinchOut(int centerX, int centerY) {
         logger.warn(
                 "Pinch out temporarily disabled for Android 15 stability"
         );
     }
 
-    /**
-     * Pinch to zoom in
-     *
-     * @param element Element to pinch on
-     */
     public void pinchIn(WebElement element) {
         logger.warn(
                 "Pinch in temporarily disabled for Android 15 stability"
         );
     }
 
-    /**
-     * Pinch to zoom in at coordinates
-     *
-     * @param centerX Center X coordinate
-     * @param centerY Center Y coordinate
-     */
     public void pinchIn(int centerX, int centerY) {
         logger.warn(
                 "Pinch in temporarily disabled for Android 15 stability"
@@ -662,33 +550,17 @@ public class GestureUtils {
         return new Point(screenSize.width / 2, screenSize.height / 2);
     }
 
-    /**
-     * Get element center coordinates
-     *
-     * @param element Element to get center of
-     * @return Point representing element center
-     */
     public Point getElementCenter(WebElement element) {
         Point location = element.getLocation();
         Dimension size = element.getSize();
         return new Point(location.x + size.width / 2, location.y + size.height / 2);
     }
 
-    /**
-     * Check if coordinates are within screen bounds
-     *
-     * @param x X coordinate
-     * @param y Y coordinate
-     * @return true if within bounds, false otherwise
-     */
     public boolean isWithinScreenBounds(int x, int y) {
         Dimension screenSize = getScreenSize();
         return x >= 0 && x <= screenSize.width && y >= 0 && y <= screenSize.height;
     }
 
-    /**
-     * Wait for gesture animation to complete
-     */
     public void waitForGestureAnimation() {
         try {
             Thread.sleep(AppConstants.ANIMATION_WAIT * 1000L);
@@ -720,7 +592,6 @@ public class GestureUtils {
 
             int delta = elementCenterY - screenCenterY;
 
-            // nếu đã gần center rồi thì thôi
             if (Math.abs(delta) < 250) {
                 return;
             }
@@ -729,7 +600,6 @@ public class GestureUtils {
             int startY = elementCenterY;
             int endY = screenCenterY;
 
-            // clamp tránh swipe quá màn hình
             endY = Math.max(200, Math.min(endY, screen.height - 200));
             swipe(startX, startY, startX, endY, 250);
             logger.debug("Scrolled element into center");
