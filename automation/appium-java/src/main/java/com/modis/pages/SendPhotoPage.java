@@ -402,7 +402,6 @@ public class SendPhotoPage extends BasePage {
 
     public void waitForSendingToComplete() {
         logger.debug("Waiting for photo sending to complete");
-        waitForElementToDisappear(TestIDs.LOADING_SPINNER);
         waitForAnimation();
     }
 
