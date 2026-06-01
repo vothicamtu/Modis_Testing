@@ -304,27 +304,9 @@ public class SendPhotoPage extends BasePage {
 
     public List<WebElement> getVisibleFriends() {
         try {
-            // Ensure we have a valid driver session
-            if (driver == null) {
-                logger.warn("Driver is null, cannot get visible friends");
-                return new ArrayList<>();
-            }
-            
-            // Check if driver session is still valid
-            try {
-                String sessionId = driver.getSessionId().toString();
-                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
-                    logger.warn("Driver session ID is null or empty");
-                    return new ArrayList<>();
-                }
-            } catch (Exception e) {
-                logger.warn("Driver session is invalid: {}", e.getMessage());
-                return new ArrayList<>();
-            }
-
             waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
 
-            return driver.findElements(
+            return DriverManager.getDriver().findElements(
                     AppiumBy.xpath(
                             "//*[starts-with(@content-desc,'send_photo_friend_')]"
                     )
@@ -474,43 +456,25 @@ public class SendPhotoPage extends BasePage {
         String friendTestId = TestIDs.getSendPhotoFriendId(userId);
 
         try {
-            if (driver == null) {
-                logger.warn("Driver is null, cannot check friend selection");
-                return false;
-            }
-            
-            try {
-                String sessionId = driver.getSessionId().toString();
-                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
-                    logger.warn("Driver session ID is null or empty");
-                    return false;
-                }
-            } catch (Exception e) {
-                logger.warn("Driver session is invalid: {}", e.getMessage());
-                return false;
-            }
-            
             WebElement friendElement = findByAccessibilityId(friendTestId);
             if (friendElement == null) {
                 logger.debug("Friend element {} not found", friendTestId);
                 return false;
             }
-            
+
             String selected = friendElement.getAttribute("selected");
             String checked = friendElement.getAttribute("checked");
             String accessibilityState = friendElement.getAttribute("accessibilityState");
-            
-            logger.debug("Friend {} selection attributes: selected='{}', checked='{}', accessibilityState='{}'", 
-                userId, selected, checked, accessibilityState);
-            
-            // Check if any of the selection indicators are true
+
+            logger.debug("Friend {} selection attributes: selected='{}', checked='{}', accessibilityState='{}'",
+                    userId, selected, checked, accessibilityState);
+
             boolean isSelected = "true".equals(selected) || "true".equals(checked);
-            
-            // Also check accessibilityState for React Native components
+
             if (!isSelected && accessibilityState != null) {
                 isSelected = accessibilityState.contains("selected") && accessibilityState.contains("true");
             }
-            
+
             logger.debug("Friend {} final selection state: {}", userId, isSelected);
             return isSelected;
         } catch (Exception e) {
