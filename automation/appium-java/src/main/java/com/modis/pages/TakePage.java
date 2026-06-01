@@ -53,8 +53,7 @@ public class TakePage extends BasePage {
 
     public TakePage toggleFlash() {
         logger.info("Toggling flash");
-        waitForElementClickable(TestIDs.TAKE_FLASH_BUTTON);
-        clickElement(flashButton);
+        findByAccessibilityId(TestIDs.TAKE_FLASH_BUTTON).click();
         waitForAnimation();
 
         try {
@@ -193,8 +192,8 @@ public class TakePage extends BasePage {
     }
 
     public boolean isFlashEnabled() {
-        waitForElementVisible(TestIDs.TAKE_FLASH_BUTTON);
-        String flashState = flashButton.getAttribute("selected");
+        WebElement freshFlashButton = findByAccessibilityId(TestIDs.TAKE_FLASH_BUTTON);
+        String flashState = freshFlashButton.getAttribute("selected");
         logger.info("Flash selected attribute = {}", flashState);
         return "true".equals(flashState);
     }

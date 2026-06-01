@@ -113,9 +113,7 @@ public class PhotoSharingTests extends BaseTest {
 
         homePage.waitForPageToLoad();
 
-        homePage.waitForFeedToLoad();
-
-        homePage.scrollFeedUp();
+        homePage.performSwipeGesture("up");
 
         Assert.assertTrue(
                 homePage.isDisplayed(),

@@ -117,29 +117,9 @@ public class SendPhotoPage extends BasePage {
 
     public HomePage sendPhoto() {
         logger.info("Sending photo");
-        
-        // Ensure we have a valid driver session
-        try {
-            if (driver == null) {
-                throw new RuntimeException("Driver is null, cannot send photo");
-            }
-            
-            String sessionId = driver.getSessionId().toString();
-            if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
-                throw new RuntimeException("Driver session ID is null or empty");
-            }
-        } catch (Exception e) {
-            logger.error("Driver session validation failed: {}", e.getMessage());
-            throw new RuntimeException("Cannot send photo due to invalid driver session", e);
-        }
-        
-        // Verify at least one friend is selected before attempting to send
-        if (!areAnyFriendsSelected()) {
-            logger.warn("No friends selected, send button may not be clickable");
-        }
-        
-        waitForElementClickable(TestIDs.SEND_PHOTO_SEND_BUTTON);
-        clickElement(sendButton);
+
+        waitForElementVisible(TestIDs.SEND_PHOTO_SEND_BUTTON);
+        findByAccessibilityId(TestIDs.SEND_PHOTO_SEND_BUTTON).click();
 
         // Wait for sending to complete
         waitForSendingToComplete();
@@ -588,14 +568,10 @@ public class SendPhotoPage extends BasePage {
 
     public SendPhotoPage waitForPageToLoad() {
         logger.info("Waiting for send photo page to load");
-        
+
         try {
             waitForElementVisible(TestIDs.SEND_PHOTO_SCREEN);
             waitForAnimation();
-            
-            // Wait for friends list to load
-            waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
-            
             logger.info("Send photo page loaded successfully");
             return this;
         } catch (Exception e) {
