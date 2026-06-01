@@ -12,19 +12,19 @@ import java.util.List;
 public class AllImagesPage extends BasePage {
 
     // PAGE ELEMENTS
-    @AndroidFindBy(id = TestIDs.ALL_IMAGES_SCREEN)
+    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_SCREEN)
     private WebElement allImagesScreen;
 
-    @AndroidFindBy(id = TestIDs.ALL_IMAGES_BACK_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_BACK_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_BACK_BUTTON)
     private WebElement backButton;
 
-    @AndroidFindBy(id = TestIDs.ALL_IMAGES_GRID)
+    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_GRID)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_GRID)
     private WebElement imagesGrid;
 
-    @AndroidFindBy(id = TestIDs.ALL_IMAGES_EMPTY_STATE)
+    @AndroidFindBy(accessibility = TestIDs.ALL_IMAGES_EMPTY_STATE)
     @iOSXCUITFindBy(accessibility = TestIDs.ALL_IMAGES_EMPTY_STATE)
     private WebElement emptyState;
 
@@ -190,7 +190,7 @@ public class AllImagesPage extends BasePage {
 
             List<WebElement> images =
                     findElementsByXPath(
-                            "//*[contains(@resource-id,'all_images_item_')]"
+                            "//*[contains(@resource-id,'" + TestIDs.ALL_IMAGES_ITEM_PREFIX + "')]"
                     );
 
             int count =
@@ -235,7 +235,7 @@ public class AllImagesPage extends BasePage {
 
             List<WebElement> images =
                     findElementsByXPath(
-                            "//*[contains(@resource-id,'all_images_item_')]"
+                            "//*[contains(@resource-id,'" + TestIDs.ALL_IMAGES_ITEM_PREFIX + "')]"
                     );
 
             int selectedCount = 0;
@@ -266,84 +266,6 @@ public class AllImagesPage extends BasePage {
 
             return 0;
         }
-    }
-
-    // GRID VIEW MODES
-    public AllImagesPage switchToGridView() {
-        logger.info("Switching to grid view");
-        return this;
-    }
-
-    public AllImagesPage switchToListView() {
-        logger.info("Switching to list view");
-        return this;
-    }
-
-    // SORTING AND FILTERING
-    public AllImagesPage sortByDate(boolean ascending) {
-        logger.info("Sorting images by date: {}", ascending ? "ascending" : "descending");
-
-        // Implementation depends on sorting controls
-
-        return this;
-    }
-
-    public AllImagesPage filterImages(String filterType) {
-        logger.info("Filtering images by: {}", filterType);
-
-        // Implementation depends on filtering controls
-
-        return this;
-    }
-
-    // BULK ACTIONS
-    public AllImagesPage selectAllImages() {
-        logger.info("Selecting all images");
-
-        // Implementation depends on select all functionality
-
-        return this;
-    }
-
-    public AllImagesPage deselectAllImages() {
-        logger.info("Deselecting all images");
-
-        // Implementation depends on deselect functionality
-
-        return this;
-    }
-
-    public AllImagesPage deleteSelectedImages() {
-        logger.info("Deleting selected images");
-
-        // Implementation depends on bulk delete functionality
-
-        return this;
-    }
-
-    public AllImagesPage shareSelectedImages() {
-        logger.info("Sharing selected images");
-
-        // Implementation depends on bulk share functionality
-
-        return this;
-    }
-
-    // SEARCH FUNCTIONALITY
-    public AllImagesPage searchImages(String searchQuery) {
-        logger.info("Searching images: {}", searchQuery);
-
-        // Implementation depends on search functionality
-
-        return this;
-    }
-
-    public AllImagesPage clearImageSearch() {
-        logger.info("Clearing image search");
-
-        // Implementation depends on search UI
-
-        return this;
     }
 
     // NEGATIVE TEST METHODS

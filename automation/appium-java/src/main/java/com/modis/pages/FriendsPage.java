@@ -8,10 +8,10 @@ import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
 
 import java.util.List;
+
 public class FriendsPage extends BasePage {
 
     private String currentSearchText = "";
-    private int requestCountOverride = 1;
 
     // PAGE ELEMENTS
 
@@ -31,26 +31,9 @@ public class FriendsPage extends BasePage {
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SEARCH_INPUT)
     private WebElement searchInput;
 
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_SEARCH_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SEARCH_BUTTON)
-    private WebElement searchButton;
-
     @AndroidFindBy(accessibility = TestIDs.FRIENDS_CLEAR_SEARCH)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_CLEAR_SEARCH)
     private WebElement clearSearchButton;
-
-    // Tab elements
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_TAB_FRIENDS)
-    @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_TAB_FRIENDS)
-    private WebElement friendsTab;
-
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_TAB_REQUESTS)
-    @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_TAB_REQUESTS)
-    private WebElement requestsTab;
-
-    @AndroidFindBy(accessibility = TestIDs.FRIENDS_TAB_SENT)
-    @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_TAB_SENT)
-    private WebElement sentRequestsTab;
 
     // Search results
     @AndroidFindBy(accessibility = TestIDs.SEARCH_RESULTS_LIST)
@@ -94,59 +77,86 @@ public class FriendsPage extends BasePage {
         return homePage;
     }
 
-    public FriendsPage switchToFriendsTab() {
-        logger.info("Switching to Friends tab");
-        waitForElementClickable(TestIDs.FRIENDS_TAB_FRIENDS);
-        clickByAccessibilityId(
-                TestIDs.FRIENDS_TAB_FRIENDS
+    public FriendsPage searchUsers(String searchQuery) {
+
+        waitForElementVisible(
+                TestIDs.FRIENDS_SEARCH_INPUT
         );
-        waitForAnimation();
-        return this;
-    }
-public FriendsPage switchToRequestsTab() {
-        logger.info("Switching to Friend Requests tab");
-        waitForElementClickable(TestIDs.FRIENDS_TAB_REQUESTS);
-        clickElement(requestsTab);
-        waitForAnimation();
-        return this;
-    }
-public FriendsPage switchToSentRequestsTab() {
-        logger.info("Switching to Sent Requests tab");
-        waitForElementClickable(TestIDs.FRIENDS_TAB_SENT);
-        clickElement(sentRequestsTab);
-        waitForAnimation();
-        return this;
-    }
 
-    // SEARCH ACTIONS
-public FriendsPage searchUsers(String searchQuery) {
-        logger.info("Searching for users: {}", searchQuery);
-        waitForElementVisible(TestIDs.FRIENDS_SEARCH_INPUT);
-        enterText(searchInput, searchQuery);
+        enterText(
+                searchInput,
+                searchQuery
+        );
 
-        // Click search button or wait for auto-search
-        if (isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SEARCH_BUTTON)) {
-            clickElement(searchButton);
+        logger.info(
+                "Search is auto-triggered by FE"
+        );
+
+        long endTime =
+                System.currentTimeMillis() + 10000;
+
+        while (System.currentTimeMillis() < endTime) {
+
+            try {
+
+                if (
+                        isElementDisplayedByAccessibilityId(
+                                TestIDs.SEARCH_RESULTS_LIST
+                        )
+                                ||
+                                isElementDisplayedByAccessibilityId(
+                                        TestIDs.SEARCH_EMPTY_STATE
+                                )
+                ) {
+
+                    logger.info(
+                            "Search results rendered"
+                    );
+
+                    return this;
+                }
+
+            } catch (Exception ignored) {
+            }
+
+            waitFor(1);
         }
 
-        waitForSearchResults();
+        logger.warn(
+                "Search results did not appear within timeout"
+        );
+
         return this;
     }
-public FriendsPage clearSearch() {
-        logger.info("Clearing search");
 
-        if (isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH)) {
-            clickElement(clearSearchButton);
-        } else {
-            // Clear search input manually
-            waitForElementVisible(TestIDs.FRIENDS_SEARCH_INPUT);
+    public FriendsPage clearSearch() {
+
+        logger.info(
+                "Clearing search"
+        );
+
+        try {
+
+            waitForElementVisible(
+                    TestIDs.FRIENDS_SEARCH_INPUT
+            );
+
             searchInput.clear();
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Failed to clear search: {}",
+                    e.getMessage()
+            );
         }
 
         waitForAnimation();
+
         return this;
     }
-public void waitForSearchResults() {
+
+    public void waitForSearchResults() {
         logger.debug("Waiting for search results");
         waitForAnimation();
 
@@ -160,23 +170,9 @@ public void waitForSearchResults() {
     }
 
     // FRIEND ACTIONS
-public FriendsPage sendFriendRequest(String userId) {
-        logger.info("Sending friend request to user: {}", userId);
-        String addButtonId = TestIDs.getFriendButtonId(userId);
-
-        WebElement addButton = scrollToElementByAccessibilityId(addButtonId);
-        if (addButton != null) {
-            clickElement(addButton);
-            waitForAnimation();
-        } else {
-            logger.warn("Add friend button not found for user: {}", userId);
-        }
-
-        return this;
-    }
-public FriendsPage acceptFriendRequest(String userId) {
+    public FriendsPage acceptFriendRequest(String userId) {
         logger.info("Accepting friend request from user: {}", userId);
-        String acceptButtonId = TestIDs.FRIENDS_ACCEPT_BUTTON_PREFIX + userId;
+        String acceptButtonId = TestIDs.getFriendRequestAcceptButtonId(userId);
 
         WebElement acceptButton = scrollToElementByAccessibilityId(acceptButtonId);
         if (acceptButton != null) {
@@ -188,9 +184,10 @@ public FriendsPage acceptFriendRequest(String userId) {
 
         return this;
     }
-public FriendsPage declineFriendRequest(String userId) {
+
+    public FriendsPage declineFriendRequest(String userId) {
         logger.info("Declining friend request from user: {}", userId);
-        String declineButtonId = TestIDs.FRIENDS_DECLINE_BUTTON_PREFIX + userId;
+        String declineButtonId = TestIDs.getFriendRequestRejectButtonId(userId);
 
         WebElement declineButton = scrollToElementByAccessibilityId(declineButtonId);
         if (declineButton != null) {
@@ -202,104 +199,56 @@ public FriendsPage declineFriendRequest(String userId) {
 
         return this;
     }
-public FriendsPage removeFriend(String userId) {
-        logger.info("Removing friend: {}", userId);
-
-        // Long press on friend to show options
-        String friendRowId = TestIDs.FRIENDS_ADD_BUTTON_PREFIX + userId;
-        WebElement friendRow = scrollToElementByAccessibilityId(friendRowId);
-
-        if (friendRow != null) {
-            longPressElement(friendRow, AppConstants.LONG_PRESS_DURATION_MS);
-
-            // Handle remove confirmation if it appears
-            // Implementation depends on actual UI flow
-
-        } else {
-            logger.warn("Friend row not found for user: {}", userId);
-        }
-
-        return this;
-    }
 
     // LIST ACTIONS
-public FriendsPage scrollFriendsList(String direction) {
+    public FriendsPage scrollFriendsList(String direction) {
         logger.debug("Scrolling friends list: {}", direction);
         waitForElementVisible(TestIDs.FRIENDS_SCROLL);
         scrollInElement(friendsScrollView, direction);
         return this;
     }
-public FriendsPage refreshFriendsList() {
+
+    public FriendsPage refreshFriendsList() {
         logger.info("Refreshing friends list");
         pullToRefresh();
         waitForAnimation();
         return this;
     }
-public FriendsPage scrollToTop() {
+
+    public FriendsPage scrollToTop() {
         logger.info("Scrolling to top of friends list");
         scrollToTopBase();
         return this;
     }
-public boolean findFriendInList(String userId) {
+
+    public boolean findFriendInList(String userId) {
         logger.info("Searching for friend in list: {}", userId);
-        String friendRowId = TestIDs.FRIENDS_ADD_BUTTON_PREFIX + userId;
+        String friendRowId = TestIDs.getFriendItemId(userId);
 
         WebElement friendElement = scrollToElementByAccessibilityId(friendRowId);
         return friendElement != null;
     }
 
     // VALIDATION METHODS
-public boolean isSearchInputDisplayed() {
+    public boolean isSearchInputDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT);
     }
-public boolean isFriendsListDisplayed() {
+
+    public boolean isFriendsListDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SCROLL);
     }
-public boolean areSearchResultsDisplayed() {
+
+    public boolean areSearchResultsDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.SEARCH_RESULTS_LIST);
     }
-public boolean isSearchEmptyStateDisplayed() {
+
+    public boolean isSearchEmptyStateDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.SEARCH_EMPTY_STATE);
     }
-public String getSearchQuery() {
+
+    public String getSearchQuery() {
         waitForElementVisible(TestIDs.FRIENDS_SEARCH_INPUT);
         return searchInput.getAttribute("text");
-    }
-public boolean isTabActive(String tabName) {
-        String tabId;
-        switch (tabName.toLowerCase()) {
-            case "friends":
-                tabId = TestIDs.FRIENDS_TAB_FRIENDS;
-                break;
-            case "requests":
-                tabId = TestIDs.FRIENDS_TAB_REQUESTS;
-                break;
-            case "sent":
-                tabId = TestIDs.FRIENDS_TAB_SENT;
-                break;
-            default:
-                return false;
-        }
-
-        try {
-            WebElement tab = findByAccessibilityId(tabId);
-            String selected = tab.getAttribute("selected");
-            return "true".equals(selected);
-        } catch (Exception e) {
-            logger.debug("Tab {} not found or not selected", tabName);
-            return false;
-        }
-    }
-public boolean isFriendRequestButtonDisplayed(String userId) {
-        String addButtonId = TestIDs.getFriendButtonId(userId);
-        return isElementDisplayedByAccessibilityId(addButtonId);
-    }
-public boolean areAcceptDeclineButtonsDisplayed(String userId) {
-        String acceptButtonId = TestIDs.FRIENDS_ACCEPT_BUTTON_PREFIX + userId;
-        String declineButtonId = TestIDs.FRIENDS_DECLINE_BUTTON_PREFIX + userId;
-
-        return isElementDisplayedByAccessibilityId(acceptButtonId) &&
-                isElementDisplayedByAccessibilityId(declineButtonId);
     }
 
     public int getVisibleFriendsCount() {
@@ -308,7 +257,7 @@ public boolean areAcceptDeclineButtonsDisplayed(String userId) {
 
             List<WebElement> friendRows =
                     findElementsByXPath(
-                            "//*[contains(@resource-id,'friends_add_button_')]"
+                            "//*[contains(@resource-id,'" + TestIDs.FRIEND_ITEM_PREFIX + "')]"
                     );
 
             return friendRows != null
@@ -332,12 +281,10 @@ public boolean areAcceptDeclineButtonsDisplayed(String userId) {
 
             List<WebElement> results =
                     findElementsByXPath(
-                            "//*[contains(@resource-id,'search_result_item_')]"
+                            "//*[contains(@content-desc,'" + TestIDs.SEARCH_RESULT_ITEM_PREFIX + "')]"
                     );
 
-            return results != null
-                    ? results.size()
-                    : 0;
+            return results.size();
 
         } catch (Exception e) {
 
@@ -349,11 +296,13 @@ public boolean areAcceptDeclineButtonsDisplayed(String userId) {
             return 0;
         }
     }
+
     // SEARCH VALIDATION
-public boolean isSearchQueryValid(String query) {
+    public boolean isSearchQueryValid(String query) {
         return query != null && query.length() >= AppConstants.MIN_SEARCH_QUERY_LENGTH;
     }
-public boolean searchAndVerifyUser(String searchQuery, String expectedUserId) {
+
+    public boolean searchAndVerifyUser(String searchQuery, String expectedUserId) {
         logger.info("Searching for user '{}' and verifying user '{}' in results", searchQuery, expectedUserId);
 
         searchUsers(searchQuery);
@@ -369,21 +318,18 @@ public boolean searchAndVerifyUser(String searchQuery, String expectedUserId) {
     }
 
     // NEGATIVE TEST METHODS
-public FriendsPage searchWithEmptyQuery() {
+    public FriendsPage searchWithEmptyQuery() {
         logger.info("Searching with empty query");
         clearSearch();
-
-        if (isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SEARCH_BUTTON)) {
-            clickElement(searchButton);
-        }
-
         return this;
     }
-public FriendsPage searchWithInvalidQuery(String invalidQuery) {
+
+    public FriendsPage searchWithInvalidQuery(String invalidQuery) {
         logger.info("Searching with invalid query: {}", invalidQuery);
         return searchUsers(invalidQuery);
     }
-public FriendsPage searchForNonExistentUser() {
+
+    public FriendsPage searchForNonExistentUser() {
         logger.info("Searching for non-existent user");
         return searchUsers(AppConstants.TEST_SEARCH_NO_RESULTS);
     }
@@ -463,7 +409,8 @@ public FriendsPage searchForNonExistentUser() {
     }
 
     public boolean isFriendsTabSelected() {
-        return true;
+        // Android FE does not render tab buttons; the friends list is the default section.
+        return isFriendsListDisplayed();
     }
 
     public boolean hasFriends() {
@@ -475,67 +422,85 @@ public FriendsPage searchForNonExistentUser() {
     }
 
     public boolean isEmptyFriendsStateDisplayed() {
-        return false;
+        return isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_LIST_EMPTY);
     }
 
     public String getFirstFriendId() {
-        return "friend_123";
+        List<WebElement> rows = findElementsByXPath(
+                "//*[contains(@resource-id,'" + TestIDs.FRIEND_ITEM_PREFIX + "') or contains(@content-desc,'" + TestIDs.FRIEND_ITEM_PREFIX + "')]"
+        );
+
+        for (WebElement row : rows) {
+            String id = extractDynamicId(row, TestIDs.FRIEND_ITEM_PREFIX);
+            if (!id.isEmpty()) {
+                return id;
+            }
+        }
+
+        return "";
     }
 
     public boolean isFriendAvatarDisplayed(String id) {
-        return true;
+        return isElementDisplayedByAccessibilityId(TestIDs.getFriendAvatarId(id));
     }
 
     public boolean isFriendNameDisplayed(String id) {
-        return true;
+        return isElementDisplayedByAccessibilityId(TestIDs.getFriendNameId(id));
     }
 
     public String getFriendName(String id) {
-        return "Test Friend";
+        return getTextByAccessibilityId(TestIDs.getFriendNameId(id));
     }
 
     public boolean isFriendUsernameDisplayed(String id) {
-        return true;
-    }
-
-    public String getFriendUsername(String id) {
-        return "testfriend";
-    }
-
-    public FriendsPage clickRequestsTab() {
-        return this;
-    }
-
-    public boolean isRequestsTabSelected() {
-        return true;
-    }
-
-    public boolean hasFriendRequests() {
-        return true;
-    }
-
-    public boolean isFriendRequestsListDisplayed() {
-        return true;
-    }
-
-    public int getFriendRequestsCount() {
-        return requestCountOverride;
-    }
-
-    public boolean isEmptyRequestsStateDisplayed() {
+        // FriendsList.tsx only renders fullname/username in one name node.
         return false;
     }
 
+    public String getFriendUsername(String id) {
+        return "";
+    }
+
+    public FriendsPage clickRequestsTab() {
+        scrollDownBase();
+        return this;
+    }
+
+    public boolean hasFriendRequests() {
+        return getFriendRequestsCount() > 0;
+    }
+
+    public boolean isFriendRequestsListDisplayed() {
+        return hasFriendRequests() || isEmptyRequestsStateDisplayed();
+    }
+
+    public int getFriendRequestsCount() {
+        return getFriendRequestRows().size();
+    }
+
+    public boolean isEmptyRequestsStateDisplayed() {
+        return isTextDisplayed("Chưa có lời mời kết bạn");
+    }
+
     public String getFirstFriendRequestId() {
-        return "req_123";
+        List<WebElement> rows = getFriendRequestRows();
+
+        for (WebElement row : rows) {
+            String id = extractDynamicId(row, TestIDs.FRIEND_REQUEST_ITEM_PREFIX);
+            if (!id.isEmpty()) {
+                return id;
+            }
+        }
+
+        return "";
     }
 
     public boolean isRequestAvatarDisplayed(String id) {
-        return true;
+        return isElementDisplayedByAccessibilityId(TestIDs.getFriendRequestAvatarId(id));
     }
 
     public boolean isRequestNameDisplayed(String id) {
-        return true;
+        return isElementDisplayedByAccessibilityId(TestIDs.getFriendRequestNameId(id));
     }
 
     public FriendsPage searchFriends(String query) {
@@ -549,16 +514,20 @@ public FriendsPage searchForNonExistentUser() {
     }
 
     public boolean isSearchResultsDisplayed() {
-        return true;
+
+        return isElementDisplayedByAccessibilityId(
+                TestIDs.SEARCH_RESULTS_LIST
+        );
     }
 
     public boolean hasSearchResults() {
-        return true;
+        return getSearchResultsCount() > 0;
     }
 
     public boolean isNoSearchResultsDisplayed() {
-        return currentSearchText.startsWith("nonexistentuser")
-                || isSearchEmptyStateDisplayed();
+        return isElementDisplayedByAccessibilityId(
+                TestIDs.SEARCH_EMPTY_STATE
+        );
     }
 
     public FriendsPage enterSearchText(String text) {
@@ -579,84 +548,100 @@ public FriendsPage searchForNonExistentUser() {
     }
 
     public String getFirstFriendName() {
-        return "Test Friend";
+        String firstFriendId = getFirstFriendId();
+        return firstFriendId.isEmpty() ? "" : getFriendName(firstFriendId);
     }
 
     public String getFirstSearchResultId() {
-        return "user_123";
+        List<WebElement> results = findElementsByXPath(
+                "//*[contains(@content-desc,'" + TestIDs.SEARCH_RESULT_ITEM_PREFIX + "') or contains(@resource-id,'" + TestIDs.SEARCH_RESULT_ITEM_PREFIX + "')]"
+        );
+
+        for (WebElement result : results) {
+            String id = extractDynamicId(result, TestIDs.SEARCH_RESULT_ITEM_PREFIX);
+            if (!id.isEmpty()) {
+                return id;
+            }
+        }
+
+        return "";
     }
 
     public boolean canAddFriend(String id) {
-        return true;
+        return isElementDisplayedByAccessibilityId(TestIDs.getSearchResultAddButtonId(id));
     }
 
     public String getSearchResultName(String id) {
-        return "Search Result";
+        WebElement row = findByAccessibilityId(TestIDs.getSearchResultItemId(id));
+        return getText(row);
     }
 
     public FriendsPage addFriend(String id) {
+        clickByAccessibilityId(TestIDs.getSearchResultAddButtonId(id));
         return this;
     }
 
     public boolean isFriendRequestSent(String id) {
-        return true;
+        return isTextDisplayed("Đã gửi") || isTextDisplayed("ÄÃ£ gá»­i");
     }
 
     public FriendsPage clickSentTab() {
+        scrollDownBase();
         return this;
     }
 
-    public boolean isSentTabSelected() {
-        return true;
-    }
-
     public FriendsPage clickFriendsTab() {
+        scrollToTop();
         return this;
     }
 
     public FriendsPage scrollDown() {
+        scrollDownBase();
         return this;
     }
 
     public FriendsPage scrollUp() {
+        scrollUpBase();
         return this;
     }
 
     public boolean isAcceptButtonDisplayed(String id) {
-        return true;
+        return isElementDisplayedByAccessibilityId(TestIDs.getFriendRequestAcceptButtonId(id));
     }
 
     public boolean isDeclineButtonDisplayed(String id) {
-        return true;
+        return isElementDisplayedByAccessibilityId(TestIDs.getFriendRequestRejectButtonId(id));
     }
 
     public String getRequestName(String id) {
-        return "Request Name";
+        return getTextByAccessibilityId(TestIDs.getFriendRequestNameId(id));
     }
 
     public FriendsPage waitForRequestToDisappear(String id) {
-        requestCountOverride = 0;
+        waitForElementToDisappear(TestIDs.getFriendRequestItemId(id));
         return this;
     }
 
     public boolean hasSentRequests() {
-        return true;
+        return getSentRequestsCount() > 0;
     }
 
     public boolean isSentRequestsListDisplayed() {
-        return true;
+        return hasSentRequests() || isEmptySentStateDisplayed();
     }
 
     public int getSentRequestsCount() {
-        return 1;
+        return findElementsByXPath(
+                "//*[contains(@text,'Đã gửi') or contains(@text,'Ä‘Ã£ gá»­i') or contains(@text,'đã gửi')]"
+        ).size();
     }
 
     public boolean isEmptySentStateDisplayed() {
-        return false;
+        return isTextDisplayed("Bạn chưa gửi lời mời nào");
     }
 
     // FRIEND SEARCH AND REQUEST ACTIONS
-public boolean isUserInSearchResults(String username) {
+    public boolean isUserInSearchResults(String username) {
         logger.info("Checking if user is in search results: " + username);
         waitForElementVisible(TestIDs.FRIENDS_SCROLL);
 
@@ -669,7 +654,8 @@ public boolean isUserInSearchResults(String username) {
             return false;
         }
     }
-public boolean isRequestFromUser(String username) {
+
+    public boolean isRequestFromUser(String username) {
         logger.info("Checking if friend request is from user: " + username);
         waitForElementVisible(TestIDs.FRIENDS_SCROLL);
 
@@ -682,10 +668,50 @@ public boolean isRequestFromUser(String username) {
             return false;
         }
     }
-public String getRequestNameByUsername(String username) {
+
+    public String getRequestNameByUsername(String username) {
         logger.info("Getting request name for username: " + username);
         String requestXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
         WebElement requestElement = findByXPath(requestXpath);
         return getText(requestElement);
+    }
+
+    private List<WebElement> getFriendRequestRows() {
+        return findElementsByXPath(
+                "//*[contains(@resource-id,'" + TestIDs.FRIEND_REQUEST_ITEM_PREFIX + "') "
+                        + "and not(contains(@resource-id,'_avatar')) "
+                        + "and not(contains(@resource-id,'_name')) "
+                        + "and not(contains(@resource-id,'_accept_button')) "
+                        + "and not(contains(@resource-id,'_reject_button'))]"
+        );
+    }
+
+    private boolean isTextDisplayed(String text) {
+        try {
+            return findByXPath(String.format("//android.widget.TextView[contains(@text,'%s')]", text)) != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String extractDynamicId(WebElement element, String prefix) {
+        String value = element.getAttribute("content-desc");
+
+        if (value == null || !value.contains(prefix)) {
+            value = element.getAttribute("resource-id");
+        }
+
+        if (value == null || !value.contains(prefix)) {
+            return "";
+        }
+
+        String id = value.substring(value.indexOf(prefix) + prefix.length());
+        int separatorIndex = id.indexOf('/');
+
+        if (separatorIndex >= 0) {
+            id = id.substring(separatorIndex + 1);
+        }
+
+        return id;
     }
 }

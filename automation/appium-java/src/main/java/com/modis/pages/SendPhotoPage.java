@@ -3,66 +3,75 @@ package com.modis.pages;
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
+import com.modis.drivers.DriverManager;
 import io.appium.java_client.pagefactory.AndroidFindBy;
-import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
+import io.appium.java_client.AppiumBy;
 
 import java.util.List;
+import java.util.ArrayList;
+
 public class SendPhotoPage extends BasePage {
 
-    // ==================== PAGE ELEMENTS ====================
-
-    @AndroidFindBy(id = TestIDs.SEND_PHOTO_SCREEN)
-    @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_SCREEN)
+    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_SCREEN)
     private WebElement sendPhotoScreen;
 
-    @AndroidFindBy(id = TestIDs.SEND_PHOTO_PREVIEW_IMAGE)
-    @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_PREVIEW_IMAGE)
+    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_PREVIEW_IMAGE)
     private WebElement previewImage;
 
-    @AndroidFindBy(id = TestIDs.SEND_PHOTO_CAPTION_INPUT)
-    @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_CAPTION_INPUT)
+    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_CAPTION_INPUT)
     private WebElement captionInput;
 
-    @AndroidFindBy(id = TestIDs.SEND_PHOTO_SEND_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_SEND_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_SEND_BUTTON)
     private WebElement sendButton;
 
-    @AndroidFindBy(id = TestIDs.SEND_PHOTO_CLOSE_BUTTON)
-    @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_CLOSE_BUTTON)
+    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_CLOSE_BUTTON)
     private WebElement closeButton;
 
-    @AndroidFindBy(id = TestIDs.SEND_PHOTO_SELECT_ALL)
-    @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_SELECT_ALL)
+    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_SELECT_ALL)
     private WebElement selectAllButton;
 
-    @AndroidFindBy(id = TestIDs.SEND_PHOTO_FRIENDS_LIST)
-    @iOSXCUITFindBy(accessibility = TestIDs.SEND_PHOTO_FRIENDS_LIST)
+    @AndroidFindBy(accessibility = TestIDs.SEND_PHOTO_FRIENDS_LIST)
     private WebElement friendsList;
 
     // Loading and status elements
-    @AndroidFindBy(id = TestIDs.LOADING_SPINNER)
-    @iOSXCUITFindBy(accessibility = TestIDs.LOADING_SPINNER)
+    @AndroidFindBy(accessibility = TestIDs.LOADING_SPINNER)
     private WebElement loadingSpinner;
 
-    @AndroidFindBy(id = TestIDs.TOAST_CONTAINER)
-    @iOSXCUITFindBy(accessibility = TestIDs.TOAST_CONTAINER)
+    @AndroidFindBy(accessibility = TestIDs.TOAST_CONTAINER)
     private WebElement toastMessage;
 
-    // ==================== PHOTO ACTIONS ====================
-public SendPhotoPage addCaption(String caption) {
+    public SendPhotoPage addCaption(String caption) {
         logger.info("Adding caption: {}", caption);
+        
+        // Ensure we have a valid driver session before proceeding
+        try {
+            if (driver == null) {
+                throw new RuntimeException("Driver is null, cannot add caption");
+            }
+            
+            String sessionId = driver.getSessionId().toString();
+            if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                throw new RuntimeException("Driver session ID is null or empty");
+            }
+        } catch (Exception e) {
+            logger.error("Driver session validation failed: {}", e.getMessage());
+            throw new RuntimeException("Cannot add caption due to invalid driver session", e);
+        }
+        
         waitForElementVisible(TestIDs.SEND_PHOTO_CAPTION_INPUT);
         enterText(captionInput, caption);
         return this;
     }
-public SendPhotoPage clearCaption() {
+
+    public SendPhotoPage clearCaption() {
         logger.debug("Clearing caption");
         waitForElementVisible(TestIDs.SEND_PHOTO_CAPTION_INPUT);
         captionInput.clear();
         return this;
     }
-public SendPhotoPage selectFriend(String userId) {
+
+    public SendPhotoPage selectFriend(String userId) {
         logger.info("Selecting friend: {}", userId);
         String friendTestId = TestIDs.getSendPhotoFriendId(userId);
 
@@ -76,7 +85,8 @@ public SendPhotoPage selectFriend(String userId) {
 
         return this;
     }
-public SendPhotoPage selectFriends(String[] userIds) {
+
+    public SendPhotoPage selectFriends(String[] userIds) {
         logger.info("Selecting {} friends", userIds.length);
 
         for (String userId : userIds) {
@@ -85,13 +95,15 @@ public SendPhotoPage selectFriends(String[] userIds) {
 
         return this;
     }
-public SendPhotoPage selectAllFriends() {
+
+    public SendPhotoPage selectAllFriends() {
         logger.info("Selecting all friends");
         waitForElementClickable(TestIDs.SEND_PHOTO_SELECT_ALL);
         clickElement(selectAllButton);
         return this;
     }
-public SendPhotoPage deselectFriend(String userId) {
+
+    public SendPhotoPage deselectFriend(String userId) {
         logger.info("Deselecting friend: {}", userId);
         String friendTestId = TestIDs.getSendPhotoFriendId(userId);
 
@@ -102,8 +114,30 @@ public SendPhotoPage deselectFriend(String userId) {
 
         return this;
     }
-public HomePage sendPhoto() {
+
+    public HomePage sendPhoto() {
         logger.info("Sending photo");
+        
+        // Ensure we have a valid driver session
+        try {
+            if (driver == null) {
+                throw new RuntimeException("Driver is null, cannot send photo");
+            }
+            
+            String sessionId = driver.getSessionId().toString();
+            if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                throw new RuntimeException("Driver session ID is null or empty");
+            }
+        } catch (Exception e) {
+            logger.error("Driver session validation failed: {}", e.getMessage());
+            throw new RuntimeException("Cannot send photo due to invalid driver session", e);
+        }
+        
+        // Verify at least one friend is selected before attempting to send
+        if (!areAnyFriendsSelected()) {
+            logger.warn("No friends selected, send button may not be clickable");
+        }
+        
         waitForElementClickable(TestIDs.SEND_PHOTO_SEND_BUTTON);
         clickElement(sendButton);
 
@@ -112,7 +146,8 @@ public HomePage sendPhoto() {
 
         return new HomePage();
     }
-public BasePage sendPhotoWithCaptionToFriends(String caption, String[] userIds) {
+
+    public BasePage sendPhotoWithCaptionToFriends(String caption, String[] userIds) {
         logger.info("Sending photo with caption to {} friends", userIds.length);
 
         if (caption != null && !caption.trim().isEmpty()) {
@@ -137,8 +172,49 @@ public BasePage sendPhotoWithCaptionToFriends(String caption, String[] userIds) 
     }
 
     public boolean hasFriends() {
-        return getVisibleFriends() != null
-                && !getVisibleFriends().isEmpty();
+        try {
+            // Ensure we have a valid driver session
+            if (driver == null) {
+                logger.warn("Driver is null, cannot check friends");
+                return false;
+            }
+            
+            // Check if driver session is still valid
+            try {
+                String sessionId = driver.getSessionId().toString();
+                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                    logger.warn("Driver session ID is null or empty");
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.warn("Driver session is invalid: {}", e.getMessage());
+                return false;
+            }
+            
+            // Wait for friends list to be visible with retry logic
+            for (int attempt = 1; attempt <= 2; attempt++) {
+                try {
+                    waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
+                    List<WebElement> friends = getVisibleFriends();
+                    boolean hasFriends = friends != null && !friends.isEmpty();
+                    logger.info("Friends check result: {} friends found", hasFriends ? friends.size() : 0);
+                    return hasFriends;
+                } catch (Exception e) {
+                    logger.warn("Failed to check friends on attempt {}: {}", attempt, e.getMessage());
+                    if (attempt == 2) {
+                        return false;
+                    }
+                    // Try to recover from UiAutomator2 crash
+                    if (!DriverManager.recoverFromUiAutomator2Crash()) {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            logger.warn("Failed to check friends availability: {}", e.getMessage());
+            return false;
+        }
     }
 
     public String getFirstFriendId() {
@@ -146,13 +222,42 @@ public BasePage sendPhotoWithCaptionToFriends(String caption, String[] userIds) 
         List<WebElement> friends =
                 getVisibleFriends();
 
-        if (friends == null || friends.isEmpty()) {
+        for (WebElement friend : friends) {
 
-            return null;
+            String contentDesc =
+                    friend.getAttribute(
+                            "content-desc"
+                    );
+
+            System.out.println(
+                    "FOUND = " + contentDesc
+            );
+
+            if (contentDesc == null) {
+                continue;
+            }
+
+            if (!contentDesc.startsWith(
+                    "send_photo_friend_")) {
+                continue;
+            }
+
+            String friendId =
+                    contentDesc.replace(
+                            "send_photo_friend_",
+                            ""
+                    );
+
+            if (friendId.equals("list")
+                    || friendId.equals("flatlist")
+                    || friendId.equals("all")) {
+                continue;
+            }
+
+            return friendId;
         }
 
-        return friends.get(0)
-                .getAttribute("content-desc");
+        return null;
     }
 
     public TakePage navigateBack() {
@@ -187,7 +292,8 @@ public BasePage sendPhotoWithCaptionToFriends(String caption, String[] userIds) 
 
         return sendPhoto();
     }
-public BasePage closeSendPhoto() {
+
+    public BasePage closeSendPhoto() {
         logger.info("Closing send photo screen");
         waitForElementClickable(TestIDs.SEND_PHOTO_CLOSE_BUTTON);
         clickElement(closeButton);
@@ -201,113 +307,261 @@ public BasePage closeSendPhoto() {
     }
 
     // ==================== FRIEND LIST ACTIONS ====================
-public SendPhotoPage scrollFriendsList(String direction) {
+    public SendPhotoPage scrollFriendsList(String direction) {
         logger.debug("Scrolling friends list: {}", direction);
         waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
         scrollInElement(friendsList, direction);
         return this;
     }
-public boolean findFriendInList(String userId) {
+
+    public boolean findFriendInList(String userId) {
         logger.info("Searching for friend in list: {}", userId);
         String friendTestId = TestIDs.getSendPhotoFriendId(userId);
 
         WebElement friendElement = scrollToElementByAccessibilityId(friendTestId);
         return friendElement != null;
     }
-public List<WebElement> getVisibleFriends() {
-        waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
-        return findElementsByAccessibilityId(TestIDs.SEND_PHOTO_FRIEND_PREFIX + "*");
-    }
-public int getSelectedFriendsCount() {
-        // Implementation depends on how selection is indicated in UI
-        // This could check for selected state attributes or visual indicators
-        List<WebElement> friends = getVisibleFriends();
-        int selectedCount = 0;
 
-        for (WebElement friend : friends) {
-            String selected = friend.getAttribute("selected");
-            if ("true".equals(selected)) {
-                selectedCount++;
+    public List<WebElement> getVisibleFriends() {
+        try {
+            // Ensure we have a valid driver session
+            if (driver == null) {
+                logger.warn("Driver is null, cannot get visible friends");
+                return new ArrayList<>();
             }
-        }
+            
+            // Check if driver session is still valid
+            try {
+                String sessionId = driver.getSessionId().toString();
+                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                    logger.warn("Driver session ID is null or empty");
+                    return new ArrayList<>();
+                }
+            } catch (Exception e) {
+                logger.warn("Driver session is invalid: {}", e.getMessage());
+                return new ArrayList<>();
+            }
 
-        logger.debug("Selected friends count: {}", selectedCount);
-        return selectedCount;
+            waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
+
+            return driver.findElements(
+                    AppiumBy.xpath(
+                            "//*[starts-with(@content-desc,'send_photo_friend_')]"
+                    )
+            );
+        } catch (Exception e) {
+            logger.warn("Failed to get visible friends: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public int getSelectedFriendsCount() {
+        try {
+            // Ensure we have a valid driver session
+            if (driver == null) {
+                logger.warn("Driver is null, cannot get selected friends count");
+                return 0;
+            }
+            
+            // Check if driver session is still valid
+            try {
+                String sessionId = driver.getSessionId().toString();
+                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                    logger.warn("Driver session ID is null or empty");
+                    return 0;
+                }
+            } catch (Exception e) {
+                logger.warn("Driver session is invalid: {}", e.getMessage());
+                return 0;
+            }
+            
+            List<WebElement> friends = getVisibleFriends();
+            int selectedCount = 0;
+
+            for (WebElement friend : friends) {
+                String selected = friend.getAttribute("selected");
+                if ("true".equals(selected)) {
+                    selectedCount++;
+                }
+            }
+
+            logger.debug("Selected friends count: {}", selectedCount);
+            return selectedCount;
+        } catch (Exception e) {
+            logger.warn("Failed to get selected friends count: {}", e.getMessage());
+            return 0;
+        }
     }
 
     // ==================== VALIDATION METHODS ====================
-public boolean isPhotoPreviewDisplayed() {
+    public boolean isPhotoPreviewDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.SEND_PHOTO_PREVIEW_IMAGE);
     }
-public boolean isCaptionInputDisplayed() {
+
+    public boolean isCaptionInputDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.SEND_PHOTO_CAPTION_INPUT);
     }
-public boolean isFriendsListDisplayed() {
+
+    public boolean isFriendsListDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.SEND_PHOTO_FRIENDS_LIST);
     }
-public boolean isSendButtonEnabled() {
+
+    public boolean isSendButtonEnabled() {
         waitForElementVisible(TestIDs.SEND_PHOTO_SEND_BUTTON);
         return isElementEnabled(sendButton);
     }
-public String getCaptionText() {
+
+    public String getCaptionText() {
         waitForElementVisible(TestIDs.SEND_PHOTO_CAPTION_INPUT);
         return captionInput.getAttribute("text");
     }
-public boolean isLoading() {
+
+    public boolean isLoading() {
         return isElementDisplayedByAccessibilityId(TestIDs.LOADING_SPINNER);
     }
-public void waitForSendingToComplete() {
+
+    public void waitForSendingToComplete() {
         logger.debug("Waiting for photo sending to complete");
         waitForElementToDisappear(TestIDs.LOADING_SPINNER);
         waitForAnimation();
     }
-public boolean isSuccessToastDisplayed() {
+
+    public boolean isSuccessToastDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.TOAST_SUCCESS);
     }
-public boolean isErrorToastDisplayed() {
+
+    public boolean isErrorToastDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.TOAST_ERROR);
     }
-public String getToastMessage() {
+
+    public String getToastMessage() {
         if (isElementDisplayedByAccessibilityId(TestIDs.TOAST_MESSAGE)) {
             return getTextByAccessibilityId(TestIDs.TOAST_MESSAGE);
         }
         return "";
     }
-public boolean isFriendSelected(String userId) {
-        String friendTestId = TestIDs.getSendPhotoFriendId(userId);
 
+    public boolean isAllFriendsSelected() {
         try {
-            WebElement friendElement = findByAccessibilityId(friendTestId);
-            String selected = friendElement.getAttribute("selected");
-            return "true".equals(selected);
+            // Ensure we have a valid driver session
+            if (driver == null) {
+                logger.warn("Driver is null, cannot check all friends selection");
+                return false;
+            }
+            
+            // Check if driver session is still valid
+            try {
+                String sessionId = driver.getSessionId().toString();
+                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                    logger.warn("Driver session ID is null or empty");
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.warn("Driver session is invalid: {}", e.getMessage());
+                return false;
+            }
+            
+            WebElement selectAllElement = findByAccessibilityId(TestIDs.SEND_PHOTO_SELECT_ALL);
+            if (selectAllElement == null) {
+                logger.debug("All friends button not found");
+                return false;
+            }
+            
+            // Check multiple attributes that might indicate selection
+            String selected = selectAllElement.getAttribute("selected");
+            String checked = selectAllElement.getAttribute("checked");
+            String accessibilityState = selectAllElement.getAttribute("accessibilityState");
+            
+            logger.debug("All friends selection attributes: selected='{}', checked='{}', accessibilityState='{}'", 
+                selected, checked, accessibilityState);
+            
+            // Check if any of the selection indicators are true
+            boolean isSelected = "true".equals(selected) || "true".equals(checked);
+            
+            // Also check accessibilityState for React Native components
+            if (!isSelected && accessibilityState != null) {
+                isSelected = accessibilityState.contains("selected") && accessibilityState.contains("true");
+            }
+            
+            logger.debug("All friends final selection state: {}", isSelected);
+            return isSelected;
         } catch (Exception e) {
-            logger.debug("Friend {} not found or not selected", userId);
+            logger.debug("All friends button not found or selection state unavailable: {}", e.getMessage());
             return false;
         }
     }
 
-    // ==================== IMAGE ACTIONS ====================
-public SendPhotoPage tapPhotoPreview() {
+    public boolean isFriendSelected(String userId) {
+        String friendTestId = TestIDs.getSendPhotoFriendId(userId);
+
+        try {
+            if (driver == null) {
+                logger.warn("Driver is null, cannot check friend selection");
+                return false;
+            }
+            
+            try {
+                String sessionId = driver.getSessionId().toString();
+                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                    logger.warn("Driver session ID is null or empty");
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.warn("Driver session is invalid: {}", e.getMessage());
+                return false;
+            }
+            
+            WebElement friendElement = findByAccessibilityId(friendTestId);
+            if (friendElement == null) {
+                logger.debug("Friend element {} not found", friendTestId);
+                return false;
+            }
+            
+            String selected = friendElement.getAttribute("selected");
+            String checked = friendElement.getAttribute("checked");
+            String accessibilityState = friendElement.getAttribute("accessibilityState");
+            
+            logger.debug("Friend {} selection attributes: selected='{}', checked='{}', accessibilityState='{}'", 
+                userId, selected, checked, accessibilityState);
+            
+            // Check if any of the selection indicators are true
+            boolean isSelected = "true".equals(selected) || "true".equals(checked);
+            
+            // Also check accessibilityState for React Native components
+            if (!isSelected && accessibilityState != null) {
+                isSelected = accessibilityState.contains("selected") && accessibilityState.contains("true");
+            }
+            
+            logger.debug("Friend {} final selection state: {}", userId, isSelected);
+            return isSelected;
+        } catch (Exception e) {
+            logger.debug("Friend {} not found or selection state unavailable: {}", userId, e.getMessage());
+            return false;
+        }
+    }
+
+    public SendPhotoPage tapPhotoPreview() {
         logger.info("Tapping photo preview");
         waitForElementClickable(TestIDs.SEND_PHOTO_PREVIEW_IMAGE);
         clickElement(previewImage);
         return this;
     }
-public SendPhotoPage longPressPhotoPreview() {
+
+    public SendPhotoPage longPressPhotoPreview() {
         logger.info("Long pressing photo preview");
         waitForElementVisible(TestIDs.SEND_PHOTO_PREVIEW_IMAGE);
         longPressElement(previewImage, AppConstants.LONG_PRESS_DURATION_MS);
         return this;
     }
 
-    // ==================== NEGATIVE TEST METHODS ====================
-public SendPhotoPage sendPhotoWithoutFriends() {
+    public SendPhotoPage sendPhotoWithoutFriends() {
         logger.info("Attempting to send photo without selecting friends");
         waitForElementClickable(TestIDs.SEND_PHOTO_SEND_BUTTON);
         clickElement(sendButton);
         return this;
     }
-public SendPhotoPage sendPhotoWithLongCaption(String longCaption) {
+
+    public SendPhotoPage sendPhotoWithLongCaption(String longCaption) {
         logger.info("Sending photo with long caption (length: {})", longCaption.length());
         addCaption(longCaption);
         selectAllFriends();
@@ -316,8 +570,6 @@ public SendPhotoPage sendPhotoWithLongCaption(String longCaption) {
         clickElement(sendButton);
         return this;
     }
-
-    // ==================== INHERITED METHODS ====================
 
     @Override
     public boolean isDisplayed() {
@@ -333,15 +585,26 @@ public SendPhotoPage sendPhotoWithLongCaption(String longCaption) {
     public String getPageTitle() {
         return "Send Photo Screen";
     }
-public SendPhotoPage waitForPageToLoad() {
+
+    public SendPhotoPage waitForPageToLoad() {
         logger.info("Waiting for send photo page to load");
-        waitForElementVisible(TestIDs.SEND_PHOTO_SCREEN);
-        waitForElementVisible(TestIDs.SEND_PHOTO_PREVIEW_IMAGE);
-        waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
-        logger.info("Send photo page loaded successfully");
-        return this;
+        
+        try {
+            waitForElementVisible(TestIDs.SEND_PHOTO_SCREEN);
+            waitForAnimation();
+            
+            // Wait for friends list to load
+            waitForElementVisible(TestIDs.SEND_PHOTO_FRIENDS_LIST);
+            
+            logger.info("Send photo page loaded successfully");
+            return this;
+        } catch (Exception e) {
+            logger.error("Failed to load send photo page: {}", e.getMessage());
+            throw new RuntimeException("Send photo page did not load properly", e);
+        }
     }
-public boolean verifyPageElements() {
+
+    public boolean verifyPageElements() {
         logger.info("Verifying send photo page elements");
 
         boolean allElementsPresent =
@@ -357,7 +620,6 @@ public boolean verifyPageElements() {
     }
 
     public boolean isCapturedPhotoDisplayed() {
-
         return isPhotoPreviewDisplayed();
     }
 
@@ -436,6 +698,29 @@ public boolean verifyPageElements() {
     }
 
     public boolean areAnyFriendsSelected() {
-        return getSelectedFriendsCount() > 0;
+        try {
+            // Ensure we have a valid driver session
+            if (driver == null) {
+                logger.warn("Driver is null, cannot check friend selection");
+                return false;
+            }
+            
+            // Check if driver session is still valid
+            try {
+                String sessionId = driver.getSessionId().toString();
+                if (sessionId == null || sessionId.isEmpty() || "null".equals(sessionId)) {
+                    logger.warn("Driver session ID is null or empty");
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.warn("Driver session is invalid: {}", e.getMessage());
+                return false;
+            }
+            
+            return getSelectedFriendsCount() > 0;
+        } catch (Exception e) {
+            logger.warn("Failed to check if any friends are selected: {}", e.getMessage());
+            return false;
+        }
     }
 }

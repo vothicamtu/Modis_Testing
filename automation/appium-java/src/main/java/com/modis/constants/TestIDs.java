@@ -41,11 +41,6 @@ public class TestIDs {
     public static final String TAKE_FLASH_BUTTON = "take_flash_button";
     public static final String TAKE_TOGGLE_CAMERA_BUTTON = "take_toggle_camera_button";
     public static final String TAKE_HISTORY = "take_history";
-    public static final String TAKE_CAMERA_PREVIEW = "take_camera_preview";
-    public static final String TAKE_CAPTION_INPUT = "take_caption_input";
-    public static final String TAKE_RECIPIENTS_LIST = "take_recipients_list";
-    public static final String TAKE_SEND_BUTTON = "take_send_button";
-    public static final String TAKE_SUCCESS_MESSAGE = "take_success_message";
 
     //  SEND PHOTO SCREEN 
     public static final String SEND_PHOTO_SCREEN = "send_photo_screen";
@@ -54,8 +49,8 @@ public class TestIDs {
     public static final String SEND_PHOTO_SEND_BUTTON = "send_photo_send_button";
     public static final String SEND_PHOTO_CLOSE_BUTTON = "send_photo_close_button";
     public static final String SEND_PHOTO_FRIEND_PREFIX = "send_photo_friend_"; // + userId
-    public static final String SEND_PHOTO_SELECT_ALL = "send_photo_select_all";
-    public static final String SEND_PHOTO_FRIENDS_LIST = "send_photo_friends_list";
+    public static final String SEND_PHOTO_SELECT_ALL = "send_photo_all_friends_button";
+    public static final String SEND_PHOTO_FRIENDS_LIST = "send_photo_friends_flatlist";
 
     //  FEED SCREEN (React Emoji Comment) 
     // React Native hiện tại dùng id root cho feed là "home_feed_screen"
@@ -66,22 +61,24 @@ public class TestIDs {
     public static final String FEED_EMOJI_PREFIX = "feed_emoji_"; // + emoji + _ + postId
     // Feed UI dùng FlatList với testID="feed_flatlist"
     public static final String FEED_SCROLL_VIEW = "feed_flatlist";
-    public static final String FEED_REFRESH_CONTROL = "feed_refresh_control";
-    public static final String FEED_LOADING_INDICATOR = "feed_loading_indicator";
 
     //  FRIENDS SCREEN 
     public static final String FRIENDS_SCREEN = "friends_screen";
     public static final String FRIENDS_BACK_BUTTON = "friends_back_button";
     public static final String FRIENDS_SCROLL = "friends_scroll";
     public static final String FRIENDS_SEARCH_INPUT = "friends_search_input";
-    public static final String FRIENDS_SEARCH_BUTTON = "friends_search_button";
-    public static final String FRIENDS_CLEAR_SEARCH = "friends_clear_search";
-    public static final String FRIENDS_TAB_FRIENDS = "friends_tab_friends";
-    public static final String FRIENDS_TAB_REQUESTS = "friends_tab_requests";
-    public static final String FRIENDS_TAB_SENT = "friends_tab_sent";
-    public static final String FRIENDS_ADD_BUTTON_PREFIX = "friends_add_button_"; // + userId
-    public static final String FRIENDS_ACCEPT_BUTTON_PREFIX = "friends_accept_button_"; // + userId
-    public static final String FRIENDS_DECLINE_BUTTON_PREFIX = "friends_decline_button_"; // + userId
+    public static final String FRIENDS_CLEAR_SEARCH = "friends_search_input_clear_button";
+    public static final String FRIENDS_LIST_EMPTY = "friends-list-empty";
+    public static final String FRIENDS_LIST = "friends-list-flatlist";
+    public static final String FRIEND_ITEM_PREFIX = "friend-item-"; // + friendReqId
+    public static final String FRIEND_AVATAR_PREFIX = "friend-avatar-"; // + friendReqId
+    public static final String FRIEND_NAME_PREFIX = "friend-name-"; // + friendReqId
+    public static final String FRIEND_UNFRIEND_PREFIX = "friend-unfriend-"; // + friendReqId
+    public static final String FRIEND_REQUEST_ITEM_PREFIX = "friend_request_item_"; // + normalized name
+    public static final String FRIEND_REQUEST_AVATAR_SUFFIX = "_avatar";
+    public static final String FRIEND_REQUEST_NAME_SUFFIX = "_name";
+    public static final String FRIEND_REQUEST_ACCEPT_SUFFIX = "_accept_button";
+    public static final String FRIEND_REQUEST_REJECT_SUFFIX = "_reject_button";
 
     //  PROFILE SCREEN 
     public static final String PROFILE_SCREEN = "profile_screen";
@@ -102,6 +99,7 @@ public class TestIDs {
     public static final String MESSAGE_BACK_BUTTON = "messages-header-back-button";
     public static final String MESSAGE_CONVERSATION_LIST = "messages_list";
     public static final String MESSAGE_CONVERSATION_ITEM_PREFIX = "message_conversation_item_"; // + conversationId
+    public static final String MESSAGE_CONVERSATION_LAST_MESSAGE_SUFFIX = "_last_message";
     public static final String MESSAGE_EMPTY_STATE = "messages_list_empty";
 
     //  CONVERSATION SCREEN 
@@ -116,8 +114,8 @@ public class TestIDs {
     //  ALL IMAGES SCREEN 
     public static final String ALL_IMAGES_SCREEN = "all_images_screen";
     public static final String ALL_IMAGES_BACK_BUTTON = "all_images_back_button";
-    public static final String ALL_IMAGES_GRID = "all_images_grid";
-    public static final String ALL_IMAGES_ITEM_PREFIX = "all_images_item_"; // + imageId
+    public static final String ALL_IMAGES_GRID = "all_images_flatlist";
+    public static final String ALL_IMAGES_ITEM_PREFIX = "all_images_grid_item_"; // + index
     public static final String ALL_IMAGES_EMPTY_STATE = "all_images_empty_state";
 
     //  TOP BAR COMPONENT 
@@ -156,19 +154,10 @@ public class TestIDs {
     public static final String PROGRESS_BAR = "progress_bar";
     public static final String REFRESH_INDICATOR = "refresh_indicator";
 
-    //  PERMISSIONS 
-    public static final String PERMISSION_DIALOG = "permission_dialog";
-    public static final String PERMISSION_ALLOW_BUTTON = "permission_allow_button";
-    public static final String PERMISSION_DENY_BUTTON = "permission_deny_button";
-    public static final String CAMERA_PERMISSION_DIALOG = "camera_permission_dialog";
-    public static final String GALLERY_PERMISSION_DIALOG = "gallery_permission_dialog";
-
     //  SEARCH COMPONENTS 
-    public static final String SEARCH_INPUT = "search_input";
-    public static final String SEARCH_BUTTON = "search_button";
-    public static final String SEARCH_CLEAR_BUTTON = "search_clear_button";
     public static final String SEARCH_RESULTS_LIST = "search_results_list";
     public static final String SEARCH_RESULT_ITEM_PREFIX = "search_result_item_"; // + userId
+    public static final String SEARCH_RESULT_ADD_BUTTON_PREFIX = "search_result_add_button_"; // + userId
     public static final String SEARCH_EMPTY_STATE = "search_empty_state";
 
     //  EMOJI PICKER 
@@ -209,12 +198,48 @@ public class TestIDs {
         return FEED_EMOJI_PREFIX + emoji + "_" + postId;
     }
 
-    public static String getFriendButtonId(String userId) {
-        return FRIENDS_ADD_BUTTON_PREFIX + userId;
-    }
-
     public static String getSendPhotoFriendId(String userId) {
         return SEND_PHOTO_FRIEND_PREFIX + userId;
+    }
+
+    public static String getFriendItemId(String friendReqId) {
+        return FRIEND_ITEM_PREFIX + friendReqId;
+    }
+
+    public static String getFriendAvatarId(String friendReqId) {
+        return FRIEND_AVATAR_PREFIX + friendReqId;
+    }
+
+    public static String getFriendNameId(String friendReqId) {
+        return FRIEND_NAME_PREFIX + friendReqId;
+    }
+
+    public static String getFriendRequestItemId(String requestId) {
+        return FRIEND_REQUEST_ITEM_PREFIX + requestId;
+    }
+
+    public static String getFriendRequestAvatarId(String requestId) {
+        return getFriendRequestItemId(requestId) + FRIEND_REQUEST_AVATAR_SUFFIX;
+    }
+
+    public static String getFriendRequestNameId(String requestId) {
+        return getFriendRequestItemId(requestId) + FRIEND_REQUEST_NAME_SUFFIX;
+    }
+
+    public static String getFriendRequestAcceptButtonId(String requestId) {
+        return getFriendRequestItemId(requestId) + FRIEND_REQUEST_ACCEPT_SUFFIX;
+    }
+
+    public static String getFriendRequestRejectButtonId(String requestId) {
+        return getFriendRequestItemId(requestId) + FRIEND_REQUEST_REJECT_SUFFIX;
+    }
+
+    public static String getSearchResultItemId(String userId) {
+        return SEARCH_RESULT_ITEM_PREFIX + userId;
+    }
+
+    public static String getSearchResultAddButtonId(String userId) {
+        return SEARCH_RESULT_ADD_BUTTON_PREFIX + userId;
     }
 
     // Private constructor to prevent instantiation

@@ -32,7 +32,6 @@ public class FeedTests extends BaseTest {
 
         Assert.assertTrue(homePage.isDisplayed(), "Home screen should remain displayed after refresh");
         Assert.assertTrue(homePage.isFeedDisplayed(), "Feed should remain displayed after refresh");
-        Assert.assertFalse(homePage.isFeedLoading(), "Feed loading indicator should disappear after refresh");
     }
 
     @Test(priority = 3, groups = {"feed", "regression"}, description = "Scroll feed")

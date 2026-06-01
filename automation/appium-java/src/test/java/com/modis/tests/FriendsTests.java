@@ -46,25 +46,110 @@ public class FriendsTests extends BaseTest {
         }
         return data;
     }
-    
+
     @BeforeMethod(alwaysRun = true)
     public void loginBeforeTest() {
-        logger.info("Logging in before friends test with real user data");
 
-        Map<String, Object> testUser = testDataReader.getRandomValidUser();
-        String username = (String) testUser.get("username");
-        String password = (String) testUser.get("password");
-        
-        LoadingPage loadingPage = new LoadingPage();
-        LoginPage loginPage = loadingPage.clickLoginButton();
-        BasePage afterLogin = loginPage.login(username, password);
-        Assert.assertTrue(afterLogin instanceof HomePage,
-                "Login should navigate to HomePage, but got: " + (afterLogin != null ? afterLogin.getClass().getSimpleName() : "null"));
+        logger.info(
+                "Logging in before friends test"
+        );
+
+        try {
+
+            HomePage currentHome =
+                    new HomePage();
+
+            if (currentHome.isDisplayed()) {
+
+                logger.info(
+                        "Already on Home screen - skipping login"
+                );
+
+                homePage = currentHome;
+
+                return;
+            }
+
+        } catch (Exception ignore) {
+        }
+
+        LoginPage loginPage;
+
+        try {
+
+            LoginPage currentLogin =
+                    new LoginPage();
+
+            if (currentLogin.isDisplayed()) {
+
+                logger.info(
+                        "Detected Login screen"
+                );
+
+                loginPage = currentLogin;
+
+            } else {
+
+                logger.info(
+                        "Detected Loading screen"
+                );
+
+                LoadingPage loadingPage =
+                        new LoadingPage();
+
+                loginPage =
+                        loadingPage.clickLoginButton();
+            }
+
+        } catch (Exception e) {
+
+            logger.warn(
+                    "Fallback to LoadingPage flow: {}",
+                    e.getMessage()
+            );
+
+            LoadingPage loadingPage =
+                    new LoadingPage();
+
+            loginPage =
+                    loadingPage.clickLoginButton();
+        }
+
+        Map<String, Object> testUser =
+                testDataReader.getValidUserByUsername("tu");
+
+        Assert.assertNotNull(
+                testUser,
+                "Test user should exist"
+        );
+
+        String username =
+                (String) testUser.get("username");
+
+        String password =
+                (String) testUser.get("password");
+
+        BasePage afterLogin =
+                loginPage.login(username, password);
+
+        Assert.assertTrue(
+                afterLogin instanceof HomePage,
+                "Login should navigate to HomePage"
+        );
+
         homePage = (HomePage) afterLogin;
+
         homePage.waitForTopbarReadyAfterLogin(8);
-        
-        Assert.assertTrue(homePage.isDisplayed(), "Should be logged in before friends tests");
-        logger.info("Logged in successfully with user: " + username);
+
+        Assert.assertTrue(
+                homePage.isDisplayed(),
+                "Should be logged in before friends tests"
+        );
+
+        logger.info(
+                "Logged in successfully with user: {}",
+                username
+        );
     }
     
     @Test(priority = 1, groups = {"friends", "regression", "data"}, 
@@ -105,9 +190,16 @@ public class FriendsTests extends BaseTest {
                     "Request should show correct sender name");
                 
                 if ("pending".equals(status)) {
-                    Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(senderUsername), 
+                    String firstRequestId = friendsPage.getFirstFriendRequestId();
+
+                    Assert.assertFalse(
+                            firstRequestId.isEmpty(),
+                            "A visible friend request id should be available"
+                    );
+
+                    Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(firstRequestId),
                         "Accept button should be displayed for pending requests");
-                    Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(senderUsername), 
+                    Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(firstRequestId),
                         "Decline button should be displayed for pending requests");
                 }
             }
@@ -204,8 +296,8 @@ public class FriendsTests extends BaseTest {
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.clickRequestsTab();
         
-        Assert.assertTrue(friendsPage.isRequestsTabSelected(), 
-            "Requests tab should be selected after clicking");
+        Assert.assertTrue(friendsPage.isFriendRequestsListDisplayed(),
+            "Friend requests section should be displayed after scrolling to it");
         
         if (friendsPage.hasFriendRequests()) {
             Assert.assertTrue(friendsPage.isFriendRequestsListDisplayed(), 
@@ -316,8 +408,8 @@ public class FriendsTests extends BaseTest {
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.clickSentTab();
         
-        Assert.assertTrue(friendsPage.isSentTabSelected(), 
-            "Sent tab should be selected after clicking");
+        Assert.assertTrue(friendsPage.isSentRequestsListDisplayed(),
+            "Sent requests section should be displayed after scrolling to it");
         
         if (friendsPage.hasSentRequests()) {
             Assert.assertTrue(friendsPage.isSentRequestsListDisplayed(), 
@@ -331,90 +423,8 @@ public class FriendsTests extends BaseTest {
         
         logger.info("Sent requests tab test completed successfully");
     }
-    
-    @Test(priority = 10, groups = {"friends", "regression"}, 
-          description = "Verify friend search functionality")
-    public void testFriendSearch() {
-        logger.info("Starting friend search test");
-        
-        FriendsPage friendsPage = homePage.navigateToFriends();
-        
-        if (friendsPage.hasFriends()) {
-            String firstFriendName = friendsPage.getFirstFriendName();
-            String searchTerm = firstFriendName.substring(0, Math.min(3, firstFriendName.length()));
-            
-            friendsPage.searchFriends(searchTerm);
-            
-            Assert.assertTrue(friendsPage.isSearchResultsDisplayed(), 
-                "Search results should be displayed");
-            
-            if (friendsPage.hasSearchResults()) {
-                Assert.assertTrue(friendsPage.getSearchResultsCount() > 0, 
-                    "Should have search results for existing friend name");
-            }
-            
-            friendsPage.clearSearch();
-            Assert.assertTrue(friendsPage.isFriendsListDisplayed(), 
-                "Friends list should be displayed after clearing search");
-        } else {
-            logger.info("No friends available for testing search functionality");
-        }
-        
-        logger.info("Friend search test completed successfully");
-    }
-    
-    @Test(priority = 11, groups = {"friends", "regression"}, 
-          description = "Verify search with no results")
-    public void testSearchWithNoResults() {
-        logger.info("Starting search with no results test");
-        
-        FriendsPage friendsPage = homePage.navigateToFriends();
-        
-        String nonExistentSearchTerm = "nonexistentuser" + System.currentTimeMillis();
-        friendsPage.searchFriends(nonExistentSearchTerm);
-        
-        Assert.assertTrue(friendsPage.isNoSearchResultsDisplayed(), 
-            "No results state should be displayed for non-existent search term");
-        
-        friendsPage.clearSearch();
-        
-        if (friendsPage.hasFriends()) {
-            Assert.assertTrue(friendsPage.isFriendsListDisplayed(), 
-                "Friends list should be displayed after clearing search");
-        } else {
-            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(), 
-                "Empty friends state should be displayed after clearing search");
-        }
-        
-        logger.info("Search with no results test completed successfully");
-    }
-    
-    @Test(priority = 12, groups = {"friends", "regression"}, 
-          description = "Verify search input validation")
-    public void testSearchInputValidation() {
-        logger.info("Starting search input validation test");
-        
-        FriendsPage friendsPage = homePage.navigateToFriends();
-        
-        friendsPage.enterSearchText("");
-        Assert.assertFalse(friendsPage.isSearchButtonEnabled(), 
-            "Search button should be disabled for empty input");
-        
-        friendsPage.enterSearchText("   ");
-        Assert.assertFalse(friendsPage.isSearchButtonEnabled(), 
-            "Search button should be disabled for whitespace-only input");
-        
-        friendsPage.enterSearchText("ab");
-        logger.info("Search button enabled for 2 characters: {}", friendsPage.isSearchButtonEnabled());
-        
-        friendsPage.enterSearchText("test");
-        Assert.assertTrue(friendsPage.isSearchButtonEnabled(), 
-            "Search button should be enabled for valid input");
-        
-        logger.info("Search input validation test completed successfully");
-    }
-    
-    @Test(priority = 13, groups = {"friends", "regression"}, 
+
+    @Test(priority = 10, groups = {"friends", "regression"},
           description = "Verify add friend from search results")
     public void testAddFriendFromSearch() {
         logger.info("Starting add friend from search test");
@@ -446,38 +456,7 @@ public class FriendsTests extends BaseTest {
         logger.info("Add friend from search test completed successfully");
     }
     
-    @Test(priority = 14, groups = {"friends", "navigation"}, 
-          description = "Verify tab navigation functionality")
-    public void testTabNavigation() {
-        logger.info("Starting tab navigation test");
-        
-        FriendsPage friendsPage = homePage.navigateToFriends();
-        
-        Assert.assertTrue(friendsPage.isFriendsTabSelected(), 
-            "Friends tab should be selected by default");
-        
-        friendsPage.clickRequestsTab();
-        Assert.assertTrue(friendsPage.isRequestsTabSelected(), 
-            "Requests tab should be selected after clicking");
-        Assert.assertFalse(friendsPage.isFriendsTabSelected(), 
-            "Friends tab should not be selected when Requests tab is active");
-        
-        friendsPage.clickSentTab();
-        Assert.assertTrue(friendsPage.isSentTabSelected(), 
-            "Sent tab should be selected after clicking");
-        Assert.assertFalse(friendsPage.isRequestsTabSelected(), 
-            "Requests tab should not be selected when Sent tab is active");
-        
-        friendsPage.clickFriendsTab();
-        Assert.assertTrue(friendsPage.isFriendsTabSelected(), 
-            "Friends tab should be selected after clicking");
-        Assert.assertFalse(friendsPage.isSentTabSelected(), 
-            "Sent tab should not be selected when Friends tab is active");
-        
-        logger.info("Tab navigation test completed successfully");
-    }
-    
-    @Test(priority = 15, groups = {"friends", "regression"}, 
+    @Test(priority = 11, groups = {"friends", "regression"},
           description = "Verify friends list scrolling")
     public void testFriendsListScrolling() {
         logger.info("Starting friends list scrolling test");
@@ -503,7 +482,7 @@ public class FriendsTests extends BaseTest {
         logger.info("Friends list scrolling test completed successfully");
     }
     
-    @Test(priority = 16, groups = {"friends", "regression"}, 
+    @Test(priority = 12, groups = {"friends", "regression"},
           description = "Verify friends list refresh")
     public void testFriendsListRefresh() {
         logger.info("Starting friends list refresh test");
@@ -526,7 +505,7 @@ public class FriendsTests extends BaseTest {
         logger.info("Friends list refresh test completed successfully");
     }
     
-    @Test(priority = 17, groups = {"friends", "regression"}, 
+    @Test(priority = 13, groups = {"friends", "regression"},
           description = "Verify network error handling")
     public void testNetworkErrorHandling() {
         logger.info("Starting network error handling test");

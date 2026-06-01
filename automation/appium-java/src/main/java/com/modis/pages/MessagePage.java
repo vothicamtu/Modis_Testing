@@ -209,7 +209,7 @@ public class MessagePage extends BasePage {
         try {
             // Strategy 4: If we have conversation items, the list must be displayed
             List<WebElement> conversationItems = getDriver().findElements(
-                    By.xpath("//*[contains(@content-desc,'message_conversation_item_')]")
+                    By.xpath("//*[contains(@content-desc,'" + TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + "')]")
             );
             
             if (!conversationItems.isEmpty()) {
@@ -230,7 +230,9 @@ public class MessagePage extends BasePage {
             // Strategy 5: Fallback - use UiAutomator selector for conversation items
             List<WebElement> conversationItems = getDriver().findElements(
                     AppiumBy.androidUIAutomator(
-                            "new UiSelector().descriptionContains(\"message_conversation_item_\")"
+                            "new UiSelector().descriptionContains(\""
+                                    + TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                                    + "\")"
                     )
             );
             
@@ -272,7 +274,9 @@ public class MessagePage extends BasePage {
             return getDriver()
                     .findElements(
                             AppiumBy.androidUIAutomator(
-                                    "new UiSelector().descriptionContains(\"message_conversation_item_\")"
+                                    "new UiSelector().descriptionContains(\""
+                                            + TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                                            + "\")"
                             )
                     )
                     .size();
@@ -281,79 +285,6 @@ public class MessagePage extends BasePage {
 
             return 0;
         }
-    }
-
-    public boolean hasUnreadMessages(String conversationId) {
-        String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
-
-        try {
-            WebElement conversationItem = findByAccessibilityId(conversationItemId);
-            // Check for unread indicator (implementation depends on UI design)
-            String unreadState = conversationItem.getAttribute("unread");
-            return "true".equals(unreadState);
-        } catch (Exception e) {
-            logger.debug("Conversation {} not found or unread state unavailable", conversationId);
-            return false;
-        }
-    }
-
-    public String getLastMessagePreview(String conversationId) {
-        String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
-
-        try {
-            WebElement conversationItem = findByAccessibilityId(conversationItemId);
-            // Get last message text (implementation depends on UI structure)
-            return conversationItem.getAttribute("lastMessage");
-        } catch (Exception e) {
-            logger.debug("Last message preview not available for conversation: {}", conversationId);
-            return "";
-        }
-    }
-public String getConversationTimestamp(String conversationId) {
-        String conversationItemId = TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + conversationId;
-
-        try {
-            WebElement conversationItem = findByAccessibilityId(conversationItemId);
-            return conversationItem.getAttribute("timestamp");
-        } catch (Exception e) {
-            logger.debug("Timestamp not available for conversation: {}", conversationId);
-            return "";
-        }
-    }
-
-    // SEARCH ACTIONS
-public MessagePage searchConversations(String searchQuery) {
-        logger.info("Searching conversations: {}", searchQuery);
-
-        // Implementation depends on whether search functionality exists
-        // This could involve opening search, entering query, etc.
-
-        return this;
-    }
-public MessagePage clearConversationSearch() {
-        logger.info("Clearing conversation search");
-
-        // Implementation depends on search UI
-
-        return this;
-    }
-
-    // FILTER ACTIONS
-public MessagePage filterConversations(String filterType) {
-        logger.info("Filtering conversations by: {}", filterType);
-
-        // Implementation depends on filtering UI
-
-        return this;
-    }
-public MessagePage showUnreadOnly() {
-        logger.info("Showing only unread conversations");
-        return filterConversations("unread");
-    }
-
-    public MessagePage showAllConversations() {
-        logger.info("Showing all conversations");
-        return filterConversations("all");
     }
 
     // NEGATIVE TEST METHODS
@@ -384,17 +315,20 @@ public MessagePage showUnreadOnly() {
     public boolean waitForNewMessage(int timeoutSeconds) {
         logger.info("Waiting for new message notification for {} seconds", timeoutSeconds);
 
-        // Implementation depends on how new messages are indicated
-        // This could check for notification badges, list updates, etc.
+        int initialCount = getVisibleConversationsCount();
+        long endTime = System.currentTimeMillis() + timeoutSeconds * 1000L;
 
-        try {
-            Thread.sleep(timeoutSeconds * 1000L);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("Wait for new message interrupted", e);
+        while (System.currentTimeMillis() < endTime) {
+            refreshConversations();
+
+            if (getVisibleConversationsCount() > initialCount) {
+                return true;
+            }
+
+            waitFor(1);
         }
 
-        return false; // Placeholder implementation
+        return false;
     }
 
     @Override
@@ -538,7 +472,7 @@ public MessagePage showUnreadOnly() {
             try {
                 logger.debug("Attempting XPath search for conversation items");
                 conversationItems = getDriver().findElements(
-                        By.xpath("//*[contains(@content-desc,'message_conversation_item_')]")
+                        By.xpath("//*[contains(@content-desc,'" + TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + "')]")
                 );
                 logger.info("Found {} conversation items via XPath", conversationItems.size());
             } catch (Exception e) {
@@ -557,7 +491,9 @@ public MessagePage showUnreadOnly() {
                     logger.debug("Attempting UiAutomator search for conversation items");
                     conversationItems = getDriver().findElements(
                             AppiumBy.androidUIAutomator(
-                                    "new UiSelector().descriptionContains(\"message_conversation_item_\")"
+                                    "new UiSelector().descriptionContains(\""
+                                            + TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                                            + "\")"
                             )
                     );
                     logger.info("Found {} conversation items via UiAutomator", conversationItems.size());
@@ -622,7 +558,7 @@ public MessagePage showUnreadOnly() {
             try {
                 logger.debug("Attempting XPath search for conversation elements");
                 elements = getDriver().findElements(
-                        By.xpath("//*[contains(@content-desc,'message_conversation_item_')]")
+                        By.xpath("//*[contains(@content-desc,'" + TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX + "')]")
                 );
                 logger.info("Found {} conversation items via XPath", elements.size());
             } catch (Exception e) {
@@ -641,7 +577,9 @@ public MessagePage showUnreadOnly() {
                     logger.debug("Attempting UiAutomator search for conversation elements");
                     elements = getDriver().findElements(
                             AppiumBy.androidUIAutomator(
-                                    "new UiSelector().descriptionContains(\"message_conversation_item_\")"
+                                    "new UiSelector().descriptionContains(\""
+                                            + TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
+                                            + "\")"
                             )
                     );
                     logger.info("Found {} conversation items via UiAutomator", elements.size());
@@ -762,47 +700,6 @@ public MessagePage showUnreadOnly() {
         }
     }
 
-    public MessagePage clickNewMessageIcon() {
-
-        logger.info(
-                "Clicking new message icon"
-        );
-
-        clickByAccessibilityId(
-                "new_message_button"
-        );
-
-        waitForAnimation();
-
-        return this;
-    }
-
-    public boolean isNewMessageScreenDisplayed() {
-
-        return isElementDisplayedByAccessibilityId(
-                "new_message_screen"
-        );
-    }
-
-    public MessagePage enterSearchTerm(String term) {
-
-        logger.info(
-                "Entering search term: {}",
-                term
-        );
-
-        waitForElementVisible(
-                TestIDs.SEARCH_INPUT
-        );
-
-        enterTextByAccessibilityId(
-                TestIDs.SEARCH_INPUT,
-                term
-        );
-
-        return this;
-    }
-
     public boolean isUserInSearchResults(
             String username
     ) {
@@ -859,31 +756,6 @@ public MessagePage showUnreadOnly() {
         conversationPage.waitForPageToLoad();
 
         return conversationPage;
-    }
-
-    public boolean isSearchInputDisplayed() {
-
-        return isElementDisplayedByAccessibilityId(
-                TestIDs.SEARCH_INPUT
-        );
-    }
-
-    public MessagePage clearSearch() {
-
-        logger.info(
-                "Clearing search"
-        );
-
-        if (isElementDisplayedByAccessibilityId(
-                TestIDs.SEARCH_CLEAR_BUTTON
-        )) {
-
-            clickByAccessibilityId(
-                    TestIDs.SEARCH_CLEAR_BUTTON
-            );
-        }
-
-        return this;
     }
 
     public boolean isConversationNameDisplayed(
@@ -1002,7 +874,7 @@ public MessagePage showUnreadOnly() {
             String lastMessageId =
                     TestIDs.MESSAGE_CONVERSATION_ITEM_PREFIX
                             + id
-                            + "_last_message";
+                            + TestIDs.MESSAGE_CONVERSATION_LAST_MESSAGE_SUFFIX;
 
             return isElementDisplayedByAccessibilityId(
                     lastMessageId

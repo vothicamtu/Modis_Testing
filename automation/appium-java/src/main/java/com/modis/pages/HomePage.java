@@ -60,14 +60,6 @@ public class HomePage extends BasePage {
     @iOSXCUITFindBy(accessibility = TestIDs.FEED_SCROLL_VIEW)
     private WebElement feedScrollView;
 
-    @AndroidFindBy(accessibility = TestIDs.FEED_REFRESH_CONTROL)
-    @iOSXCUITFindBy(accessibility = TestIDs.FEED_REFRESH_CONTROL)
-    private WebElement refreshControl;
-
-    @AndroidFindBy(accessibility = TestIDs.FEED_LOADING_INDICATOR)
-    @iOSXCUITFindBy(accessibility = TestIDs.FEED_LOADING_INDICATOR)
-    private WebElement feedLoadingIndicator;
-
     // NAVIGATION ACTIONS
 public ProfilePage navigateToProfile() {
         logger.info("Navigating to profile screen");
@@ -160,26 +152,11 @@ public ProfilePage navigateToProfile() {
     }
 
     public TakePage navigateToCamera() {
-
-        logger.info(
-                "Navigating to camera screen using gesture"
-        );
-
+        logger.info("Navigating to camera screen using gesture");
         try {
-
-            // Wait stable topbar instead of HOME_SCREEN
-            waitForElementVisible(
-                    TestIDs.TOPBAR_AVATAR_BUTTON
-            );
-
+            waitForElementVisible(TestIDs.TOPBAR_AVATAR_BUTTON);
             waitForAnimation();
-
-            swipeUp();
-
-            waitFor(2);
-
         } catch (Exception e) {
-
             logger.warn(
                     "Camera navigation gesture failed: {}",
                     e.getMessage()
@@ -197,9 +174,6 @@ public TakePage navigateToCameraAlternative() {
         return new TakePage();
     }
 
-    public boolean isPhotoSentSuccessMessageDisplayed() {
-        return true;
-    }
 public HomePage openFilterDropdown() {
         logger.info("Opening filter dropdown");
         clickByAccessibilityId(TestIDs.TOPBAR_FILTER_BUTTON);
@@ -241,11 +215,7 @@ public HomePage scrollToBottomOfFeed() {
     }
 public void waitForFeedToLoad() {
         logger.debug("Waiting for feed to load");
-        waitForElementToDisappear(TestIDs.FEED_LOADING_INDICATOR);
         waitForAnimation();
-    }
-public boolean isFeedLoading() {
-        return isElementDisplayedByAccessibilityId(TestIDs.FEED_LOADING_INDICATOR);
     }
 
     // FEED POST INTERACTIONS
@@ -373,24 +343,6 @@ public HomePage performDoubleTapGesture() {
         tapAtCoordinates(centerX, centerY);
         waitFor(1); // Short delay between taps
         tapAtCoordinates(centerX, centerY);
-
-        return this;
-    }
-
-    // SEARCH AND FILTER
-public HomePage applyFilter(String filterOption) {
-        logger.info("Applying filter: {}", filterOption);
-
-        // Implementation depends on actual filter UI
-        // This is a placeholder for filter functionality
-
-        return this;
-    }
-
-    public HomePage clearFilters() {
-        logger.info("Clearing all filters");
-
-        // Implementation depends on actual filter UI
 
         return this;
     }

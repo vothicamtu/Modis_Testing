@@ -21,60 +21,36 @@ public class SearchTests extends BaseTest {
     @Test(priority = 1, groups = {"search", "smoke", "regression"}, description = "Search users with results")
     public void testSearchUsersWithResults() {
         FriendsPage friendsPage = homePage.navigateToFriends();
-
         friendsPage.searchUsers("camtu");
-
-        Assert.assertTrue(
-                friendsPage.areSearchResultsDisplayed() || friendsPage.hasSearchResults(),
-                "Search results should be displayed for an existing user"
-        );
+        Assert.assertTrue(friendsPage.areSearchResultsDisplayed() || friendsPage.hasSearchResults(), "Search results should be displayed for an existing user");
     }
 
     @Test(priority = 2, groups = {"search", "regression"}, description = "Search users with no results")
     public void testSearchUsersWithNoResults() {
         FriendsPage friendsPage = homePage.navigateToFriends();
-
         friendsPage.searchForNonExistentUser();
-
-        Assert.assertTrue(
-                friendsPage.isSearchEmptyStateDisplayed() || friendsPage.isNoSearchResultsDisplayed(),
-                "No-result state should be displayed for a non-existent user"
-        );
+        Assert.assertTrue(friendsPage.isSearchEmptyStateDisplayed() || friendsPage.isNoSearchResultsDisplayed(), "No-result state should be displayed for a non-existent user");
     }
 
     @Test(priority = 3, groups = {"search", "regression"}, description = "Validate empty search input")
     public void testSearchInputValidationForEmptyValue() {
         FriendsPage friendsPage = homePage.navigateToFriends();
-
         friendsPage.enterSearchText("");
-
-        Assert.assertFalse(
-                friendsPage.isSearchQueryValid(""),
-                "Empty search query should be invalid"
-        );
+        Assert.assertTrue(friendsPage.isFriendsListDisplayed(), "Friends screen should remain displayed when search input is empty");
+        Assert.assertFalse(friendsPage.hasSearchResults(), "No search results should be shown for empty search");
     }
 
     @Test(priority = 4, groups = {"search", "regression"}, description = "Validate short search input")
     public void testSearchInputValidationForShortValue() {
         FriendsPage friendsPage = homePage.navigateToFriends();
-
         friendsPage.enterSearchText("a");
-
-        Assert.assertFalse(
-                friendsPage.isSearchQueryValid("a"),
-                "Single-character search query should be invalid"
-        );
+        Assert.assertFalse(friendsPage.isSearchQueryValid("a"), "Single-character search query should be invalid");
     }
 
-    @Test(priority = 5, groups = {"search", "regression"}, description = "Validate valid search input")
-    public void testSearchInputValidationForValidValue() {
+    @Test(priority = 5, groups = {"search", "regression"}, description = "Search with special characters")
+    public void testSearchWithSpecialCharacters() {
         FriendsPage friendsPage = homePage.navigateToFriends();
-
-        friendsPage.enterSearchText("camtu");
-
-        Assert.assertTrue(
-                friendsPage.isSearchQueryValid("camtu"),
-                "Valid search query should pass validation"
-        );
+        friendsPage.enterSearchText("!@#$%^&*");
+        Assert.assertFalse(friendsPage.hasSearchResults(), "Special characters should not return valid users");
     }
 }

@@ -266,12 +266,6 @@ public class ConversationPage extends BasePage {
         return false;
     }
 
-    // TYPING INDICATORS
-    public boolean isTypingIndicatorShown() {
-        // Implementation depends on how typing indicator is implemented
-        return isElementDisplayedByAccessibilityId("typing_indicator");
-    }
-
     public ConversationPage simulateTyping(String text) {
         logger.info("Simulating typing: {}", text);
 
@@ -288,28 +282,6 @@ public class ConversationPage extends BasePage {
                 break;
             }
         }
-
-        return this;
-    }
-
-    // MESSAGE REACTIONS
-    public ConversationPage reactToMessage(String messageId, String reaction) {
-        logger.info("Reacting to message {} with {}", messageId, reaction);
-
-        // Long press to show reaction options
-        longPressMessage(messageId);
-
-        // Select reaction (implementation depends on UI)
-        // This is a placeholder for reaction functionality
-
-        return this;
-    }
-
-    // MESSAGE SEARCH
-    public ConversationPage searchMessages(String searchQuery) {
-        logger.info("Searching messages: {}", searchQuery);
-
-        // Implementation depends on search functionality
 
         return this;
     }
