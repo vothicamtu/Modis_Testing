@@ -34,19 +34,10 @@ public class PhotoSharingTests extends BaseTest {
     public void testToggleFlash() {
         TakePage takePage = new TakePage();
         takePage.waitForPageToLoad();
-
-        if (!takePage.isFlashButtonDisplayed()) {
-            throw new SkipException("Flash button is not available on this device");
-        }
-
+        Assert.assertTrue(takePage.isFlashButtonDisplayed(), "Flash button should be displayed");
         boolean initialFlashState = takePage.isFlashEnabled();
         takePage.toggleFlash();
-
-        Assert.assertNotEquals(
-                takePage.isFlashEnabled(),
-                initialFlashState,
-                "Flash state should change after toggle"
-        );
+        Assert.assertNotEquals(takePage.isFlashEnabled(), initialFlashState, "Flash state should change after toggle");
     }
 
     @Test(priority = 3, groups = {"photo-sharing", "regression"}, description = "Switch front and back camera")
@@ -109,9 +100,7 @@ public class PhotoSharingTests extends BaseTest {
         Assert.assertTrue(homePage.isDisplayed(), "Should return to Home page after sending photo");
     }
 
-    @Test(priority = 9,
-            groups = {"photo-sharing", "regression"},
-            description = "View feed after sending photo")
+    @Test(priority = 9, groups = {"photo-sharing", "regression"}, description = "View feed after sending photo")
     public void testViewPhotoHistory() {
 
         SendPhotoPage sendPhotoPage =
