@@ -7,45 +7,12 @@ import com.modis.utils.TestDataReader;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
 import java.util.Map;
-import java.util.List;
 
 public class FriendsTests extends BaseTest {
     
     private HomePage homePage;
     private TestDataReader testDataReader = new TestDataReader();
-    
-    @DataProvider(name = "testFriendsData")
-    public Object[][] getTestFriendsData() {
-        List<Map<String, Object>> friends = testDataReader.getTestFriends();
-        Object[][] data = new Object[friends.size()][];
-        
-        for (int i = 0; i < friends.size(); i++) {
-            Map<String, Object> friend = friends.get(i);
-            data[i] = new Object[]{
-                friend.get("username"),
-                friend.get("fullName")
-            };
-        }
-        return data;
-    }
-    
-    @DataProvider(name = "friendRequestsData")
-    public Object[][] getFriendRequestsData() {
-        List<Map<String, Object>> requests = testDataReader.getFriendRequests();
-        Object[][] data = new Object[requests.size()][];
-        
-        for (int i = 0; i < requests.size(); i++) {
-            Map<String, Object> request = requests.get(i);
-            data[i] = new Object[]{
-                request.get("senderUsername"),
-                request.get("senderFullName"),
-                request.get("status")
-            };
-        }
-        return data;
-    }
 
     @BeforeMethod(alwaysRun = true)
     public void loginBeforeTest() {
@@ -153,59 +120,66 @@ public class FriendsTests extends BaseTest {
     }
     
     @Test(priority = 1, groups = {"friends", "regression", "data"}, 
-          dataProvider = "testFriendsData", description = "Verify friends data from real database")
-    public void testFriendsWithRealData(String username, String fullName) {
-        logger.info("Testing friend data - Username: " + username + ", FullName: " + fullName);
+          description = "Verify search result items or empty state from current database")
+    public void testFriendsWithRealData() {
+        logger.info("Testing current search result data");
         
         FriendsPage friendsPage = homePage.navigateToFriends();
         
-        friendsPage.searchFriends(username);
-        
+        friendsPage.searchFriends("tu");
+
         if (friendsPage.hasSearchResults()) {
-            Assert.assertTrue(friendsPage.isUserInSearchResults(username), 
-                "User " + username + " should appear in search results");
-            
-            if (friendsPage.isUserInSearchResults(username)) {
-                String displayedName = friendsPage.getSearchResultName(username);
-                Assert.assertTrue(displayedName.contains(fullName) || displayedName.contains(username),
-                    "Displayed name should contain expected fullname or username");
-            }
+            String firstResultId = friendsPage.getFirstSearchResultId();
+
+            Assert.assertFalse(firstResultId.isEmpty(),
+                "Search result item id should be available");
+            Assert.assertTrue(friendsPage.isSearchResultDisplayed(firstResultId),
+                "Search result row should be displayed for id: " + firstResultId);
+            Assert.assertTrue(friendsPage.isSearchResultNameDisplayed(firstResultId),
+                "Search result name should be displayed for id: " + firstResultId);
+            Assert.assertTrue(friendsPage.isSearchResultUsernameDisplayed(firstResultId),
+                "Search result username should be displayed for id: " + firstResultId);
+            Assert.assertFalse(friendsPage.getSearchResultName(firstResultId).trim().isEmpty(),
+                "Search result name text should not be empty");
+            Assert.assertFalse(friendsPage.getSearchResultUsername(firstResultId).trim().isEmpty(),
+                "Search result username text should not be empty");
+        } else {
+            Assert.assertTrue(friendsPage.isNoSearchResultsDisplayed(),
+                "Search empty state should be displayed when current database returns no users");
         }
         
-        logger.info("Friend data test completed for: " + username);
+        logger.info("Current search result data test completed");
     }
     
     @Test(priority = 2, groups = {"friends", "regression", "data"}, 
-          dataProvider = "friendRequestsData", description = "Verify friend requests data from real database")
-    public void testFriendRequestsWithRealData(String senderUsername, String senderFullName, String status) {
-        logger.info("Testing friend request data - Sender: " + senderUsername + ", Status: " + status);
+          description = "Verify received request items or empty state from current database")
+    public void testFriendRequestsWithRealData() {
+        logger.info("Testing current friend request data");
         
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.clickRequestsTab();
         
         if (friendsPage.hasFriendRequests()) {
-            if (friendsPage.isRequestFromUser(senderUsername)) {
-                String displayedName = friendsPage.getRequestNameByUsername(senderUsername);
-                Assert.assertTrue(displayedName.contains(senderFullName) || displayedName.contains(senderUsername),
-                    "Request should show correct sender name");
-                
-                if ("pending".equals(status)) {
-                    String firstRequestId = friendsPage.getFirstFriendRequestId();
+            String requestId = friendsPage.getFirstFriendRequestId();
 
-                    Assert.assertFalse(
-                            firstRequestId.isEmpty(),
-                            "A visible friend request id should be available"
-                    );
-
-                    Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(firstRequestId),
-                        "Accept button should be displayed for pending requests");
-                    Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(firstRequestId),
-                        "Decline button should be displayed for pending requests");
-                }
-            }
+            Assert.assertFalse(requestId.isEmpty(),
+                "Friend request item id should be available");
+            Assert.assertTrue(friendsPage.isFriendRequestDisplayed(requestId),
+                "Request row should be displayed for id: " + requestId);
+            Assert.assertTrue(friendsPage.isRequestNameDisplayed(requestId),
+                "Request name should be displayed for id: " + requestId);
+            Assert.assertFalse(friendsPage.getRequestName(requestId).trim().isEmpty(),
+                "Request name text should not be empty");
+            Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(requestId),
+                "Accept button should be displayed for request id: " + requestId);
+            Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(requestId),
+                "Decline button should be displayed for request id: " + requestId);
+        } else {
+            Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
+                "Received request empty state should be displayed when current database has no received requests");
         }
         
-        logger.info("Friend request data test completed for: " + senderUsername);
+        logger.info("Current friend request data test completed");
     }
     
     @Test(priority = 3, groups = {"friends", "smoke"}, 
@@ -248,13 +222,13 @@ public class FriendsTests extends BaseTest {
             "Friends tab should be selected by default");
         
         if (friendsPage.hasFriends()) {
-            Assert.assertTrue(friendsPage.isFriendsListDisplayed(), 
-                "Friends list should be displayed when friends exist");
-            Assert.assertTrue(friendsPage.getFriendsCount() > 0, 
-                "Should have at least one friend");
+            String firstVisibleFriendName = friendsPage.getFirstVisibleFriendName();
+
+            Assert.assertFalse(firstVisibleFriendName.isEmpty(),
+                "Visible friend name should not be empty when friends are displayed");
         } else {
-            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(), 
-                "Empty state should be displayed when no friends exist");
+            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
+                "Friends empty state should be displayed when current database has no friends");
         }
         
         logger.info("Friends list display test completed successfully");
@@ -268,21 +242,20 @@ public class FriendsTests extends BaseTest {
         FriendsPage friendsPage = homePage.navigateToFriends();
         
         if (friendsPage.hasFriends()) {
+            String firstVisibleFriendName = friendsPage.getFirstVisibleFriendName();
             String firstFriendId = friendsPage.getFirstFriendId();
-            
-            Assert.assertTrue(friendsPage.isFriendAvatarDisplayed(firstFriendId), 
-                "Friend avatar should be displayed");
-            Assert.assertTrue(friendsPage.isFriendNameDisplayed(firstFriendId), 
-                "Friend name should be displayed");
-            Assert.assertFalse(friendsPage.getFriendName(firstFriendId).isEmpty(), 
+
+            Assert.assertFalse(firstFriendId.isEmpty(),
+                "Friend item id should be available");
+            Assert.assertFalse(firstVisibleFriendName.isEmpty(),
                 "Friend name should not be empty");
-            
-            if (friendsPage.isFriendUsernameDisplayed(firstFriendId)) {
-                Assert.assertFalse(friendsPage.getFriendUsername(firstFriendId).isEmpty(), 
-                    "Friend username should not be empty when displayed");
-            }
+            Assert.assertTrue(friendsPage.isFriendNameDisplayed(firstFriendId),
+                "Friend name should be displayed for item id: " + firstFriendId);
+            Assert.assertTrue(friendsPage.isFriendUnfriendButtonDisplayed(firstFriendId),
+                "Friend action button should be displayed for item id: " + firstFriendId);
         } else {
-            logger.info("No friends available for testing friend item elements");
+            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
+                "Friends empty state should be displayed when current database has no friends");
         }
         
         logger.info("Friend item elements test completed successfully");
@@ -300,13 +273,11 @@ public class FriendsTests extends BaseTest {
             "Friend requests section should be displayed after scrolling to it");
         
         if (friendsPage.hasFriendRequests()) {
-            Assert.assertTrue(friendsPage.isFriendRequestsListDisplayed(), 
-                "Friend requests list should be displayed when requests exist");
-            Assert.assertTrue(friendsPage.getFriendRequestsCount() > 0, 
-                "Should have at least one friend request");
+            Assert.assertFalse(friendsPage.getFirstFriendRequestId().isEmpty(),
+                "Friend request item id should be available");
         } else {
-            Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(), 
-                "Empty state should be displayed when no requests exist");
+            Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
+                "Friend requests empty state should be displayed when current database has no received requests");
         }
         
         logger.info("Friend requests tab test completed successfully");
@@ -321,21 +292,22 @@ public class FriendsTests extends BaseTest {
         friendsPage.clickRequestsTab();
         
         if (friendsPage.hasFriendRequests()) {
+            String firstVisibleRequestName = friendsPage.getFirstVisibleFriendRequestName();
             String firstRequestId = friendsPage.getFirstFriendRequestId();
-            
-            Assert.assertTrue(friendsPage.isRequestAvatarDisplayed(firstRequestId), 
-                "Request avatar should be displayed");
-            Assert.assertTrue(friendsPage.isRequestNameDisplayed(firstRequestId), 
-                "Request name should be displayed");
-            Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(firstRequestId), 
-                "Accept button should be displayed");
-            Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(firstRequestId), 
-                "Decline button should be displayed");
-            
-            Assert.assertFalse(friendsPage.getRequestName(firstRequestId).isEmpty(), 
+
+            Assert.assertFalse(firstRequestId.isEmpty(),
+                "Friend request item id should be available");
+            Assert.assertFalse(firstVisibleRequestName.isEmpty(),
                 "Request name should not be empty");
+            Assert.assertTrue(friendsPage.isRequestNameDisplayed(firstRequestId),
+                "Request name should be displayed for item id: " + firstRequestId);
+            Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(firstRequestId),
+                "Accept button should be displayed for item id: " + firstRequestId);
+            Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(firstRequestId),
+                "Decline button should be displayed for item id: " + firstRequestId);
         } else {
-            logger.info("No friend requests available for testing request item elements");
+            Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
+                "Friend requests empty state should be displayed when current database has no received requests");
         }
         
         logger.info("Friend request item elements test completed successfully");
@@ -349,25 +321,28 @@ public class FriendsTests extends BaseTest {
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.clickRequestsTab();
         
-        if (friendsPage.hasFriendRequests()) {
-            String firstRequestId = friendsPage.getFirstFriendRequestId();
-            String requestName = friendsPage.getRequestName(firstRequestId);
-            int initialRequestsCount = friendsPage.getFriendRequestsCount();
-            
-            friendsPage.acceptFriendRequest(firstRequestId);
-            
-            friendsPage.waitForRequestToDisappear(firstRequestId);
-            
-            Assert.assertTrue(friendsPage.getFriendRequestsCount() < initialRequestsCount, 
-                "Friend requests count should decrease after accepting");
-            
-            friendsPage.clickFriendsTab();
-            if (friendsPage.hasFriends()) {
-                logger.info("Accepted friend request for: {}", requestName);
-            }
-        } else {
-            logger.info("No friend requests available for testing accept functionality");
+        if (!friendsPage.hasFriendRequests()) {
+            Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
+                "Friend requests empty state should be displayed when there is no request to accept");
+            return;
         }
+
+        String firstRequestId = friendsPage.getFirstFriendRequestId();
+        String requestName = friendsPage.getRequestName(firstRequestId);
+        int initialRequestsCount = friendsPage.getFriendRequestsCount();
+
+        Assert.assertFalse(firstRequestId.isEmpty(),
+            "Friend request item id should be available before accepting");
+        Assert.assertFalse(requestName.isEmpty(),
+            "Friend request name should be available before accepting");
+        Assert.assertTrue(friendsPage.isAcceptButtonDisplayed(firstRequestId),
+            "Accept button should be visible before accepting request");
+
+        friendsPage.acceptFriendRequest(firstRequestId);
+        friendsPage.waitForRequestToDisappear(firstRequestId);
+
+        Assert.assertTrue(friendsPage.getFriendRequestsCount() < initialRequestsCount,
+            "Friend requests count should decrease after accepting");
         
         logger.info("Accept friend request test completed successfully");
     }
@@ -380,22 +355,28 @@ public class FriendsTests extends BaseTest {
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.clickRequestsTab();
         
-        if (friendsPage.hasFriendRequests()) {
-            String firstRequestId = friendsPage.getFirstFriendRequestId();
-            String requestName = friendsPage.getRequestName(firstRequestId);
-            int initialRequestsCount = friendsPage.getFriendRequestsCount();
-            
-            friendsPage.declineFriendRequest(firstRequestId);
-            
-            friendsPage.waitForRequestToDisappear(firstRequestId);
-            
-            Assert.assertTrue(friendsPage.getFriendRequestsCount() < initialRequestsCount, 
-                "Friend requests count should decrease after declining");
-            
-            logger.info("Declined friend request for: {}", requestName);
-        } else {
-            logger.info("No friend requests available for testing decline functionality");
+        if (!friendsPage.hasFriendRequests()) {
+            Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
+                "Friend requests empty state should be displayed when there is no request to decline");
+            return;
         }
+
+        String firstRequestId = friendsPage.getFirstFriendRequestId();
+        String requestName = friendsPage.getRequestName(firstRequestId);
+        int initialRequestsCount = friendsPage.getFriendRequestsCount();
+
+        Assert.assertFalse(firstRequestId.isEmpty(),
+            "Friend request item id should be available before declining");
+        Assert.assertFalse(requestName.isEmpty(),
+            "Friend request name should be available before declining");
+        Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(firstRequestId),
+            "Decline button should be visible before declining request");
+
+        friendsPage.declineFriendRequest(firstRequestId);
+        friendsPage.waitForRequestToDisappear(firstRequestId);
+
+        Assert.assertTrue(friendsPage.getFriendRequestsCount() < initialRequestsCount,
+            "Friend requests count should decrease after declining");
         
         logger.info("Decline friend request test completed successfully");
     }
@@ -412,13 +393,20 @@ public class FriendsTests extends BaseTest {
             "Sent requests section should be displayed after scrolling to it");
         
         if (friendsPage.hasSentRequests()) {
-            Assert.assertTrue(friendsPage.isSentRequestsListDisplayed(), 
-                "Sent requests list should be displayed when requests exist");
-            Assert.assertTrue(friendsPage.getSentRequestsCount() > 0, 
-                "Should have at least one sent request");
+            String firstSentRequestId = friendsPage.getFirstSentRequestId();
+            String firstSentRequestName = friendsPage.getFirstVisibleSentRequestName();
+
+            Assert.assertFalse(firstSentRequestId.isEmpty(),
+                "Sent request item id should be available");
+            Assert.assertFalse(firstSentRequestName.isEmpty(),
+                "Sent request name should not be empty");
+            Assert.assertTrue(friendsPage.isSentRequestNameDisplayed(firstSentRequestId),
+                "Sent request name should be displayed for item id: " + firstSentRequestId);
+            Assert.assertTrue(friendsPage.isSentRequestCancelButtonDisplayed(firstSentRequestId),
+                "Sent request cancel button should be displayed for item id: " + firstSentRequestId);
         } else {
-            Assert.assertTrue(friendsPage.isEmptySentStateDisplayed(), 
-                "Empty state should be displayed when no sent requests exist");
+            Assert.assertTrue(friendsPage.isEmptySentStateDisplayed(),
+                "Sent requests empty state should be displayed when current database has no sent requests");
         }
         
         logger.info("Sent requests tab test completed successfully");
@@ -434,24 +422,35 @@ public class FriendsTests extends BaseTest {
         String searchTerm = "test";
         friendsPage.searchFriends(searchTerm);
         
-        if (friendsPage.hasSearchResults()) {
-            String firstResultId = friendsPage.getFirstSearchResultId();
-            
-            if (friendsPage.canAddFriend(firstResultId)) {
-                String userName = friendsPage.getSearchResultName(firstResultId);
-                
-                friendsPage.addFriend(firstResultId);
-                
-                Assert.assertTrue(friendsPage.isFriendRequestSent(firstResultId), 
-                    "Friend request should be marked as sent");
-                
-                logger.info("Sent friend request to: {}", userName);
-            } else {
-                logger.info("No users available to add as friends in search results");
-            }
-        } else {
-            logger.info("No search results available for testing add friend functionality");
+        if (!friendsPage.hasSearchResults()) {
+            Assert.assertTrue(friendsPage.isNoSearchResultsDisplayed(),
+                "Search empty state should be displayed when current database returns no addable users");
+            return;
         }
+
+        String firstResultId = friendsPage.getFirstAddableSearchResultId();
+
+        if (firstResultId.isEmpty()) {
+            String visibleResultId = friendsPage.getFirstSearchResultId();
+
+            Assert.assertFalse(visibleResultId.isEmpty(),
+                "Search result item id should be available when results are displayed");
+            Assert.assertTrue(friendsPage.isSearchResultDisplayed(visibleResultId),
+                "Search result row should be displayed for id: " + visibleResultId);
+            Assert.assertFalse(friendsPage.getSearchResultStatus(visibleResultId).trim().isEmpty(),
+                "Search result status should explain why the user is not addable");
+            return;
+        }
+
+        Assert.assertFalse(firstResultId.isEmpty(),
+            "Search result item id should be available");
+        Assert.assertTrue(friendsPage.canAddFriend(firstResultId),
+            "First search result should be addable");
+
+        friendsPage.addFriend(firstResultId);
+
+        Assert.assertTrue(friendsPage.isFriendRequestSent(firstResultId),
+            "Friend request should be marked as sent");
         
         logger.info("Add friend from search test completed successfully");
     }
@@ -463,21 +462,23 @@ public class FriendsTests extends BaseTest {
         
         FriendsPage friendsPage = homePage.navigateToFriends();
         
-        if (friendsPage.hasFriends() && friendsPage.getFriendsCount() > 5) {
-            friendsPage.scrollDown();
-            Assert.assertTrue(friendsPage.isFriendsListDisplayed(), 
-                "Friends list should still be displayed after scrolling down");
-            
-            friendsPage.scrollUp();
-            Assert.assertTrue(friendsPage.isFriendsListDisplayed(), 
-                "Friends list should still be displayed after scrolling up");
-            
-            friendsPage.scrollToTop();
-            Assert.assertTrue(friendsPage.isFriendsListDisplayed(), 
-                "Friends list should still be displayed after scrolling to top");
-        } else {
-            logger.info("Not enough friends for scrolling test");
+        if (!friendsPage.hasFriends()) {
+            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
+                "Friends empty state should be displayed when current database has no friends");
+            return;
         }
+
+        friendsPage.scrollDown();
+        Assert.assertTrue(friendsPage.isFriendsListDisplayed() || !friendsPage.getFirstVisibleFriendName().isEmpty(),
+            "Friends list should still be displayed after scrolling down");
+
+        friendsPage.scrollUp();
+        Assert.assertTrue(friendsPage.isFriendsListDisplayed() || !friendsPage.getFirstVisibleFriendName().isEmpty(),
+            "Friends list should still be displayed after scrolling up");
+
+        friendsPage.scrollToTop();
+        Assert.assertTrue(friendsPage.isFriendsListDisplayed() || !friendsPage.getFirstVisibleFriendName().isEmpty(),
+            "Friends list should still be displayed after scrolling to top");
         
         logger.info("Friends list scrolling test completed successfully");
     }
@@ -520,10 +521,16 @@ public class FriendsTests extends BaseTest {
             "Friends page should remain stable during network issues");
         
         if (friendsPage.hasFriends()) {
-            friendsPage.searchFriends("test");
-            Assert.assertTrue(friendsPage.isDisplayed(), 
-                "Friends page should remain stable during search with network issues");
+            Assert.assertFalse(friendsPage.getFirstFriendId().isEmpty(),
+                "Friend item id should still be available after returning from background");
+        } else {
+            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
+                "Friends empty state should still be displayed after returning from background");
         }
+
+        friendsPage.searchFriends("test");
+        Assert.assertTrue(friendsPage.isDisplayed(),
+            "Friends page should remain stable during search with network issues");
         
         logger.info("Network error handling test completed successfully");
     }

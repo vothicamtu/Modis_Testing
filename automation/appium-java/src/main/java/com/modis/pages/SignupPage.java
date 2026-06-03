@@ -2,7 +2,14 @@ package com.modis.pages;
 
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
+import com.modis.drivers.DriverManager;
+import io.appium.java_client.AppiumBy;
+import io.appium.java_client.AppiumDriver;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebElement;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignupPage extends BasePage {
 
@@ -72,15 +79,10 @@ public class SignupPage extends BasePage {
         waitFor(1);
 
         // SCROLL XUỐNG TỚI KHI THẤY NÚT
-        scrollDownUntilVisible(
-                TestIDs.SIGNUP_SUBMIT_BUTTON
-        );
+        WebElement signupTarget =
+                ensureSignupButtonVisible();
 
-        waitFor(1);
-
-        clickByAccessibilityId(
-                TestIDs.SIGNUP_SUBMIT_BUTTON
-        );
+        clickElement(signupTarget);
 
         if (waitForAuthDialog(8)) {
 
@@ -100,6 +102,129 @@ public class SignupPage extends BasePage {
         }
 
         return this;
+    }
+
+    private WebElement ensureSignupButtonVisible() {
+        WebElement visibleSignupButton =
+                findVisibleSignupButton();
+
+        if (visibleSignupButton != null) {
+            return visibleSignupButton;
+        }
+
+        visibleSignupButton =
+                scrollSignupButtonIntoViewWithGesture();
+
+        if (visibleSignupButton != null) {
+            return visibleSignupButton;
+        }
+
+        throw new RuntimeException(
+                "Signup button is not visible on signup screen"
+        );
+    }
+
+    private WebElement scrollSignupButtonIntoViewWithGesture() {
+        AppiumDriver currentDriver =
+                DriverManager.getDriver();
+
+        if (currentDriver == null) {
+            return null;
+        }
+
+        Dimension size;
+
+        try {
+            size = currentDriver.manage().window().getSize();
+        } catch (Exception e) {
+            logger.warn(
+                    "Could not read screen size before signup scroll: {}",
+                    e.getMessage()
+            );
+
+            return null;
+        }
+
+        int centerX = size.width / 2;
+        int startY = (int) (size.height * 0.78);
+        int endY = (int) (size.height * 0.32);
+
+        for (int attempt = 1; attempt <= 4; attempt++) {
+            try {
+                Map<String, Object> dragParams =
+                        new HashMap<>();
+
+                dragParams.put("startX", centerX);
+                dragParams.put("startY", startY);
+                dragParams.put("endX", centerX);
+                dragParams.put("endY", endY);
+                dragParams.put("speed", 700);
+
+                currentDriver.executeScript(
+                        "mobile: dragGesture",
+                        dragParams
+                );
+
+                waitFor(1);
+
+                WebElement visibleSignupButton =
+                        findVisibleSignupButton();
+
+                if (visibleSignupButton != null) {
+                    logger.info(
+                            "Signup button visible after dragGesture attempt {}",
+                            attempt
+                    );
+
+                    return visibleSignupButton;
+                }
+            } catch (Exception e) {
+                logger.warn(
+                        "Signup dragGesture attempt {} failed: {}",
+                        attempt,
+                        e.getMessage()
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private WebElement findVisibleSignupButton() {
+        AppiumDriver currentDriver =
+                DriverManager.getDriver();
+
+        if (currentDriver == null) {
+            return null;
+        }
+
+        try {
+            for (WebElement element : currentDriver.findElements(AppiumBy.accessibilityId(TestIDs.SIGNUP_SUBMIT_BUTTON))) {
+                if (element != null && element.isDisplayed()) {
+                    return element;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug(
+                    "Signup button accessibility lookup failed: {}",
+                    e.getMessage()
+            );
+        }
+
+        try {
+            for (WebElement element : currentDriver.findElements(AppiumBy.id(TestIDs.SIGNUP_SUBMIT_BUTTON))) {
+                if (element != null && element.isDisplayed()) {
+                    return element;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug(
+                    "Signup button resource-id lookup failed: {}",
+                    e.getMessage()
+            );
+        }
+
+        return null;
     }
 
     public boolean isHomePageDisplayed() {

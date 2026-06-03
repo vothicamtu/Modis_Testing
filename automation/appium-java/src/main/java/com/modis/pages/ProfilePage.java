@@ -3,7 +3,10 @@ package com.modis.pages;
 import com.modis.base.BasePage;
 import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
+import com.modis.drivers.DriverManager;
+import io.appium.java_client.AppiumBy;
 import io.appium.java_client.pagefactory.AndroidFindBy;
+import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.WebElement;
 
 public class ProfilePage extends BasePage {
@@ -100,23 +103,105 @@ public class ProfilePage extends BasePage {
     }
 
     private WebElement ensureLogoutButtonVisible() {
-        if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) {
-            return logoutButton;
+        WebElement visibleLogout = null;
+
+        try {
+            String uiScrollable =
+                    "new UiScrollable(new UiSelector().scrollable(true))"
+                            + ".scrollIntoView(new UiSelector().description(\""
+                            + TestIDs.PROFILE_LOGOUT_BUTTON
+                            + "\"))";
+
+            WebElement logoutTarget =
+                    DriverManager.getDriver().findElement(
+                            AppiumBy.androidUIAutomator(uiScrollable)
+                    );
+
+            if (logoutTarget != null && logoutTarget.isDisplayed()) {
+                return logoutTarget;
+            }
+        } catch (Exception e) {
+            logger.warn(
+                    "UiScrollable could not locate logout button: {}",
+                    e.getMessage()
+            );
         }
 
-        WebElement logoutTarget = gestureUtils.scrollToElementByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON);
-        if (logoutTarget != null && logoutTarget.isDisplayed()) {
-            return logoutTarget;
+        if (visibleLogout != null) {
+            return visibleLogout;
+        }
+
+        try {
+            WebElement logoutTarget =
+                    gestureUtils.scrollToElementByAccessibilityId(
+                            TestIDs.PROFILE_LOGOUT_BUTTON
+                    );
+
+            if (logoutTarget != null && logoutTarget.isDisplayed()) {
+                return logoutTarget;
+            }
+        } catch (Exception e) {
+            logger.warn(
+                    "Gesture scroll could not locate logout button: {}",
+                    e.getMessage()
+            );
         }
 
         for (int i = 0; i < 4; i++) {
-            scrollDownBase();
-            if (isElementDisplayedByAccessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON)) {
-                return logoutButton;
+            try {
+                scrollDownBase();
+            } catch (Exception e) {
+                logger.warn(
+                        "Manual logout scroll attempt {} failed: {}",
+                        i + 1,
+                        e.getMessage()
+                );
+                continue;
+            }
+
+            visibleLogout = findVisibleLogoutButton();
+            if (visibleLogout != null) {
+                return visibleLogout;
             }
         }
 
         throw new RuntimeException("Logout button is not visible on profile screen");
+    }
+
+    private WebElement findVisibleLogoutButton() {
+        AppiumDriver currentDriver = DriverManager.getDriver();
+
+        if (currentDriver == null) {
+            return null;
+        }
+
+        try {
+            for (WebElement element : currentDriver.findElements(AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON))) {
+                if (element != null && element.isDisplayed()) {
+                    return element;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug(
+                    "Logout button accessibility lookup failed: {}",
+                    e.getMessage()
+            );
+        }
+
+        try {
+            for (WebElement element : currentDriver.findElements(AppiumBy.id(TestIDs.PROFILE_LOGOUT_BUTTON))) {
+                if (element != null && element.isDisplayed()) {
+                    return element;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug(
+                    "Logout button resource-id lookup failed: {}",
+                    e.getMessage()
+            );
+        }
+
+        return null;
     }
 
     // PROFILE EDIT ACTIONS 
