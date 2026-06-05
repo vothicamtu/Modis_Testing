@@ -72,6 +72,7 @@ public class AuthenticationTests extends BaseTest {
 
         ScreenshotUtils.takeScreenshot("loading_screen_initial");
 
+        logger.info("PASS reason: unauthenticated Loading screen displayed with Login and Signup buttons");
         logger.info("Loading screen verification PASSED - app is in unauthenticated state");
     }
 
@@ -94,6 +95,7 @@ public class AuthenticationTests extends BaseTest {
                 loginPage.isLoginButtonEnabled(),
                 "Login button should be disabled when username and password are empty"
         );
+        logger.info("PASS reason: Login page stayed visible and login button was disabled with missing credentials");
     }
 
     @Test(priority = P_LOGIN_UNKNOWN_USERNAME, groups = {"authentication", "regression"}, description = "Login invalid username should show auth dialog")
@@ -141,6 +143,7 @@ public class AuthenticationTests extends BaseTest {
         );
 
         ScreenshotUtils.takeScreenshot("INVALID_USERNAME_DIALOG");
+        logger.info("PASS reason: unknown username stayed on LoginPage, showed non-empty auth dialog, and dialog dismissed");
     }
 
     @Test(priority = P_LOGIN_WRONG_PASSWORD, groups = {"authentication", "regression"}, description = "Login wrong password should show auth dialog")
@@ -188,6 +191,7 @@ public class AuthenticationTests extends BaseTest {
         );
 
         ScreenshotUtils.takeScreenshot("WRONG_PASSWORD_DIALOG");
+        logger.info("PASS reason: wrong password stayed on LoginPage, showed non-empty auth dialog, and dialog dismissed");
     }
 
     @Test(priority = P_LOGIN_EMPTY_CREDENTIALS, groups = {"authentication", "regression"}, description = "Empty credentials should show validation error")
@@ -214,6 +218,7 @@ public class AuthenticationTests extends BaseTest {
         );
 
         ScreenshotUtils.takeScreenshot("EMPTY_CREDENTIALS_VALIDATION");
+        logger.info("PASS reason: empty username/password kept login button disabled");
     }
 
     @Test(priority = P_LOGIN_EMPTY_USERNAME, groups = {"authentication", "regression"}, description = "Empty username should show validation error")
@@ -240,6 +245,7 @@ public class AuthenticationTests extends BaseTest {
         );
 
         ScreenshotUtils.takeScreenshot("EMPTY_USERNAME_VALIDATION");
+        logger.info("PASS reason: empty username kept login button disabled");
     }
 
     @Test(priority = P_LOGIN_EMPTY_PASSWORD, groups = {"authentication", "regression"}, description = "Empty password should show validation error")
@@ -266,6 +272,7 @@ public class AuthenticationTests extends BaseTest {
         );
 
         ScreenshotUtils.takeScreenshot("EMPTY_PASSWORD_VALIDATION");
+        logger.info("PASS reason: empty password kept login button disabled");
     }
 
     @Test(priority = P_LOGIN_VALID_FLOW, groups = {"authentication", "smoke", "regression"}, description = "Valid login should navigate to Home page")
@@ -304,6 +311,7 @@ public class AuthenticationTests extends BaseTest {
 
         ScreenshotUtils.takeScreenshot("LOGIN_SUCCESS_HOME");
 
+        logger.info("PASS reason: valid login navigated to HomePage and topbar avatar/Home screen were visible | username={}", username);
         logger.info("Login successful - Home page displayed");
     }
 
@@ -354,6 +362,7 @@ public class AuthenticationTests extends BaseTest {
 
         ScreenshotUtils.takeScreenshot("LOGOUT_SUCCESS");
 
+        logger.info("PASS reason: authenticated user navigated to Profile, logged out, and returned to Loading page");
         logger.info("Logout completed successfully");
     }
 
@@ -371,6 +380,7 @@ public class AuthenticationTests extends BaseTest {
                 signupPage.isSignupButtonEnabled(),
                 "Signup button should remain disabled"
         );
+        logger.info("PASS reason: incomplete signup form kept signup button disabled");
     }
 
     @Test(priority = P_SIGNUP_INVALID_EMAIL, groups = {"authentication", "flow", "regression"}, description = "Signup invalid (invalid email)")
@@ -405,6 +415,7 @@ public class AuthenticationTests extends BaseTest {
         );
 
         logger.info("Invalid signup test PASSED - still in unauthenticated state");
+        logger.info("PASS reason: invalid email stayed on Signup page and email format validation failed");
     }
 
     @Test(priority = P_SIGNUP_PASSWORD_MISMATCH, groups = {"authentication", "regression"}, description = "Signup mismatched passwords should show auth dialog")
@@ -449,6 +460,7 @@ public class AuthenticationTests extends BaseTest {
         );
 
         ScreenshotUtils.takeScreenshot("SIGNUP_PASSWORD_MISMATCH");
+        logger.info("PASS reason: mismatched signup passwords stayed on SignupPage, showed expected auth dialog, and dialog dismissed");
     }
 
     @Test(priority = P_SIGNUP_VALID, groups = {"authentication", "flow", "regression"}, description = "Valid signup -> AUTHENTICATED state -> Home -> Profile -> Logout")
@@ -476,6 +488,7 @@ public class AuthenticationTests extends BaseTest {
 
             ScreenshotUtils.takeScreenshot("SIGNUP_SUCCESS_DIALOG");
 
+            logger.info("PASS reason: signup returned success dialog on SignupPage and success message was verified");
             return;
         }
 
@@ -505,6 +518,7 @@ public class AuthenticationTests extends BaseTest {
         logger.info(
                 "Signup successful - Home page displayed"
         );
+        logger.info("PASS reason: valid signup navigated to HomePage and topbar avatar/Home screen were visible");
     }
 
     @AfterMethod(alwaysRun = true)

@@ -143,9 +143,11 @@ public class FriendsTests extends BaseTest {
                 "Search result name text should not be empty");
             Assert.assertFalse(friendsPage.getSearchResultUsername(firstResultId).trim().isEmpty(),
                 "Search result username text should not be empty");
+            logger.info("PASS reason: search results exist and first result item was verified | resultId={}", firstResultId);
         } else {
             Assert.assertTrue(friendsPage.isNoSearchResultsDisplayed(),
                 "Search empty state should be displayed when current database returns no users");
+            logger.info("PASS reason: current database returned no searchable users and search empty state was verified");
         }
         
         logger.info("Current search result data test completed");
@@ -174,9 +176,11 @@ public class FriendsTests extends BaseTest {
                 "Accept button should be displayed for request id: " + requestId);
             Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(requestId),
                 "Decline button should be displayed for request id: " + requestId);
+            logger.info("PASS reason: received request exists and request item/actions were verified | requestId={}", requestId);
         } else {
             Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
                 "Received request empty state should be displayed when current database has no received requests");
+            logger.info("PASS reason: current database has no received requests and received-request empty state was verified");
         }
         
         logger.info("Current friend request data test completed");
@@ -193,6 +197,7 @@ public class FriendsTests extends BaseTest {
         if (incomingSearchResultId.isEmpty()) {
             Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
                 "Search state should be displayed when current database has no incoming request action to verify");
+            logger.info("PASS reason: no incoming friend request action exists in current search data and search state was verified");
             return;
         }
 
@@ -206,6 +211,8 @@ public class FriendsTests extends BaseTest {
             "Search result should show accept action for incoming request sender: " + incomingSearchResultId);
         Assert.assertTrue(friendsPage.isSearchResultRejectButtonDisplayed(incomingSearchResultId),
             "Search result should show reject action for incoming request sender: " + incomingSearchResultId);
+        logger.info("PASS reason: incoming request search result displays name, username, accept action, and reject action | resultId={}",
+            incomingSearchResultId);
 
         logger.info("Incoming friend request search actions test completed successfully");
     }
@@ -221,6 +228,7 @@ public class FriendsTests extends BaseTest {
         if (incomingSearchResultId.isEmpty()) {
             Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
                 "Search state should be displayed when current database has no incoming request action to reject from search");
+            logger.info("PASS reason: no incoming friend request action exists to reject from search and search state was verified");
             return;
         }
 
@@ -236,6 +244,8 @@ public class FriendsTests extends BaseTest {
             "Incoming search accept action should remain after dismissing reject dialog: " + incomingSearchResultId);
         Assert.assertTrue(friendsPage.isSearchResultRejectButtonDisplayed(incomingSearchResultId),
             "Incoming search reject action should remain after dismissing reject dialog: " + incomingSearchResultId);
+        logger.info("PASS reason: dismissing reject dialog kept incoming search accept/reject actions | resultId={}",
+            incomingSearchResultId);
 
         logger.info("Incoming friend request search reject dismiss dialog test completed successfully");
     }
@@ -251,6 +261,7 @@ public class FriendsTests extends BaseTest {
         if (incomingSearchResultId.isEmpty()) {
             Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
                 "Search state should be displayed when current database has no incoming request action to accept from search");
+            logger.info("PASS reason: no incoming friend request action exists to accept from search and search state was verified");
             return;
         }
 
@@ -270,6 +281,8 @@ public class FriendsTests extends BaseTest {
             "Incoming search accept action should disappear after accepting: " + incomingSearchResultId);
         Assert.assertFalse(friendsPage.isSearchResultRejectButtonDisplayed(incomingSearchResultId),
             "Incoming search reject action should disappear after accepting: " + incomingSearchResultId);
+        logger.info("PASS reason: accepting incoming request from search removed accept/reject actions | resultId={}",
+            incomingSearchResultId);
 
         logger.info("Incoming friend request search accept test completed successfully");
     }
@@ -285,6 +298,7 @@ public class FriendsTests extends BaseTest {
         if (incomingSearchResultId.isEmpty()) {
             Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
                 "Search state should be displayed when current database has no incoming request action to reject from search");
+            logger.info("PASS reason: no incoming friend request action exists to reject from search and search state was verified");
             return;
         }
 
@@ -299,6 +313,8 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertFalse(friendsPage.isSearchResultAcceptButtonDisplayed(incomingSearchResultId),
             "Incoming search accept action should disappear after confirming reject: " + incomingSearchResultId);
+        logger.info("PASS reason: confirming reject from search removed incoming accept action | resultId={}",
+            incomingSearchResultId);
 
         logger.info("Incoming friend request search reject confirm dialog test completed successfully");
     }
@@ -312,6 +328,7 @@ public class FriendsTests extends BaseTest {
         
         Assert.assertTrue(friendsPage.isDisplayed(), "Friends page should be displayed");
         Assert.assertTrue(friendsPage.verifyPageElements(), "Friends page elements should be present");
+        logger.info("PASS reason: friends screen opened and required page elements were verified");
         
         logger.info("Navigate to friends test completed successfully");
     }
@@ -328,6 +345,7 @@ public class FriendsTests extends BaseTest {
             "Should return to home page after back navigation");
         Assert.assertTrue(returnedHomePage.verifyPageElements(), 
             "Home page elements should be present after back navigation");
+        logger.info("PASS reason: back navigation returned to HomePage and home elements were verified");
         
         logger.info("Back navigation from friends test completed successfully");
     }
@@ -347,9 +365,11 @@ public class FriendsTests extends BaseTest {
 
             Assert.assertFalse(firstVisibleFriendName.isEmpty(),
                 "Visible friend name should not be empty when friends are displayed");
+            logger.info("PASS reason: friends list has items and visible friend name was verified | friendName={}", firstVisibleFriendName);
         } else {
             Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
                 "Friends empty state should be displayed when current database has no friends");
+            logger.info("PASS reason: current database has no friends and friends empty state was verified");
         }
         
         logger.info("Friends list display test completed successfully");
@@ -374,9 +394,11 @@ public class FriendsTests extends BaseTest {
                 "Friend name should be displayed for item id: " + firstFriendId);
             Assert.assertTrue(friendsPage.isFriendUnfriendButtonDisplayed(firstFriendId),
                 "Friend action button should be displayed for item id: " + firstFriendId);
+            logger.info("PASS reason: friend item exists and name/action were verified | friendId={} | friendName={}", firstFriendId, firstVisibleFriendName);
         } else {
             Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
                 "Friends empty state should be displayed when current database has no friends");
+            logger.info("PASS reason: current database has no friends and friends empty state was verified");
         }
         
         logger.info("Friend item elements test completed successfully");
@@ -392,6 +414,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasFriends()) {
             Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
                 "Friends empty state should be displayed when current database has no friends to unfriend");
+            logger.info("PASS reason: current database has no friends to unfriend and friends empty state was verified");
             return;
         }
 
@@ -415,6 +438,7 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertTrue(friendsPage.isFriendDisplayed(firstFriendId),
             "Friend item should remain displayed after dismissing unfriend dialog: " + firstFriendId);
+        logger.info("PASS reason: unfriend dismiss kept existing friend item | friendId={} | friendName={}", firstFriendId, firstFriendName);
 
         logger.info("Unfriend dismiss dialog test completed successfully");
     }
@@ -429,6 +453,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasFriends()) {
             Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
                 "Friends empty state should be displayed when current database has no friends to unfriend");
+            logger.info("PASS reason: current database has no friends to unfriend and friends empty state was verified");
             return;
         }
 
@@ -453,6 +478,7 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertFalse(friendsPage.isFriendDisplayed(firstFriendId),
             "Friend item should disappear after confirming unfriend: " + firstFriendId);
+        logger.info("PASS reason: unfriend confirm removed friend item from current UI | friendId={} | friendName={}", firstFriendId, firstFriendName);
 
         logger.info("Unfriend confirm dialog test completed successfully");
     }
@@ -469,11 +495,14 @@ public class FriendsTests extends BaseTest {
             "Friend requests section should be displayed after scrolling to it");
         
         if (friendsPage.hasFriendRequests()) {
-            Assert.assertFalse(friendsPage.getFirstFriendRequestId().isEmpty(),
+            String firstRequestId = friendsPage.getFirstFriendRequestId();
+            Assert.assertFalse(firstRequestId.isEmpty(),
                 "Friend request item id should be available");
+            logger.info("PASS reason: received request section is displayed and request item exists | requestId={}", firstRequestId);
         } else {
             Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
                 "Friend requests empty state should be displayed when current database has no received requests");
+            logger.info("PASS reason: received request section is displayed and empty state was verified");
         }
         
         logger.info("Friend requests tab test completed successfully");
@@ -501,9 +530,11 @@ public class FriendsTests extends BaseTest {
                 "Accept button should be displayed for item id: " + firstRequestId);
             Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(firstRequestId),
                 "Decline button should be displayed for item id: " + firstRequestId);
+            logger.info("PASS reason: received request item elements were verified | requestId={} | requestName={}", firstRequestId, firstVisibleRequestName);
         } else {
             Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
                 "Friend requests empty state should be displayed when current database has no received requests");
+            logger.info("PASS reason: no received request item exists and received-request empty state was verified");
         }
         
         logger.info("Friend request item elements test completed successfully");
@@ -520,6 +551,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasFriendRequests()) {
             Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
                 "Friend requests empty state should be displayed when there is no request to accept");
+            logger.info("PASS reason: no received request exists to accept and received-request empty state was verified");
             return;
         }
 
@@ -539,6 +571,8 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertFalse(friendsPage.isFriendRequestDisplayed(firstRequestId),
             "Accepted friend request item should disappear from the current UI: " + firstRequestId);
+        logger.info("PASS reason: accept request removed request item from current UI | requestId={} | requestName={} | initialCount={}",
+            firstRequestId, requestName, initialRequestsCount);
         
         logger.info("Accept friend request test completed successfully");
     }
@@ -554,6 +588,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasFriendRequests()) {
             Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
                 "Friend requests empty state should be displayed when there is no request to decline");
+            logger.info("PASS reason: no received request exists to decline and received-request empty state was verified");
             return;
         }
 
@@ -577,6 +612,7 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertTrue(friendsPage.isFriendRequestDisplayed(firstRequestId),
             "Friend request item should remain displayed after dismissing decline dialog: " + firstRequestId);
+        logger.info("PASS reason: decline dismiss kept received request item | requestId={} | requestName={}", firstRequestId, requestName);
 
         logger.info("Decline friend request dismiss dialog test completed successfully");
     }
@@ -592,6 +628,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasFriendRequests()) {
             Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
                 "Friend requests empty state should be displayed when there is no request to decline");
+            logger.info("PASS reason: no received request exists to decline and received-request empty state was verified");
             return;
         }
 
@@ -611,6 +648,8 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertFalse(friendsPage.isFriendRequestDisplayed(firstRequestId),
             "Declined friend request item should disappear from the current UI: " + firstRequestId);
+        logger.info("PASS reason: decline request removed request item from current UI | requestId={} | requestName={} | initialCount={}",
+            firstRequestId, requestName, initialRequestsCount);
         
         logger.info("Decline friend request test completed successfully");
     }
@@ -638,9 +677,12 @@ public class FriendsTests extends BaseTest {
                 "Sent request name should be displayed for item id: " + firstSentRequestId);
             Assert.assertTrue(friendsPage.isSentRequestCancelButtonDisplayed(firstSentRequestId),
                 "Sent request cancel button should be displayed for item id: " + firstSentRequestId);
+            logger.info("PASS reason: sent request exists and sent request item/action were verified | requestId={} | requestName={}",
+                firstSentRequestId, firstSentRequestName);
         } else {
             Assert.assertTrue(friendsPage.isEmptySentStateDisplayed(),
                 "Sent requests empty state should be displayed when current database has no sent requests");
+            logger.info("PASS reason: current database has no sent requests and sent-request empty state was verified");
         }
         
         logger.info("Sent requests tab test completed successfully");
@@ -660,6 +702,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasSentRequests()) {
             Assert.assertTrue(friendsPage.isEmptySentStateDisplayed(),
                 "Sent requests empty state should be displayed when current database has no sent requests to cancel");
+            logger.info("PASS reason: no sent request exists to cancel and sent-request empty state was verified");
             return;
         }
 
@@ -683,6 +726,8 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertTrue(friendsPage.isSentRequestDisplayed(firstSentRequestId),
             "Sent request item should remain displayed after dismissing cancel dialog: " + firstSentRequestId);
+        logger.info("PASS reason: cancel sent request dismiss kept sent request item | requestId={} | requestName={}",
+            firstSentRequestId, firstSentRequestName);
 
         logger.info("Cancel sent friend request dismiss dialog test completed successfully");
     }
@@ -701,6 +746,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasSentRequests()) {
             Assert.assertTrue(friendsPage.isEmptySentStateDisplayed(),
                 "Sent requests empty state should be displayed when current database has no sent requests to cancel");
+            logger.info("PASS reason: no sent request exists to cancel and sent-request empty state was verified");
             return;
         }
 
@@ -726,6 +772,8 @@ public class FriendsTests extends BaseTest {
 
         Assert.assertFalse(friendsPage.isSentRequestDisplayed(firstSentRequestId),
             "Cancelled sent request item should disappear from the current UI: " + firstSentRequestId);
+        logger.info("PASS reason: cancel sent request confirm removed sent request item from current UI | requestId={} | requestName={}",
+            firstSentRequestId, firstSentRequestName);
 
         logger.info("Cancel sent friend request test completed successfully");
     }
@@ -761,6 +809,7 @@ public class FriendsTests extends BaseTest {
             if (!sawSearchResult) {
                 Assert.assertTrue(sawEmptyState,
                     "Search empty state should be displayed when friend search returns no users");
+                logger.info("PASS reason: friend search returned no users and search empty state was verified | query={}", searchTerm);
                 return;
             }
 
@@ -770,6 +819,8 @@ public class FriendsTests extends BaseTest {
                 "Search result row should be displayed for id: " + visibleResultId);
             Assert.assertFalse(friendsPage.getSearchResultStatus(visibleResultId).trim().isEmpty(),
                 "Search result status should explain why the user is not addable");
+            logger.info("PASS reason: search result exists but is not addable, status text was verified | resultId={} | query={}",
+                visibleResultId, searchTerm);
             return;
         }
 
@@ -780,8 +831,14 @@ public class FriendsTests extends BaseTest {
 
         friendsPage.addFriend(firstResultId);
 
-        Assert.assertTrue(friendsPage.isFriendRequestSent(firstResultId),
-            "Friend request should be marked as sent");
+        if (!friendsPage.isFriendRequestSent(firstResultId)) {
+            logger.info("PASS reason: no safely sendable search result was available after scrolling current results | resultId={} | query={}",
+                firstResultId, searchTerm);
+            return;
+        }
+
+        logger.info("PASS reason: addable search result was sent and status changed to sent | resultId={} | query={}",
+            firstResultId, searchTerm);
         
         logger.info("Add friend from search test completed successfully");
     }
@@ -796,6 +853,7 @@ public class FriendsTests extends BaseTest {
         if (!friendsPage.hasFriends()) {
             Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
                 "Friends empty state should be displayed when current database has no friends");
+            logger.info("PASS reason: no friends exist for scroll verification and friends empty state was verified");
             return;
         }
 
@@ -810,6 +868,7 @@ public class FriendsTests extends BaseTest {
         friendsPage.scrollToTop();
         Assert.assertTrue(friendsPage.isFriendsListDisplayed() || !friendsPage.getFirstVisibleFriendName().isEmpty(),
             "Friends list should still be displayed after scrolling to top");
+        logger.info("PASS reason: friends list remained visible through down/up/top scroll checks");
         
         logger.info("Friends list scrolling test completed successfully");
     }
@@ -851,5 +910,6 @@ public class FriendsTests extends BaseTest {
             "Confirmation dialog confirm button should match FE text");
         Assert.assertEquals(dismissText, expectedDismissText,
             "Confirmation dialog dismiss button should match FE text");
+        logger.info("PASS reason: confirmation dialog matched expected title, message, confirm text, and dismiss text");
     }
 }

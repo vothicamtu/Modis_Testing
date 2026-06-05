@@ -47,24 +47,65 @@ final class TestSessionHelper {
                 "Default user 'tu' should exist in test data"
         );
 
-        BasePage afterLogin = loginPage.login(
-                (String) testUser.get("username"),
-                (String) testUser.get("password")
-        );
+        String username = (String) testUser.get("username");
+        String password = (String) testUser.get("password");
+
+        HomePage homePage = null;
+
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            BasePage afterLogin = loginPage.login(username, password);
+
+            if (afterLogin instanceof HomePage) {
+                homePage = (HomePage) afterLogin;
+            } else {
+                homePage = detectHomePage();
+            }
+
+            if (homePage != null) {
+                homePage.waitForTopbarReadyAfterLogin(8);
+
+                if (homePage.isDisplayed()) {
+                    return homePage;
+                }
+            }
+
+            if (attempt < 2) {
+                loginPage = prepareLoginPage();
+            }
+        }
 
         Assert.assertTrue(
-                afterLogin instanceof HomePage,
+                false,
                 "Login should navigate to HomePage"
         );
 
-        HomePage homePage = (HomePage) afterLogin;
-        homePage.waitForTopbarReadyAfterLogin(8);
+        return null;
+    }
 
-        Assert.assertTrue(
-                homePage.isDisplayed(),
-                "Home page should display after login"
-        );
+    private static LoginPage prepareLoginPage() {
+        try {
+            LoginPage currentLogin = new LoginPage();
 
-        return homePage;
+            if (currentLogin.isDisplayed()) {
+                return currentLogin;
+            }
+        } catch (Exception ignored) {
+        }
+
+        return new LoadingPage().clickLoginButton();
+    }
+
+    private static HomePage detectHomePage() {
+        try {
+            HomePage homePage = new HomePage();
+            homePage.waitForTopbarReadyAfterLogin(8);
+
+            if (homePage.isDisplayed()) {
+                return homePage;
+            }
+        } catch (Exception ignored) {
+        }
+
+        return null;
     }
 }

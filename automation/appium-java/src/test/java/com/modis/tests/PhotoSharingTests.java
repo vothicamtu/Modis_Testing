@@ -28,6 +28,7 @@ public class PhotoSharingTests extends BaseTest {
 
         Assert.assertTrue(takePage.isDisplayed(), "Camera screen should be displayed");
         Assert.assertTrue(takePage.isCaptureButtonDisplayed(), "Capture button should be displayed");
+        logger.info("PASS reason: camera screen loaded and capture button is visible");
     }
 
     @Test(priority = 2, groups = {"photo-sharing", "regression"}, description = "Toggle flash")
@@ -38,6 +39,7 @@ public class PhotoSharingTests extends BaseTest {
         boolean initialFlashState = takePage.isFlashEnabled();
         takePage.toggleFlash();
         Assert.assertNotEquals(takePage.isFlashEnabled(), initialFlashState, "Flash state should change after toggle");
+        logger.info("PASS reason: flash button was visible and flash state changed after toggle");
     }
 
     @Test(priority = 3, groups = {"photo-sharing", "regression"}, description = "Switch front and back camera")
@@ -45,16 +47,19 @@ public class PhotoSharingTests extends BaseTest {
         TakePage takePage = new TakePage();
         takePage.waitForPageToLoad();
         if (!takePage.hasMultipleCameras()) {
+            logger.info("SKIP reason: camera switch button is not available on this device");
             throw new SkipException("Camera switch button is not available on this device");
         }
         takePage.toggleCamera().waitForCameraSwitch();
         Assert.assertTrue(takePage.isToggleCameraButtonDisplayed(), "Camera toggle button should remain visible after switching");
+        logger.info("PASS reason: device has multiple cameras and camera toggle remained visible after switching");
     }
 
     @Test(priority = 4, groups = {"photo-sharing", "regression"})
     public void testCapturePhoto() {
         SendPhotoPage sendPhotoPage = capturePhotoOrSkip();
         Assert.assertTrue(sendPhotoPage.isDisplayed(), "Send photo screen should be displayed after capture");
+        logger.info("PASS reason: capture photo navigated to Send Photo screen");
     }
 
     @Test(priority = 5, groups = {"photo-sharing", "regression"})
@@ -63,6 +68,7 @@ public class PhotoSharingTests extends BaseTest {
         String caption = "Automation caption " + System.currentTimeMillis();
         sendPhotoPage.enterCaption(caption);
         Assert.assertEquals(sendPhotoPage.getCaptionText(), caption);
+        logger.info("PASS reason: caption text was entered and read back correctly | caption={}", caption);
     }
 
     @Test(priority = 6, groups = {"photo-sharing", "regression"}, description = "Select recipient")
@@ -70,6 +76,7 @@ public class PhotoSharingTests extends BaseTest {
         SendPhotoPage sendPhotoPage = capturePhotoOrSkip();
 
         if (!sendPhotoPage.hasFriends()) {
+            logger.info("SKIP reason: no friends are available for recipient selection");
             throw new SkipException("No friends available for recipient selection");
         }
 
@@ -79,6 +86,7 @@ public class PhotoSharingTests extends BaseTest {
         sendPhotoPage.selectFriend(friendId);
 
         Assert.assertTrue(sendPhotoPage.isFriendSelected(friendId), "Selected recipient should be marked selected");
+        logger.info("PASS reason: recipient was selected and marked selected | friendId={}", friendId);
     }
 
     @Test(priority = 7, groups = {"photo-sharing", "regression"}, description = "Send photo successfully")
@@ -87,6 +95,7 @@ public class PhotoSharingTests extends BaseTest {
         sendPhotoPage.waitForPageToLoad();
         HomePage homePage = sendPhotoPage.sendPhoto();
         Assert.assertTrue(homePage.isDisplayed(), "Should return to Home page after sending photo");
+        logger.info("PASS reason: photo was sent and app returned to Home page");
     }
 
     @Test(priority = 8, groups = {"photo-sharing", "regression"}, description = "Send photo with caption")
@@ -98,6 +107,7 @@ public class PhotoSharingTests extends BaseTest {
         Assert.assertEquals(sendPhotoPage.getCaptionText(), caption, "Caption should be entered correctly");
         HomePage homePage = sendPhotoPage.sendPhoto();
         Assert.assertTrue(homePage.isDisplayed(), "Should return to Home page after sending photo");
+        logger.info("PASS reason: photo with caption was sent and app returned to Home page | caption={}", caption);
     }
 
     @Test(priority = 9, groups = {"photo-sharing", "regression"}, description = "View feed after sending photo")
@@ -124,6 +134,7 @@ public class PhotoSharingTests extends BaseTest {
                 homePage.isFeedDisplayed(),
                 "Feed should be displayed"
         );
+        logger.info("PASS reason: photo was sent, Home page loaded, and feed was visible after swipe");
     }
 
     private SendPhotoPage capturePhotoOrSkip() {
@@ -133,6 +144,7 @@ public class PhotoSharingTests extends BaseTest {
         SendPhotoPage sendPhotoPage = takePage.capturePhoto();
 
         if (sendPhotoPage == null) {
+            logger.info("SKIP reason: photo capture did not navigate to Send Photo screen");
             throw new SkipException("Photo capture did not navigate to send photo screen");
         }
 

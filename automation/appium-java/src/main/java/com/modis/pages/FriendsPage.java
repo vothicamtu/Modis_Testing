@@ -766,13 +766,16 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean canAddFriend(String id) {
-        return isElementDisplayedByAccessibilityId(TestIDs.getSearchResultAddButtonId(id));
+        return isSearchResultAddButtonEnabled(id);
     }
 
     public boolean isSearchResultAddButtonEnabled(String id) {
         try {
-            WebElement button = findByAccessibilityId(TestIDs.getSearchResultAddButtonId(id));
-            return button.isEnabled();
+            WebElement button = findVisibleNodeByResourceId(TestIDs.getSearchResultAddButtonId(id));
+            return button != null
+                    && button.isDisplayed()
+                    && button.isEnabled()
+                    && isElementInSafeTapArea(button);
         } catch (Exception e) {
             return false;
         }
@@ -910,7 +913,7 @@ public class FriendsPage extends BasePage {
     }
 
     public FriendsPage addFriend(String id) {
-        clickByAccessibilityId(TestIDs.getSearchResultAddButtonId(id));
+        tapVisibleResource(TestIDs.getSearchResultAddButtonId(id));
         return this;
     }
 
@@ -931,7 +934,25 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isFriendRequestSent(String id) {
-        return isTextDisplayed("Đã gửi") || isTextDisplayed("ÄÃ£ gá»­i");
+        String addButtonId = TestIDs.getSearchResultAddButtonId(id);
+        String statusId = "search_result_status_" + id;
+
+        try {
+            waitUtils.waitForCondition(driver -> {
+                WebElement status = findVisibleNodeByResourceId(statusId);
+                WebElement button = findVisibleNodeByResourceId(addButtonId);
+
+                return status != null
+                        && button != null
+                        && status.isDisplayed()
+                        && button.isDisplayed()
+                        && !button.isEnabled();
+            }, 10);
+            return true;
+        } catch (Exception e) {
+            logger.warn("Search result '{}' did not change to sent/disabled state: {}", id, e.getMessage());
+            return false;
+        }
     }
 
     public FriendsPage clickSentTab() {
@@ -1778,6 +1799,24 @@ public class FriendsPage extends BasePage {
                     && rect.getX() + rect.getWidth() > 0;
         } catch (Exception e) {
             logger.warn("Could not verify element viewport bounds: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean isElementInSafeTapArea(WebElement node) {
+        try {
+            if (!isElementInViewport(node)) {
+                return false;
+            }
+
+            Rectangle rect = node.getRect();
+            org.openqa.selenium.Dimension screen = DriverManager.getDriver().manage().window().getSize();
+            int bottomSafeMargin = Math.max(96, screen.getHeight() / 14);
+
+            return rect.getY() >= 0
+                    && rect.getY() + rect.getHeight() <= screen.getHeight() - bottomSafeMargin;
+        } catch (Exception e) {
+            logger.warn("Could not verify safe tap area: {}", e.getMessage());
             return false;
         }
     }

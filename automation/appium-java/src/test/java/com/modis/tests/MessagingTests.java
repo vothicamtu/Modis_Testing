@@ -96,101 +96,10 @@ public class MessagingTests extends BaseTest {
                 "Logging in before messaging test"
         );
 
-        try {
-
-            HomePage currentHome =
-                    new HomePage();
-
-            if (currentHome.isDisplayed()) {
-
-                logger.info(
-                        "Already on Home screen - skipping login"
-                );
-
-                homePage = currentHome;
-
-                return;
-            }
-
-        } catch (Exception ignore) {
-        }
-
-        LoginPage loginPage;
-
-        try {
-
-            LoginPage currentLogin =
-                    new LoginPage();
-
-            if (currentLogin.isDisplayed()) {
-
-                logger.info(
-                        "Detected Login screen"
-                );
-
-                loginPage = currentLogin;
-
-            } else {
-
-                logger.info(
-                        "Detected Loading screen"
-                );
-
-                LoadingPage loadingPage =
-                        new LoadingPage();
-
-                loginPage =
-                        loadingPage.clickLoginButton();
-            }
-
-        } catch (Exception e) {
-
-            logger.warn(
-                    "Fallback to LoadingPage flow: {}",
-                    e.getMessage()
-            );
-
-            LoadingPage loadingPage =
-                    new LoadingPage();
-
-            loginPage =
-                    loadingPage.clickLoginButton();
-        }
-
-        Map<String, Object> testUser =
-                testDataReader.getValidUserByUsername("tu");
-
-        Assert.assertNotNull(
-                testUser,
-                "Test user should exist"
-        );
-
-        String username =
-                (String) testUser.get("username");
-
-        String password =
-                (String) testUser.get("password");
-
-        BasePage afterLogin =
-                loginPage.login(username, password);
-
-        Assert.assertTrue(
-                afterLogin instanceof HomePage,
-                "Login should navigate to HomePage"
-        );
-
-        homePage = (HomePage) afterLogin;
-
-        homePage.waitForTopbarReadyAfterLogin(8);
-
-        Assert.assertTrue(
-                homePage.isDisplayed(),
-                "Should be on Home page"
-        );
+        homePage = TestSessionHelper.loginAsDefaultUser(testDataReader);
 
         logger.info(
-                "Logged in successfully with user: {}",
-                username
+                "Logged in successfully with default user"
         );
     }
 
@@ -215,6 +124,7 @@ public class MessagingTests extends BaseTest {
                 String pageState = messagePage.getPageStateSummary();
                 logger.info("Message page state after navigation: {}", pageState);
 
+                logger.info("PASS reason: Messages page opened, page elements were verified, and state was captured | attempt={}", attempt);
                 logger.info("Navigate to messages test completed successfully on attempt {}", attempt);
                 return;
                 
@@ -314,11 +224,13 @@ public class MessagingTests extends BaseTest {
                     "Should have at least one visible conversation, found: " + conversationCount);
             
             logger.info("Found {} conversations", conversationCount);
+            logger.info("PASS reason: conversations exist and message list rendered visible conversation rows | count={}", conversationCount);
         } else {
             Assert.assertTrue(messagePage.isEmptyStateDisplayed(),
                     "Empty state should be displayed when no conversations exist");
             
             logger.info("No conversations found - empty state is correctly displayed");
+            logger.info("PASS reason: no conversations exist and message empty state was verified");
         }
 
         logger.info("Message list display test completed successfully");
@@ -332,6 +244,7 @@ public class MessagingTests extends BaseTest {
 
         if (!messagePage.hasConversations()) {
             logger.info("No conversations available for testing conversation item elements - test will be skipped");
+            logger.info("SKIP reason: no conversations available for conversation item element verification");
             throw new org.testng.SkipException("No conversations available for testing conversation item elements");
         }
 
@@ -371,6 +284,8 @@ public class MessagingTests extends BaseTest {
             logger.info("No last message found for conversation ID: {}", firstConversationId);
         }
 
+        logger.info("PASS reason: conversation item avatar/name were verified, and last-message metadata was verified when present | conversationId={} | name={}",
+                firstConversationId, conversationName);
         logger.info("Conversation item elements test completed successfully");
     }
 
@@ -392,8 +307,10 @@ public class MessagingTests extends BaseTest {
                     "Conversation page should be displayed after selection");
             Assert.assertTrue(conversationPage.verifyPageElements(),
                     "Conversation page elements should be present");
+            logger.info("PASS reason: existing conversation opened and conversation page elements were verified | conversationId={}", firstConversationId);
         } else {
             logger.info("No conversations available for testing conversation selection");
+            logger.info("PASS reason: no conversations available for selection; message list state was accepted for current database");
         }
 
         logger.info("Conversation selection test completed successfully");
@@ -425,9 +342,13 @@ public class MessagingTests extends BaseTest {
             if (conversationPage.hasMessages()) {
                 Assert.assertTrue(conversationPage.isMessageListDisplayed(),
                         "Message list should be displayed when messages exist");
+                logger.info("PASS reason: conversation page header/back/input/send were visible and message list was visible because messages exist | conversationId={}", firstConversationId);
+            } else {
+                logger.info("PASS reason: conversation page header/back/input/send were visible and no message list assertion was required because conversation has no messages | conversationId={}", firstConversationId);
             }
         } else {
             logger.info("No conversations available for testing conversation page elements");
+            logger.info("PASS reason: no conversations available for conversation page element verification; message list state was accepted for current database");
         }
 
         logger.info("Conversation page elements test completed successfully");
@@ -453,8 +374,10 @@ public class MessagingTests extends BaseTest {
                     "Should return to message page after back navigation");
             Assert.assertTrue(returnedMessagePage.verifyPageElements(),
                     "Message page elements should be present after back navigation");
+            logger.info("PASS reason: selected conversation returned to Messages page and message page elements were verified | conversationId={}", firstConversationId);
         } else {
             logger.info("No conversations available for testing back navigation");
+            logger.info("PASS reason: no conversations available for conversation back navigation; message list state was accepted for current database");
         }
 
         logger.info("Back navigation from conversation test completed successfully");
@@ -472,6 +395,7 @@ public class MessagingTests extends BaseTest {
         Assert.assertTrue(returnedHomePage.verifyPageElements(),
                 "Home page elements should be present after back navigation");
 
+        logger.info("PASS reason: message-list back navigation returned to HomePage and home elements were verified");
         logger.info("Back navigation from message list test completed successfully");
     }
 
@@ -499,7 +423,15 @@ public class MessagingTests extends BaseTest {
                 }
 
                 conversationPage.navigateBack();
+                logger.info("PASS reason: conversation for message data existed, opened, and returned to message list | sender={} | receiver={}",
+                        senderUsername, receiverUsername);
+            } else {
+                logger.info("PASS reason: conversations exist but no visible conversation matched sender/receiver in current UI | sender={} | receiver={}",
+                        senderUsername, receiverUsername);
             }
+        } else {
+            logger.info("PASS reason: no conversations available in current database for message data row | sender={} | receiver={}",
+                    senderUsername, receiverUsername);
         }
 
         logger.info("Message data test completed for: " + senderUsername + " -> " + receiverUsername);
@@ -518,6 +450,7 @@ public class MessagingTests extends BaseTest {
                     messagePage.isEmptyStateDisplayed(),
                     "Empty state should be displayed when no conversations exist"
             );
+            logger.info("PASS reason: no conversations exist and message empty state was verified for scenario | scenario={}", scenarioName);
             return;
         }
 
@@ -554,6 +487,7 @@ public class MessagingTests extends BaseTest {
 
         conversationPage.navigateBack();
 
+        logger.info("PASS reason: scenario conversation opened, all scenario messages were sent and displayed | scenario={}", scenarioName);
         logger.info("Scenario completed: " + scenarioName);
     }
 
@@ -584,8 +518,11 @@ public class MessagingTests extends BaseTest {
             );
             Assert.assertTrue(conversationPage.isMessageDisplayed(testMessage),
                     "Sent message should be displayed in conversation");
+            logger.info("PASS reason: message was sent in existing conversation and displayed | conversationId={} | message={}",
+                    firstConversationId, testMessage);
         } else {
             logger.info("No conversations available for testing send message");
+            logger.info("PASS reason: no conversations available for send-message flow; message list state was accepted for current database");
         }
 
         logger.info("Send message test completed successfully");
@@ -618,8 +555,10 @@ public class MessagingTests extends BaseTest {
             conversationPage.enterMessage("Valid message");
             Assert.assertTrue(conversationPage.isSendButtonEnabled(),
                     "Send button should be enabled for valid message");
+            logger.info("PASS reason: empty and whitespace messages disabled send button, valid message enabled it | conversationId={}", firstConversationId);
         } else {
             logger.info("No conversations available for testing empty message handling");
+            logger.info("PASS reason: no conversations available for empty-message validation; message list state was accepted for current database");
         }
 
         logger.info("Empty message handling test completed successfully");
@@ -652,11 +591,14 @@ public class MessagingTests extends BaseTest {
                 Assert.assertTrue(
                         conversationPage.isMessageDisplayed(longMessage)
                 );
+                logger.info("PASS reason: long message was accepted, sent, and displayed | conversationId={}", firstConversationId);
             } else {
                 logger.info("Long message was rejected by input validation");
+                logger.info("PASS reason: long message was rejected by input validation and send button stayed disabled | conversationId={}", firstConversationId);
             }
         } else {
             logger.info("No conversations available for testing long message handling");
+            logger.info("PASS reason: no conversations available for long-message validation; message list state was accepted for current database");
         }
 
         logger.info("Long message handling test completed successfully");
@@ -684,11 +626,14 @@ public class MessagingTests extends BaseTest {
                 conversationPage.scrollToBottom();
                 Assert.assertTrue(conversationPage.isMessageListDisplayed(),
                         "Message list should still be displayed after scrolling");
+                logger.info("PASS reason: message list stayed visible after scroll to top and bottom | conversationId={}", firstConversationId);
             } else {
                 logger.info("Not enough messages for scrolling test");
+                logger.info("PASS reason: conversation had too few messages for scroll stress; current conversation state was accepted | conversationId={}", firstConversationId);
             }
         } else {
             logger.info("No conversations available for testing message list scrolling");
+            logger.info("PASS reason: no conversations available for message-list scrolling; message list state was accepted for current database");
         }
 
         logger.info("Message list scrolling test completed successfully");
@@ -722,9 +667,12 @@ public class MessagingTests extends BaseTest {
             conversationPage.clearMessageInput();
             Assert.assertTrue(conversationPage.getMessageInputText().isEmpty(),
                     "Message input should be empty after clearing");
+            logger.info("PASS reason: message input reflected rapid typed values and cleared to empty | conversationId={} | samples={}",
+                    firstConversationId, rapidMessages.size());
 
         } else {
             logger.info("No conversations available for testing message input responsiveness");
+            logger.info("PASS reason: no conversations available for message input responsiveness; message list state was accepted for current database");
         }
 
         logger.info("Message input responsiveness test completed successfully");
@@ -775,9 +723,12 @@ public class MessagingTests extends BaseTest {
 
                 logger.info("Sent message: " + message);
             }
+            logger.info("PASS reason: multiple message types were sent and displayed | conversationId={} | count={}",
+                    firstConversationId, testMessages.size());
 
         } else {
             logger.info("No conversations available");
+            logger.info("PASS reason: no conversations available for multiple message types; message list state was accepted for current database");
         }
 
         logger.info("Multiple message types test completed");
@@ -804,9 +755,12 @@ public class MessagingTests extends BaseTest {
 
             Assert.assertTrue(conversationPage.isDisplayed(),
                     "Conversation page should remain stable during network issues");
+            logger.info("PASS reason: conversation stayed displayed after backgrounding and sending message during recovery scenario | conversationId={}",
+                    firstConversationId);
 
         } else {
             logger.info("No conversations available for testing message sending error handling");
+            logger.info("PASS reason: no conversations available for message sending error handling; message list state was accepted for current database");
         }
 
         logger.info("Message sending error handling test completed successfully");
@@ -826,6 +780,7 @@ public class MessagingTests extends BaseTest {
                     messagePage.isEmptyStateDisplayed(),
                     "Empty state should be displayed when no conversations exist"
             );
+            logger.info("PASS reason: no conversations exist and message empty state was verified for available-conversation send flow");
             return;
         }
 
@@ -851,5 +806,7 @@ public class MessagingTests extends BaseTest {
 
         logger.info("Message sent in visible conversation: "
                 + newMessage);
+        logger.info("PASS reason: message was sent in available conversation and displayed | conversationId={} | message={}",
+                firstConversationId, newMessage);
     }
 }
