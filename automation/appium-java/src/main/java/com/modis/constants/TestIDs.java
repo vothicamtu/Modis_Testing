@@ -59,6 +59,8 @@ public class TestIDs {
     public static final String FEED_POST_IMAGE_PREFIX = "feed_post_image_"; // + postId
     public static final String FEED_COMMENT_BUTTON_PREFIX = "feed_comment_button_"; // + postId
     public static final String FEED_EMOJI_PREFIX = "feed_emoji_"; // + emoji + _ + postId
+    public static final String FEED_COMMENT_INPUT = "feed_comment_input";
+    public static final String FEED_SEND_COMMENT_BUTTON = "feed_send_comment_button";
     // Feed UI dùng FlatList với testID="feed_flatlist"
     public static final String FEED_SCROLL_VIEW = "feed_flatlist";
 
@@ -110,6 +112,7 @@ public class TestIDs {
     public static final String CONVERSATION_INPUT = "chat_input";
     public static final String CONVERSATION_SEND_BUTTON = "chat_send_button";
     public static final String CONVERSATION_MESSAGE_PREFIX = "conversation_message_"; // + messageId
+    public static final String CONVERSATION_SENT_IMAGE_SUFFIX = "_sent_image";
 
     //  ALL IMAGES SCREEN 
     public static final String ALL_IMAGES_SCREEN = "all_images_screen";

@@ -149,7 +149,7 @@ public class AppConstants {
     public static final int MAX_FEED_SCROLL_ATTEMPTS = 5;
     
     // Search Configuration
-    public static final int MIN_SEARCH_QUERY_LENGTH = 2;
+    public static final int MIN_SEARCH_QUERY_LENGTH = 1;
     public static final int SEARCH_DEBOUNCE_MS = 500;
     
     // Camera Configuration

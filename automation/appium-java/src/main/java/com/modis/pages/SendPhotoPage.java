@@ -384,7 +384,21 @@ public class SendPhotoPage extends BasePage {
 
     public void waitForSendingToComplete() {
         logger.debug("Waiting for photo sending to complete");
-        waitForAnimation();
+        long endTime = System.currentTimeMillis() + 15000;
+
+        while (System.currentTimeMillis() < endTime) {
+            boolean sendScreenVisible = isElementDisplayedByAccessibilityId(TestIDs.SEND_PHOTO_SCREEN);
+            boolean homeVisible = isElementDisplayedByAccessibilityId(TestIDs.HOME_SCREEN);
+            boolean takeVisible = isElementDisplayedByAccessibilityId(TestIDs.TAKE_SCREEN);
+
+            if (!sendScreenVisible && (homeVisible || takeVisible)) {
+                return;
+            }
+
+            waitFor(1);
+        }
+
+        logger.warn("Photo send did not navigate away from send photo screen within timeout");
     }
 
     public boolean isSuccessToastDisplayed() {
@@ -454,6 +468,11 @@ public class SendPhotoPage extends BasePage {
 
     public boolean isFriendSelected(String userId) {
         String friendTestId = TestIDs.getSendPhotoFriendId(userId);
+        String selectedMarkerId = friendTestId + "_selected";
+
+        if (isElementDisplayedByAccessibilityId(selectedMarkerId)) {
+            return true;
+        }
 
         try {
             WebElement friendElement = findByAccessibilityId(friendTestId);

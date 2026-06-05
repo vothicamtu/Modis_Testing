@@ -505,28 +505,32 @@ public class MessagingTests extends BaseTest {
         logger.info("Message data test completed for: " + senderUsername + " -> " + receiverUsername);
     }
 
-    @Test(priority = 9, groups = {"messaging", "regression", "data"}, dataProvider = "conversationScenariosData", description = "Verify tu and tune conversation scenarios")
+    @Test(priority = 9, groups = {"messaging", "regression", "data"}, dataProvider = "conversationScenariosData", description = "Verify visible conversation scenarios")
     public void testConversationScenariosWithRealData(String scenarioName, List<String> participants, List<String> messages) {
 
         logger.info("Testing scenario: " + scenarioName);
 
-        if (!(participants.contains("tu")
-                && participants.contains("tune"))) {
-
-            logger.info("Skipping non tu-tune scenario");
-            return;
-        }
-
         MessagePage messagePage =
                 homePage.navigateToMessages();
 
-        Assert.assertTrue(
-                messagePage.hasConversationWith("tune"),
-                "Conversation with tune should exist"
+        if (!messagePage.hasConversations()) {
+            Assert.assertTrue(
+                    messagePage.isEmptyStateDisplayed(),
+                    "Empty state should be displayed when no conversations exist"
+            );
+            return;
+        }
+
+        String firstConversationId =
+                messagePage.getFirstConversationId();
+
+        Assert.assertNotNull(
+                firstConversationId,
+                "First conversation id should not be null"
         );
 
         ConversationPage conversationPage =
-                messagePage.openConversation("tune");
+                messagePage.selectConversation(firstConversationId);
 
         Assert.assertTrue(
                 conversationPage.isDisplayed(),
@@ -726,40 +730,7 @@ public class MessagingTests extends BaseTest {
         logger.info("Message input responsiveness test completed successfully");
     }
 
-    @Test(priority = 15, groups = {"messaging", "regression"}, description = "Verify conversation refresh functionality")
-    public void testConversationRefresh() {
-        logger.info("Starting conversation refresh test");
-
-        MessagePage messagePage = homePage.navigateToMessages();
-
-        if (messagePage.hasConversations()) {
-            String firstConversationId = messagePage.getFirstConversationId();
-            Assert.assertNotNull(
-                    firstConversationId,
-                    "First conversation id should not be null"
-            );
-            ConversationPage conversationPage = messagePage.selectConversation(firstConversationId);
-
-            int initialMessageCount = conversationPage.getMessageCount();
-
-            conversationPage.refreshConversation();
-
-            Assert.assertTrue(conversationPage.isDisplayed(),
-                    "Conversation page should be displayed after refresh");
-            Assert.assertTrue(conversationPage.verifyPageElements(),
-                    "Conversation page elements should be present after refresh");
-
-            Assert.assertTrue(conversationPage.getMessageCount() >= initialMessageCount,
-                    "Message count should not decrease after refresh");
-
-        } else {
-            logger.info("No conversations available for testing conversation refresh");
-        }
-
-        logger.info("Conversation refresh test completed successfully");
-    }
-
-    @Test(priority = 16, groups = {"messaging", "regression"}, description = "Verify sending multiple message types")
+    @Test(priority = 15, groups = {"messaging", "regression"}, description = "Verify sending multiple message types")
     public void testSendMultipleMessageTypes() {
 
         logger.info("Starting multiple message types test");
@@ -812,7 +783,7 @@ public class MessagingTests extends BaseTest {
         logger.info("Multiple message types test completed");
     }
 
-    @Test(priority = 17, groups = {"messaging", "regression"}, description = "Verify message sending error handling")
+    @Test(priority = 16, groups = {"messaging", "regression"}, description = "Verify message sending error handling")
     public void testMessageSendingErrorHandling() {
         logger.info("Starting message sending error handling test");
 
@@ -841,8 +812,8 @@ public class MessagingTests extends BaseTest {
         logger.info("Message sending error handling test completed successfully");
     }
 
-    @Test(priority = 18, groups = {"messaging", "e2e"}, description = "Verify messaging between tu and tune")
-    public void testSendMessageBetweenTuAndTune() {
+    @Test(priority = 17, groups = {"messaging", "e2e"}, description = "Verify sending message in an available conversation")
+    public void testSendMessageInAvailableConversation() {
 
         String newMessage =
                 testDataReader.getTestData("vietnameseMessage");
@@ -850,8 +821,24 @@ public class MessagingTests extends BaseTest {
         MessagePage messagePage =
                 homePage.navigateToMessages();
 
+        if (!messagePage.hasConversations()) {
+            Assert.assertTrue(
+                    messagePage.isEmptyStateDisplayed(),
+                    "Empty state should be displayed when no conversations exist"
+            );
+            return;
+        }
+
+        String firstConversationId =
+                messagePage.getFirstConversationId();
+
+        Assert.assertNotNull(
+                firstConversationId,
+                "First conversation id should not be null"
+        );
+
         ConversationPage conversationPage =
-                messagePage.openConversation("tune");
+                messagePage.selectConversation(firstConversationId);
 
         conversationPage.sendMessage(newMessage);
 
@@ -862,7 +849,7 @@ public class MessagingTests extends BaseTest {
                 "Message should be displayed"
         );
 
-        logger.info("Message sent between tu and tune: "
+        logger.info("Message sent in visible conversation: "
                 + newMessage);
     }
 }

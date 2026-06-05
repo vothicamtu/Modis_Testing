@@ -5,7 +5,13 @@ import com.modis.constants.TestIDs;
 import com.modis.constants.AppConstants;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebElement;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HomePage extends BasePage {
 
@@ -198,6 +204,27 @@ public HomePage scrollFeedDown() {
         scrollInElement(feedScrollView, "down");
         return this;
     }
+public HomePage scrollFeedToNextPost() {
+        logger.info("Scrolling feed to next post");
+        try {
+            Dimension size = driver.manage().window().getSize();
+            Map<String, Object> params = new HashMap<>();
+            params.put("left", 20);
+            params.put("top", (int) (size.height * 0.18));
+            params.put("width", size.width - 40);
+            params.put("height", (int) (size.height * 0.74));
+            params.put("direction", "down");
+            params.put("percent", 0.95);
+
+            driver.executeScript("mobile: scrollGesture", params);
+            waitForAnimation();
+        } catch (Exception e) {
+            logger.warn("Feed scrollGesture failed, falling back to swipe: {}", e.getMessage());
+            performSwipeGesture("up");
+            waitForAnimation();
+        }
+        return this;
+    }
 public HomePage scrollFeedUp() {
         logger.debug("Scrolling feed up");
         scrollInElement(feedScrollView, "up");
@@ -211,6 +238,20 @@ public HomePage scrollToTopOfFeed() {
 public HomePage scrollToBottomOfFeed() {
         logger.info("Scrolling to bottom of feed");
         scrollToBottomBase();
+        return this;
+    }
+public HomePage navigateToFeed() {
+        logger.info("Navigating to feed screen");
+
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            if (isFeedDisplayed()) {
+                return this;
+            }
+
+            performSwipeGesture("up");
+            waitForAnimation();
+        }
+
         return this;
     }
 public void waitForFeedToLoad() {
@@ -240,6 +281,12 @@ public HomePage clickEmojiReaction(String emoji, String postId) {
         clickByAccessibilityId(emojiTestId);
         return this;
     }
+public HomePage clickEmojiReactionById(String emojiTestId) {
+        logger.info("Clicking emoji reaction by id: {}", emojiTestId);
+        waitForElementClickable(emojiTestId);
+        clickByAccessibilityId(emojiTestId);
+        return this;
+    }
 public HomePage clickCommentButton(String postId) {
         logger.info("Clicking comment button on post: {}", postId);
         String commentButtonId = TestIDs.FEED_COMMENT_BUTTON_PREFIX + postId;
@@ -247,6 +294,16 @@ public HomePage clickCommentButton(String postId) {
         clickByAccessibilityId(commentButtonId);
         return this;
     }
+
+public ConversationPage sendFeedComment(String commentText) {
+        logger.info("Sending feed comment");
+        waitForElementVisible(TestIDs.FEED_COMMENT_INPUT);
+        enterTextByAccessibilityId(TestIDs.FEED_COMMENT_INPUT, commentText);
+        waitForElementClickable(TestIDs.FEED_SEND_COMMENT_BUTTON);
+        clickByAccessibilityId(TestIDs.FEED_SEND_COMMENT_BUTTON);
+        return new ConversationPage();
+    }
+
 public HomePage longPressFeedPost(String postId) {
         logger.info("Long pressing on feed post: {}", postId);
         String postTestId = TestIDs.getFeedPostItemId(postId);
@@ -300,9 +357,131 @@ public boolean isEmojiReactionDisplayed(String emoji, String postId) {
         return isElementDisplayedByAccessibilityId(emojiTestId);
     }
 
-    public boolean isFeedCommentButtonDisplayed(String postId) {
+public boolean isFeedCommentButtonDisplayed(String postId) {
         String commentButtonId = TestIDs.FEED_COMMENT_BUTTON_PREFIX + postId;
         return isElementDisplayedByAccessibilityId(commentButtonId);
+    }
+
+    public String getFirstVisibleFeedPostId() {
+        return getFirstVisibleFeedId("feed_post_item_([a-fA-F0-9]+)");
+    }
+
+    public String getFirstVisibleFeedPostImageId() {
+        return getFirstVisibleFeedId("feed_post_image_([a-fA-F0-9]+)");
+    }
+
+    public String getFirstVisibleFeedPostWithEmoji(String emoji) {
+        return getFirstVisibleFeedId("feed_emoji_" + Pattern.quote(emoji) + "_([a-fA-F0-9]+)");
+    }
+
+    public String getFirstVisibleFeedPostWithCommentButton() {
+        return getFirstVisibleFeedId("feed_comment_button_([a-fA-F0-9]+)");
+    }
+
+    public String getFirstVisibleFeedEmojiButtonId() {
+        return getFirstVisibleFeedMatch("(feed_emoji_[^\"']+?_[a-fA-F0-9]+)");
+    }
+
+    public String findFirstFeedEmojiButtonId(int maxScrolls) {
+        String previousPostId = "";
+        int unchangedCount = 0;
+
+        for (int attempt = 0; attempt <= maxScrolls; attempt++) {
+            String emojiButtonId = getFirstVisibleFeedEmojiButtonId();
+
+            if (!emojiButtonId.isEmpty()) {
+                logger.info("Found emoji feed button on attempt {}: {}", attempt + 1, emojiButtonId);
+                return emojiButtonId;
+            }
+
+            String currentPostId = getFirstVisibleFeedPostId();
+            logger.info("No emoji feed button on attempt {}, current post: {}", attempt + 1, currentPostId);
+
+            if (!currentPostId.isEmpty() && currentPostId.equals(previousPostId)) {
+                unchangedCount++;
+            } else {
+                unchangedCount = 0;
+            }
+
+            if (unchangedCount >= 2) {
+                logger.info("Reached end of feed without an emoji button");
+                return "";
+            }
+
+            previousPostId = currentPostId;
+            scrollFeedToNextPost();
+        }
+
+        logger.info("No emoji feed button found after scanning {} feed positions", maxScrolls + 1);
+        return "";
+    }
+
+    public String findFirstFeedPostWithCommentButton(int maxScrolls) {
+        String previousPostId = "";
+        int unchangedCount = 0;
+
+        for (int attempt = 0; attempt <= maxScrolls; attempt++) {
+            String postId = getFirstVisibleFeedPostWithCommentButton();
+
+            if (!postId.isEmpty()) {
+                logger.info("Found commentable feed post on attempt {}: {}", attempt + 1, postId);
+                return postId;
+            }
+
+            String currentPostId = getFirstVisibleFeedPostId();
+            logger.info("No commentable feed post on attempt {}, current post: {}", attempt + 1, currentPostId);
+
+            if (!currentPostId.isEmpty() && currentPostId.equals(previousPostId)) {
+                unchangedCount++;
+            } else {
+                unchangedCount = 0;
+            }
+
+            if (unchangedCount >= 2) {
+                logger.info("Reached end of feed without a commentable post");
+                return "";
+            }
+
+            previousPostId = currentPostId;
+            scrollFeedToNextPost();
+        }
+
+        logger.info("No commentable feed post found after scanning {} feed positions", maxScrolls + 1);
+        return "";
+    }
+
+    private String getFirstVisibleFeedId(String regex) {
+        Matcher matcher = getFirstVisibleFeedMatcher(regex);
+
+        if (matcher != null) {
+            return matcher.group(1);
+        }
+
+        return "";
+    }
+
+    private String getFirstVisibleFeedMatch(String regex) {
+        Matcher matcher = getFirstVisibleFeedMatcher(regex);
+
+        if (matcher != null) {
+            return matcher.group(1);
+        }
+
+        return "";
+    }
+
+    private Matcher getFirstVisibleFeedMatcher(String regex) {
+        try {
+            Matcher matcher = Pattern.compile(regex).matcher(driver.getPageSource());
+
+            if (matcher.find()) {
+                return matcher;
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to read visible feed id: {}", e.getMessage());
+        }
+
+        return null;
     }
 
     // GESTURE ACTIONS

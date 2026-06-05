@@ -169,7 +169,11 @@ public class ConversationPage extends BasePage {
 
     public String getMessageInputText() {
         waitForElementVisible(TestIDs.CONVERSATION_INPUT);
-        return messageInput.getAttribute("text");
+        String text = messageInput.getAttribute("text");
+        if (text == null || "Nhắn tin...".equals(text.trim())) {
+            return "";
+        }
+        return text;
     }
 
     public boolean isMessageInputEmpty() {
@@ -602,5 +606,24 @@ public class ConversationPage extends BasePage {
         }
 
         return hasMessageWithContent(message);
+    }
+
+    public boolean hasVisibleSentImageMessage() {
+        try {
+            waitForElementVisible(TestIDs.CONVERSATION_MESSAGES_LIST);
+
+            for (int i = 0; i < 10; i++) {
+                if (getDriver().getPageSource().contains(TestIDs.CONVERSATION_SENT_IMAGE_SUFFIX)) {
+                    return true;
+                }
+
+                waitFor(1);
+            }
+
+            return false;
+        } catch (Exception e) {
+            logger.warn("Failed checking sent image message: {}", e.getMessage());
+            return false;
+        }
     }
 }

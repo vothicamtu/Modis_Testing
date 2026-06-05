@@ -89,7 +89,9 @@ public class DriverManager {
         for (URL url : urls) {
             try {
                 logger.info("Attempting to create AndroidDriver at: {}", url);
-                return new AndroidDriver(url, options);
+                AndroidDriver driver = new AndroidDriver(url, options);
+                logger.info("Runtime capabilities: {}", driver.getCapabilities());
+                return driver;
             } catch (Exception e) {
                 last = e;
                 if (!retriedWithNoReset && isPmClearPermissionError(e)) {
@@ -99,7 +101,9 @@ public class DriverManager {
                         options.setNoReset(true);
                         options.setFullReset(false);
                         options.setCapability("fastReset", false);
-                        return new AndroidDriver(url, options);
+                        AndroidDriver driver = new AndroidDriver(url, options);
+                        logger.info("Runtime capabilities: {}", driver.getCapabilities());
+                        return driver;
                     } catch (Exception retryException) {
                         last = retryException;
                         logger.warn("Retry with noReset=true failed at {}: {}: {}", url, retryException.getClass().getSimpleName(), retryException.getMessage());
@@ -213,6 +217,8 @@ public class DriverManager {
         options.setCapability("skipUnlock", ConfigReader.getBooleanProperty("android.skipUnlock", true));
         options.setCapability("unlockType", ConfigReader.getProperty("android.unlockType", "pin"));
         options.setCapability("unlockKey", ConfigReader.getProperty("android.unlockKey", "1234"));
+        options.setCapability("unicodeKeyboard", ConfigReader.getBooleanProperty("android.unicodeKeyboard", true));
+        options.setCapability("resetKeyboard", ConfigReader.getBooleanProperty("android.resetKeyboard", true));
 
         // Turn OFF ignoreUnimportantViews when debugging accessibility issues
         boolean debugMode = ConfigReader.getBooleanProperty("android.debugMode", false);

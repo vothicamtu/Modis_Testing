@@ -14,6 +14,7 @@ import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.RemoteWebElement;
 import org.openqa.selenium.support.PageFactory;
 import org.slf4j.Logger;
 
@@ -25,8 +26,8 @@ import java.util.Map;
 public abstract class BasePage {
 
     protected final Logger logger = LoggerUtil.getLogger(this.getClass());
-    protected final AppiumDriver driver;
-    protected final WaitUtils waitUtils;
+    protected AppiumDriver driver;
+    protected WaitUtils waitUtils;
     protected final GestureUtils gestureUtils;
 
     public BasePage() {
@@ -35,6 +36,18 @@ public abstract class BasePage {
         this.gestureUtils = new GestureUtils();
         PageFactory.initElements(new AppiumFieldDecorator(driver, Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT)), this);
         logger.info("Initialized page: {}", this.getClass().getSimpleName());
+    }
+
+    protected void syncDriverContext() {
+        AppiumDriver currentDriver = DriverManager.getDriver();
+        if (currentDriver == null || currentDriver == driver) {
+            return;
+        }
+
+        driver = currentDriver;
+        waitUtils = new WaitUtils(driver);
+        PageFactory.initElements(new AppiumFieldDecorator(driver, Duration.ofSeconds(AppConstants.ELEMENT_WAIT_TIMEOUT)), this);
+        logger.info("Reinitialized page context after driver session change: {}", this.getClass().getSimpleName());
     }
 
     protected org.openqa.selenium.Dimension getScreenSize() {
@@ -67,6 +80,7 @@ public abstract class BasePage {
                 );
 
         if (element != null) {
+            syncDriverContext();
             return element;
         }
 
@@ -79,6 +93,7 @@ public abstract class BasePage {
                 );
 
         if (element != null) {
+            syncDriverContext();
             return element;
         }
 
@@ -276,12 +291,35 @@ public abstract class BasePage {
         }
 
         try {
-            element.clear();
-            element.sendKeys(text);
+            if (DriverManager.getCurrentPlatform().equalsIgnoreCase("android")) {
+                if (!replaceElementValue(element, text)) {
+                    throw new RuntimeException("Android direct text replacement failed");
+                }
+            } else {
+                element.clear();
+                element.sendKeys(text);
+            }
             logger.debug("Entered text: {}", text);
         } catch (Exception e) {
             logger.error("Failed to enter text: {}", text, e);
             throw new RuntimeException("Text input failed", e);
+        }
+    }
+
+    private boolean replaceElementValue(WebElement element, String text) {
+        try {
+            if (!(element instanceof RemoteWebElement)) {
+                return false;
+            }
+
+            Map<String, Object> args = new HashMap<>();
+            args.put("elementId", ((RemoteWebElement) element).getId());
+            args.put("text", text);
+            driver.executeScript("mobile: replaceElementValue", args);
+            return true;
+        } catch (Exception e) {
+            logger.debug("mobile: replaceElementValue failed: {}", e.getMessage());
+            return false;
         }
     }
 
@@ -584,6 +622,7 @@ public abstract class BasePage {
                 );
 
         if (element != null) {
+            syncDriverContext();
             return element;
         }
 
@@ -595,6 +634,7 @@ public abstract class BasePage {
                 );
 
         if (element != null) {
+            syncDriverContext();
             return element;
         }
 
@@ -612,6 +652,7 @@ public abstract class BasePage {
                 );
 
         if (element != null) {
+            syncDriverContext();
             return element;
         }
 

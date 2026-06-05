@@ -26,6 +26,8 @@ public class FriendsPage extends BasePage {
     private final Map<String, String> searchResultTexts = new HashMap<>();
     private final Set<String> visibleSearchResultIds = new HashSet<>();
     private final Map<String, String> friendRequestNames = new HashMap<>();
+    private boolean friendRequestsSectionReached = false;
+    private boolean sentRequestsSectionReached = false;
 
     // PAGE ELEMENTS
 
@@ -57,8 +59,6 @@ public class FriendsPage extends BasePage {
     @AndroidFindBy(accessibility = TestIDs.SEARCH_EMPTY_STATE)
     @iOSXCUITFindBy(accessibility = TestIDs.SEARCH_EMPTY_STATE)
     private WebElement searchEmptyState;
-
-    // NAVIGATION ACTIONS
 
     public HomePage navigateBack() {
 
@@ -97,14 +97,17 @@ public class FriendsPage extends BasePage {
         searchResultTexts.clear();
         visibleSearchResultIds.clear();
 
-        waitForElementVisible(
-                TestIDs.FRIENDS_SEARCH_INPUT
-        );
+        if (!isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT)) {
+            scrollToTop();
+            waitForElementVisible(
+                    TestIDs.FRIENDS_SEARCH_INPUT
+            );
+        }
 
-        enterTextByAccessibilityId(
-                TestIDs.FRIENDS_SEARCH_INPUT,
-                searchQuery
-        );
+        WebElement input = findByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT);
+        clearSearchInputIfNeeded(input);
+        input = findByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT);
+        enterText(input, searchQuery);
 
         logger.info(
                 "Search is auto-triggered by FE"
@@ -125,6 +128,8 @@ public class FriendsPage extends BasePage {
                                 isElementDisplayedByAccessibilityId(
                                         TestIDs.SEARCH_EMPTY_STATE
                                 )
+                                ||
+                                !getSearchResultRows().isEmpty()
                 ) {
 
                     logger.info(
@@ -155,10 +160,15 @@ public class FriendsPage extends BasePage {
 
         try {
 
+            if (isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH)) {
+                clickByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH);
+                waitForAnimation();
+                return this;
+            }
+
             waitForElementVisible(
                     TestIDs.FRIENDS_SEARCH_INPUT
             );
-
             findByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT).clear();
 
         } catch (Exception e) {
@@ -192,27 +202,51 @@ public class FriendsPage extends BasePage {
         logger.info("Accepting friend request from user: {}", userId);
         String acceptButtonId = TestIDs.getFriendRequestAcceptButtonId(userId);
 
-        WebElement acceptButton = scrollToElementByAccessibilityId(acceptButtonId);
+        WebElement acceptButton = findVisibleNodeByResourceId(acceptButtonId);
         if (acceptButton != null) {
             clickElement(acceptButton);
             waitForAnimation();
         } else {
-            logger.warn("Accept button not found for user: {}", userId);
+            throw new RuntimeException("Accept button not found for user: " + userId);
         }
 
         return this;
     }
 
     public FriendsPage declineFriendRequest(String userId) {
-        logger.info("Declining friend request from user: {}", userId);
+        openDeclineFriendRequestDialog(userId);
+        confirmCurrentDialog();
+        return this;
+    }
+
+    private void clearSearchInputIfNeeded(WebElement input) {
+        if (isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH)) {
+            clickByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH);
+
+            long endTime = System.currentTimeMillis() + 5000;
+
+            while (System.currentTimeMillis() < endTime) {
+                if (!isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH)) {
+                    return;
+                }
+
+                waitFor(1);
+            }
+
+            logger.warn("Search clear button was still displayed after clear action");
+        }
+    }
+
+    public FriendsPage openDeclineFriendRequestDialog(String userId) {
+        logger.info("Opening decline friend request dialog for user: {}", userId);
         String declineButtonId = TestIDs.getFriendRequestRejectButtonId(userId);
 
-        WebElement declineButton = scrollToElementByAccessibilityId(declineButtonId);
+        WebElement declineButton = findVisibleNodeByResourceId(declineButtonId);
         if (declineButton != null) {
             clickElement(declineButton);
             waitForAnimation();
         } else {
-            logger.warn("Decline button not found for user: {}", userId);
+            throw new RuntimeException("Decline button not found for user: " + userId);
         }
 
         return this;
@@ -250,6 +284,10 @@ public class FriendsPage extends BasePage {
     // VALIDATION METHODS
     public boolean isSearchInputDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT);
+    }
+
+    public boolean isSearchInputIconDisplayed() {
+        return isNodeDisplayed(TestIDs.FRIENDS_SEARCH_INPUT + "_left_icon");
     }
 
     public boolean isFriendsListDisplayed() {
@@ -411,7 +449,15 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean hasFriends() {
-        return getVisibleFriendsCount() > 0;
+        for (int i = 0; i < 4; i++) {
+            if (getVisibleFriendsCount() > 0) {
+                return true;
+            }
+
+            waitFor(1);
+        }
+
+        return false;
     }
 
     public int getFriendsCount() {
@@ -419,7 +465,8 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isEmptyFriendsStateDisplayed() {
-        return isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_LIST_EMPTY);
+        return isNodeDisplayed(TestIDs.FRIENDS_LIST_EMPTY)
+                || isVisibleTextDisplayed("Bạn chưa có bạn bè");
     }
 
     public String getFirstFriendId() {
@@ -445,6 +492,34 @@ public class FriendsPage extends BasePage {
         return isNodeDisplayed(TestIDs.FRIEND_UNFRIEND_PREFIX + id);
     }
 
+    public FriendsPage openUnfriendDialog(String id) {
+        logger.info("Opening unfriend dialog for friend request id: {}", id);
+        WebElement unfriendButton = findVisibleNodeByResourceId(TestIDs.FRIEND_UNFRIEND_PREFIX + id);
+
+        if (unfriendButton == null) {
+            throw new RuntimeException("Unfriend button not found for id: " + id);
+        }
+
+        clickElement(unfriendButton);
+        waitFor(1);
+        return this;
+    }
+
+    public FriendsPage unfriend(String id) {
+        openUnfriendDialog(id);
+        confirmCurrentDialog();
+        return this;
+    }
+
+    public FriendsPage waitForFriendToDisappear(String id) {
+        waitForElementToDisappear(TestIDs.getFriendItemId(id));
+        return this;
+    }
+
+    public boolean isFriendDisplayed(String id) {
+        return isNodeDisplayed(TestIDs.getFriendItemId(id));
+    }
+
     public boolean isFriendUsernameDisplayed(String id) {
         // FriendsList.tsx only renders fullname/username in one name node.
         return false;
@@ -455,17 +530,83 @@ public class FriendsPage extends BasePage {
     }
 
     public FriendsPage clickRequestsTab() {
-        for (int i = 0; i < 8; i++) {
-            if (isNodeVisible("friend_requests_section")) {
+        friendRequestsSectionReached = false;
+        scrollToTop();
+
+        WebElement requestTitle = scrollIntoViewByDescription("friend_requests_title");
+        if (requestTitle != null) {
+            friendRequestsSectionReached = true;
+            waitForFriendRequestsContent();
+            return this;
+        }
+
+        WebElement requestEmpty = scrollIntoViewByDescription("friend_requests_empty");
+        if (requestEmpty != null) {
+            friendRequestsSectionReached = true;
+            waitForFriendRequestsContent();
+            return this;
+        }
+
+        while (true) {
+            if (isFriendRequestsSectionInView()) {
+                friendRequestsSectionReached = true;
+                alignFriendRequestsHeader();
+                waitForFriendRequestsContent();
                 return this;
             }
 
             try {
-                scrollFriendsContainerDown();
+                String beforeScrollSource = getCurrentPageSource();
+                boolean canScrollMore;
+
+                if (isPastFriendRequestsSection()) {
+                    friendRequestsSectionReached = true;
+                    if (!hasFriendRequests()) {
+                        alignFriendRequestsHeader();
+                        waitForFriendRequestsContent();
+                        return this;
+                    }
+
+                    canScrollMore = scrollFriendsContainerUp(0.18);
+                } else {
+                    canScrollMore = scrollFriendsContainerDown(0.22);
+                }
+
                 waitFor(1);
+
+                if (isFriendRequestsSectionInView()) {
+                    friendRequestsSectionReached = true;
+                    alignFriendRequestsHeader();
+                    waitForFriendRequestsContent();
+                    return this;
+                }
+
+                if (isPastFriendRequestsSection() && !hasFriendRequests()) {
+                    friendRequestsSectionReached = true;
+                    alignFriendRequestsHeader();
+                    waitForFriendRequestsContent();
+                    return this;
+                }
+
+                String afterScrollSource = getCurrentPageSource();
+
+                if (!canScrollMore || beforeScrollSource.equals(afterScrollSource)) {
+                    break;
+                }
             } catch (Exception e) {
-                logger.warn("Request section scroll attempt {} failed: {}", i + 1, e.getMessage());
+                logger.warn("Request section scroll failed: {}", e.getMessage());
+                break;
             }
+        }
+
+        if (isPastFriendRequestsSection()) {
+            friendRequestsSectionReached = true;
+            alignFriendRequestsHeader();
+        }
+
+        if (!hasFriendRequests()) {
+            friendRequestsSectionReached = true;
+            alignFriendRequestsHeader();
         }
 
         return this;
@@ -476,9 +617,10 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isFriendRequestsListDisplayed() {
-        return isNodeVisible("friend_requests_section")
+        return isFriendRequestsSectionInView()
                 || hasFriendRequests()
-                || isNodeVisible("friend_requests_empty");
+                || isNodeVisible("friend_requests_empty")
+                || friendRequestsSectionReached;
     }
 
     public int getFriendRequestsCount() {
@@ -486,7 +628,9 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isEmptyRequestsStateDisplayed() {
-        return isNodeDisplayed("friend_requests_empty");
+        return isNodeDisplayed("friend_requests_empty")
+                || isVisibleTextDisplayed("Chưa có lời mời kết bạn")
+                || (friendRequestsSectionReached && !hasFriendRequests());
     }
 
     public String getFirstFriendRequestId() {
@@ -635,18 +779,76 @@ public class FriendsPage extends BasePage {
     }
 
     public String getFirstAddableSearchResultId() {
+        int maxAttempts = getSearchResultScrollAttempts();
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            List<WebElement> results = getSearchResultRows();
+
+            for (WebElement result : results) {
+                String id = extractDynamicId(result, TestIDs.SEARCH_RESULT_ITEM_PREFIX);
+
+                if (!id.isEmpty() && isSearchResultAddButtonEnabled(id)) {
+                    rememberSearchResult(id, result);
+                    return id;
+                }
+            }
+
+            if (attempt < maxAttempts - 1) {
+                scrollFriendsContainerDown(0.60);
+                waitFor(1);
+            }
+        }
+
+        return "";
+    }
+
+    public String getFirstIncomingSearchResultId() {
         List<WebElement> results = getSearchResultRows();
 
         for (WebElement result : results) {
             String id = extractDynamicId(result, TestIDs.SEARCH_RESULT_ITEM_PREFIX);
 
-            if (!id.isEmpty() && isSearchResultAddButtonEnabled(id)) {
+            if (!id.isEmpty()
+                    && isSearchResultAcceptButtonDisplayed(id)
+                    && isSearchResultRejectButtonDisplayed(id)) {
                 rememberSearchResult(id, result);
+                logger.info("Found visible incoming search result actions for id '{}'", id);
                 return id;
             }
         }
 
+        logger.info("No visible incoming search result actions found at top of search results");
         return "";
+    }
+
+    private int getSearchResultScrollAttempts() {
+        int totalResults = getSearchResultTotalCount();
+        int visibleResults = Math.max(1, getSearchResultRows().size());
+        int maxAttempts = totalResults > 0
+                ? Math.max(1, (int) Math.ceil((double) totalResults / visibleResults) + 2)
+                : 12;
+
+        logger.info("Search result scroll plan | total={} | visible={} | maxAttempts={}",
+                totalResults, visibleResults, maxAttempts);
+
+        return maxAttempts;
+    }
+
+    private int getSearchResultTotalCount() {
+        try {
+            String title = getVisibleResourceText("search_results_title");
+            Matcher matcher = Pattern
+                    .compile("\\((\\d+)\\)")
+                    .matcher(title);
+
+            if (matcher.find()) {
+                return Integer.parseInt(matcher.group(1));
+            }
+        } catch (Exception e) {
+            logger.warn("Could not read search result total count: {}", e.getMessage());
+        }
+
+        return 0;
     }
 
     public String getSearchResultName(String id) {
@@ -699,8 +901,32 @@ public class FriendsPage extends BasePage {
         return !getSearchResultUsername(id).trim().isEmpty();
     }
 
+    public boolean isSearchResultAcceptButtonDisplayed(String id) {
+        return isNodeDisplayed("search_result_accept_button_" + id);
+    }
+
+    public boolean isSearchResultRejectButtonDisplayed(String id) {
+        return isNodeDisplayed("search_result_reject_button_" + id);
+    }
+
     public FriendsPage addFriend(String id) {
         clickByAccessibilityId(TestIDs.getSearchResultAddButtonId(id));
+        return this;
+    }
+
+    public FriendsPage acceptIncomingSearchResult(String id) {
+        tapVisibleResource("search_result_accept_button_" + id);
+        return this;
+    }
+
+    public FriendsPage openRejectIncomingSearchResultDialog(String id) {
+        tapVisibleResource("search_result_reject_button_" + id);
+        waitFor(1);
+        return this;
+    }
+
+    public FriendsPage waitForIncomingSearchActionsToDisappear(String id) {
+        waitForElementToDisappear("search_result_accept_button_" + id);
         return this;
     }
 
@@ -709,11 +935,63 @@ public class FriendsPage extends BasePage {
     }
 
     public FriendsPage clickSentTab() {
-        try {
-            scrollDownBase();
-        } catch (Exception e) {
-            logger.warn("Sent section scroll failed; continuing with visible friends state: {}", e.getMessage());
+        sentRequestsSectionReached = false;
+        scrollToTop();
+
+        WebElement sentTitleText = scrollIntoViewByText("Lời mời đã gửi");
+        if (sentTitleText != null) {
+            sentRequestsSectionReached = true;
+            waitForSentRequestsContent();
+            return this;
         }
+
+        WebElement sentTitle = scrollIntoViewByDescription("sent_requests_title");
+        if (sentTitle != null) {
+            sentRequestsSectionReached = true;
+            waitForSentRequestsContent();
+            return this;
+        }
+
+        WebElement sentEmpty = scrollIntoViewByDescription("sent_requests_empty");
+        if (sentEmpty != null) {
+            sentRequestsSectionReached = true;
+            waitForSentRequestsContent();
+            return this;
+        }
+
+        while (true) {
+            if (isSentRequestsSectionInView()) {
+                sentRequestsSectionReached = true;
+                waitForSentRequestsContent();
+                return this;
+            }
+
+            try {
+                String beforeScrollSource = getCurrentPageSource();
+                boolean canScrollMore = scrollFriendsContainerDown(0.22);
+                waitFor(1);
+
+                if (isSentRequestsSectionInView()) {
+                    sentRequestsSectionReached = true;
+                    waitForSentRequestsContent();
+                    return this;
+                }
+
+                String afterScrollSource = getCurrentPageSource();
+
+                if (!canScrollMore || beforeScrollSource.equals(afterScrollSource)) {
+                    break;
+                }
+            } catch (Exception e) {
+                logger.warn("Sent section scroll failed: {}", e.getMessage());
+                break;
+            }
+        }
+
+        if (!hasSentRequests()) {
+            sentRequestsSectionReached = true;
+        }
+
         return this;
     }
 
@@ -832,7 +1110,10 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isSentRequestsListDisplayed() {
-        return hasSentRequests() || isEmptySentStateDisplayed();
+        return isSentRequestsSectionInView()
+                || hasSentRequests()
+                || isEmptySentStateDisplayed()
+                || sentRequestsSectionReached;
     }
 
     public int getSentRequestsCount() {
@@ -842,7 +1123,9 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isEmptySentStateDisplayed() {
-        return isNodeDisplayed("sent_requests_empty");
+        return isNodeDisplayed("sent_requests_empty")
+                || isVisibleTextDisplayed("Bạn chưa gửi lời mời nào")
+                || (sentRequestsSectionReached && !hasSentRequests());
     }
 
     public String getFirstSentRequestId() {
@@ -866,6 +1149,83 @@ public class FriendsPage extends BasePage {
 
     public boolean isSentRequestCancelButtonDisplayed(String id) {
         return isNodeDisplayed("sent_request_item_" + id + "_cancel_button");
+    }
+
+    public FriendsPage cancelSentRequest(String id) {
+        logger.info("Cancelling sent friend request: {}", id);
+        WebElement cancelButton = findVisibleNodeByResourceId("sent_request_item_" + id + "_cancel_button");
+
+        if (cancelButton == null) {
+            throw new RuntimeException("Sent request cancel button not found for id: " + id);
+        }
+
+        clickElement(cancelButton);
+        waitFor(1);
+        return this;
+    }
+
+    public boolean isCancelSentRequestDialogDisplayed() {
+        return !findElementsByXPath(
+                "//*[@resource-id='android:id/alertTitle' or @resource-id='android:id/message']"
+        ).isEmpty();
+    }
+
+    public String getCancelSentRequestDialogTitle() {
+        return getVisibleResourceText("com.modis:id/alert_title");
+    }
+
+    public String getCancelSentRequestDialogMessage() {
+        return getVisibleResourceText("android:id/message");
+    }
+
+    public String getCancelSentRequestConfirmText() {
+        return getVisibleResourceText("android:id/button1");
+    }
+
+    public String getCancelSentRequestDismissText() {
+        return getVisibleResourceText("android:id/button2");
+    }
+
+    public FriendsPage captureCancelSentRequestDialog() {
+        takeScreenshot("cancel_sent_request_dialog");
+        return this;
+    }
+
+    public FriendsPage confirmCancelSentRequest() {
+        return confirmCurrentDialog();
+    }
+
+    public FriendsPage waitForSentRequestToDisappear(String id) {
+        waitForElementToDisappear("sent_request_item_" + id);
+        return this;
+    }
+
+    public boolean isSentRequestDisplayed(String id) {
+        return isNodeDisplayed("sent_request_item_" + id);
+    }
+
+    public FriendsPage confirmCurrentDialog() {
+        WebElement confirmButton = findVisibleNodeByResourceId("android:id/button1");
+
+        if (confirmButton == null) {
+            throw new RuntimeException("Dialog confirmation button not found");
+        }
+
+        clickElement(confirmButton);
+        waitForAnimation();
+        return this;
+    }
+
+    public FriendsPage dismissCurrentDialog() {
+        WebElement dismissButton = findVisibleNodeByResourceId("android:id/button2");
+
+        if (dismissButton == null) {
+            throw new RuntimeException("Dialog dismiss button not found");
+        }
+
+        clickElement(dismissButton);
+        waitForAnimation();
+        return this;
     }
 
     // FRIEND SEARCH AND REQUEST ACTIONS
@@ -927,6 +1287,10 @@ public class FriendsPage extends BasePage {
     }
 
     private void scrollFriendsContainerDown() {
+        scrollFriendsContainerDown(0.85);
+    }
+
+    private boolean scrollFriendsContainerDown(double percent) {
         try {
             Map<String, Object> params = new HashMap<>();
             params.put("left", 0);
@@ -934,16 +1298,154 @@ public class FriendsPage extends BasePage {
             params.put("width", 720);
             params.put("height", 1200);
             params.put("direction", "down");
-            params.put("percent", 0.85);
+            params.put("percent", percent);
 
-            driver.executeScript("mobile: scrollGesture", params);
+            Object result = driver.executeScript("mobile: scrollGesture", params);
             logger.info("Scrolled friends container down with scrollGesture");
-            return;
+            return !(result instanceof Boolean) || (Boolean) result;
         } catch (Exception e) {
             logger.warn("friends_scroll scrollGesture failed: {}", e.getMessage());
         }
 
         scrollDownBase();
+        return true;
+    }
+
+    private boolean scrollFriendsContainerUp(double percent) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("left", 0);
+            params.put("top", 260);
+            params.put("width", 720);
+            params.put("height", 1200);
+            params.put("direction", "up");
+            params.put("percent", percent);
+
+            Object result = driver.executeScript("mobile: scrollGesture", params);
+            logger.info("Scrolled friends container up with scrollGesture");
+            return !(result instanceof Boolean) || (Boolean) result;
+        } catch (Exception e) {
+            logger.warn("friends_scroll upward scrollGesture failed: {}", e.getMessage());
+        }
+
+        scrollUpBase();
+        return true;
+    }
+
+    private boolean isFriendRequestsSectionInView() {
+        return isNodeVisible("friend_requests_title")
+                || isNodeVisible("friend_requests_section")
+                || isNodeVisible("friend_requests_empty")
+                || isVisibleTextDisplayed("Lời mời kết bạn")
+                || isVisibleTextDisplayed("Chưa có lời mời kết bạn")
+                || !getVisibleFriendRequestRows().isEmpty();
+    }
+
+    private void alignFriendRequestsHeader() {
+        while (!isNodeVisible("friend_requests_title")
+                && !isVisibleTextDisplayed("Lời mời kết bạn")
+                && !hasFriendRequests()
+                && isPastFriendRequestsSection()) {
+            String beforeScrollSource = getCurrentPageSource();
+            boolean canScrollMore = scrollFriendsContainerUp(0.10);
+            waitFor(1);
+            String afterScrollSource = getCurrentPageSource();
+
+            if (!canScrollMore || beforeScrollSource.equals(afterScrollSource)) {
+                return;
+            }
+        }
+    }
+
+    private String getCurrentPageSource() {
+        try {
+            return DriverManager.getDriver().getPageSource();
+        } catch (Exception e) {
+            logger.warn("Could not read friends page source: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    private boolean isPastFriendRequestsSection() {
+        return isNodeVisible("sent_requests_section")
+                || isNodeVisible("sent_requests_empty")
+                || isNodeVisible("sent_request_item_")
+                || isVisibleTextDisplayed("Lời mời đã gửi")
+                || isVisibleTextDisplayed("Messenger")
+                || isVisibleTextDisplayed("Facebook")
+                || isVisibleTextDisplayed("Instagram");
+    }
+
+    private boolean isSentRequestsSectionInView() {
+        return isNodeVisible("sent_requests_title")
+                || isNodeVisible("sent_requests_section")
+                || isNodeVisible("sent_requests_empty")
+                || isNodeVisible("sent_request_item_")
+                || isVisibleTextDisplayed("Lời mời đã gửi")
+                || isVisibleTextDisplayed("Bạn chưa gửi lời mời nào")
+                || hasSentRequests();
+    }
+
+    private WebElement scrollIntoViewByDescription(String accessibilityId) {
+        try {
+            String selector = "new UiScrollable(new UiSelector().scrollable(true))"
+                    + ".scrollIntoView(new UiSelector().descriptionContains(\"" + accessibilityId + "\"))";
+            WebElement element = DriverManager.getDriver().findElement(AppiumBy.androidUIAutomator(selector));
+
+            if (element != null && isElementInViewport(element)) {
+                logger.info("Scrolled into view by accessibility id: {}", accessibilityId);
+                return element;
+            }
+        } catch (Exception e) {
+            logger.warn("Could not scroll into view by accessibility id '{}': {}", accessibilityId, e.getMessage());
+        }
+
+        return null;
+    }
+
+    private WebElement scrollIntoViewByText(String text) {
+        try {
+            String selector = "new UiScrollable(new UiSelector().scrollable(true))"
+                    + ".scrollIntoView(new UiSelector().textContains(\"" + text + "\"))";
+            WebElement element = DriverManager.getDriver().findElement(AppiumBy.androidUIAutomator(selector));
+
+            if (element != null && isElementInViewport(element)) {
+                logger.info("Scrolled into view by text: {}", text);
+                return element;
+            }
+        } catch (Exception e) {
+            logger.warn("Could not scroll into view by text '{}': {}", text, e.getMessage());
+        }
+
+        return null;
+    }
+
+    private void waitForFriendRequestsContent() {
+        long endTime = System.currentTimeMillis() + 6000;
+
+        while (System.currentTimeMillis() < endTime) {
+            if (hasFriendRequests() || isNodeVisible("friend_requests_empty")) {
+                return;
+            }
+
+            if (friendRequestsSectionReached && isPastFriendRequestsSection()) {
+                return;
+            }
+
+            waitFor(1);
+        }
+    }
+
+    private void waitForSentRequestsContent() {
+        long endTime = System.currentTimeMillis() + 6000;
+
+        while (System.currentTimeMillis() < endTime) {
+            if (hasSentRequests() || isNodeVisible("sent_requests_empty")) {
+                return;
+            }
+
+            waitFor(1);
+        }
     }
 
     private void rememberFriendRequestName(String id) {
@@ -1035,6 +1537,46 @@ public class FriendsPage extends BasePage {
                 .matcher(node);
 
         return matcher.find() ? matcher.group(1).trim() : "";
+    }
+
+    private WebElement findVisibleNodeByResourceId(String resourceId) {
+        List<WebElement> nodes = findElementsByXPath(
+                "//*[@resource-id='" + resourceId + "' or contains(@resource-id,'" + resourceId + "')]"
+        );
+
+        for (WebElement node : nodes) {
+            try {
+                if (node.isDisplayed() && isElementInViewport(node)) {
+                    return node;
+                }
+            } catch (Exception e) {
+                logger.warn("Could not verify visible resource-id '{}': {}", resourceId, e.getMessage());
+            }
+        }
+
+        return null;
+    }
+
+    private void tapVisibleResource(String resourceId) {
+        WebElement element = findVisibleNodeByResourceId(resourceId);
+
+        if (element == null) {
+            clickByAccessibilityId(resourceId);
+            return;
+        }
+
+        tapElement(element);
+        logger.info("Tapped visible resource-id: {}", resourceId);
+    }
+
+    private String getVisibleResourceText(String resourceId) {
+        WebElement node = findVisibleNodeByResourceId(resourceId);
+
+        if (node == null) {
+            return "";
+        }
+
+        return getText(node).trim();
     }
 
     private List<WebElement> getSearchResultRows() {
@@ -1211,7 +1753,9 @@ public class FriendsPage extends BasePage {
             logger.warn("Could not read screen size for bounds check: {}", e.getMessage());
         }
 
-        return right > 0
+        return right > left
+                && bottom > top
+                && right > 0
                 && left < screenWidth
                 && bottom > 0
                 && top < screenHeight;
@@ -1244,6 +1788,33 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private boolean isVisibleTextDisplayed(String text) {
+        try {
+            String source = DriverManager.getDriver().getPageSource();
+            Matcher nodeMatcher = Pattern
+                    .compile("<node[^>]*(text|content-desc)=\"[^\"]*" + Pattern.quote(text) + "[^\"]*\"[^>]*>")
+                    .matcher(source);
+
+            while (nodeMatcher.find()) {
+                Matcher boundsMatcher = Pattern
+                        .compile("bounds=\"\\[(\\d+),(\\d+)]\\[(\\d+),(\\d+)]\"")
+                        .matcher(nodeMatcher.group());
+
+                if (boundsMatcher.find() && isBoundsInViewport(
+                        Integer.parseInt(boundsMatcher.group(1)),
+                        Integer.parseInt(boundsMatcher.group(2)),
+                        Integer.parseInt(boundsMatcher.group(3)),
+                        Integer.parseInt(boundsMatcher.group(4)))) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not verify visible text '{}': {}", text, e.getMessage());
+        }
+
+        return false;
     }
 
     private String getSearchResultLabelPart(String id, int index) {

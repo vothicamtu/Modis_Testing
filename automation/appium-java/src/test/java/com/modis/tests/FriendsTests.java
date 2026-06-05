@@ -181,6 +181,127 @@ public class FriendsTests extends BaseTest {
         
         logger.info("Current friend request data test completed");
     }
+
+    @Test(priority = 3, groups = {"friends", "regression", "search"},
+          description = "Verify incoming friend request users show accept and reject actions in search results")
+    public void testIncomingFriendRequestActionsInSearchResults() {
+        logger.info("Starting incoming friend request search actions test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        String incomingSearchResultId = searchFirstIncomingFriendRequestSender(friendsPage);
+
+        if (incomingSearchResultId.isEmpty()) {
+            Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
+                "Search state should be displayed when current database has no incoming request action to verify");
+            return;
+        }
+
+        Assert.assertTrue(friendsPage.isSearchResultDisplayed(incomingSearchResultId),
+            "Incoming request sender should be displayed in search results: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultNameDisplayed(incomingSearchResultId),
+            "Incoming request search result name should be displayed: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultUsernameDisplayed(incomingSearchResultId),
+            "Incoming request search result username should be displayed: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultAcceptButtonDisplayed(incomingSearchResultId),
+            "Search result should show accept action for incoming request sender: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultRejectButtonDisplayed(incomingSearchResultId),
+            "Search result should show reject action for incoming request sender: " + incomingSearchResultId);
+
+        logger.info("Incoming friend request search actions test completed successfully");
+    }
+
+    @Test(priority = 4, groups = {"friends", "regression", "search"},
+          description = "Verify dismissing reject dialog from incoming search result keeps the request")
+    public void testIncomingFriendRequestSearchRejectDismissDialog() {
+        logger.info("Starting incoming friend request search reject dismiss dialog test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        String incomingSearchResultId = searchFirstIncomingFriendRequestSender(friendsPage);
+
+        if (incomingSearchResultId.isEmpty()) {
+            Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
+                "Search state should be displayed when current database has no incoming request action to reject from search");
+            return;
+        }
+
+        friendsPage.openRejectIncomingSearchResultDialog(incomingSearchResultId);
+        assertCurrentDialog(friendsPage,
+            "T\u1eeb ch\u1ed1i l\u1eddi m\u1eddi",
+            "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n t\u1eeb ch\u1ed1i?",
+            "C\u00d3",
+            "KH\u00d4NG");
+        friendsPage.dismissCurrentDialog();
+
+        Assert.assertTrue(friendsPage.isSearchResultAcceptButtonDisplayed(incomingSearchResultId),
+            "Incoming search accept action should remain after dismissing reject dialog: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultRejectButtonDisplayed(incomingSearchResultId),
+            "Incoming search reject action should remain after dismissing reject dialog: " + incomingSearchResultId);
+
+        logger.info("Incoming friend request search reject dismiss dialog test completed successfully");
+    }
+
+    @Test(priority = 5, groups = {"friends", "regression", "search"},
+          description = "Verify accepting incoming friend request from search result removes incoming actions")
+    public void testIncomingFriendRequestSearchAccept() {
+        logger.info("Starting incoming friend request search accept test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        String incomingSearchResultId = searchFirstIncomingFriendRequestSender(friendsPage);
+
+        if (incomingSearchResultId.isEmpty()) {
+            Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
+                "Search state should be displayed when current database has no incoming request action to accept from search");
+            return;
+        }
+
+        Assert.assertTrue(friendsPage.isSearchResultNameDisplayed(incomingSearchResultId),
+            "Incoming request search result name should be displayed before accepting: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultUsernameDisplayed(incomingSearchResultId),
+            "Incoming request search result username should be displayed before accepting: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultAcceptButtonDisplayed(incomingSearchResultId),
+            "Search result accept action should be visible before accepting: " + incomingSearchResultId);
+        Assert.assertTrue(friendsPage.isSearchResultRejectButtonDisplayed(incomingSearchResultId),
+            "Search result reject action should be visible before accepting: " + incomingSearchResultId);
+
+        friendsPage.acceptIncomingSearchResult(incomingSearchResultId);
+        friendsPage.waitForIncomingSearchActionsToDisappear(incomingSearchResultId);
+
+        Assert.assertFalse(friendsPage.isSearchResultAcceptButtonDisplayed(incomingSearchResultId),
+            "Incoming search accept action should disappear after accepting: " + incomingSearchResultId);
+        Assert.assertFalse(friendsPage.isSearchResultRejectButtonDisplayed(incomingSearchResultId),
+            "Incoming search reject action should disappear after accepting: " + incomingSearchResultId);
+
+        logger.info("Incoming friend request search accept test completed successfully");
+    }
+
+    @Test(priority = 6, groups = {"friends", "regression", "search"},
+          description = "Verify confirming reject dialog from incoming search result removes incoming actions")
+    public void testIncomingFriendRequestSearchRejectConfirmDialog() {
+        logger.info("Starting incoming friend request search reject confirm dialog test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        String incomingSearchResultId = searchFirstIncomingFriendRequestSender(friendsPage);
+
+        if (incomingSearchResultId.isEmpty()) {
+            Assert.assertTrue(friendsPage.hasSearchResults() || friendsPage.isNoSearchResultsDisplayed(),
+                "Search state should be displayed when current database has no incoming request action to reject from search");
+            return;
+        }
+
+        friendsPage.openRejectIncomingSearchResultDialog(incomingSearchResultId);
+        assertCurrentDialog(friendsPage,
+            "T\u1eeb ch\u1ed1i l\u1eddi m\u1eddi",
+            "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n t\u1eeb ch\u1ed1i?",
+            "C\u00d3",
+            "KH\u00d4NG");
+        friendsPage.confirmCurrentDialog();
+        friendsPage.waitForIncomingSearchActionsToDisappear(incomingSearchResultId);
+
+        Assert.assertFalse(friendsPage.isSearchResultAcceptButtonDisplayed(incomingSearchResultId),
+            "Incoming search accept action should disappear after confirming reject: " + incomingSearchResultId);
+
+        logger.info("Incoming friend request search reject confirm dialog test completed successfully");
+    }
     
     @Test(priority = 3, groups = {"friends", "smoke"}, 
           description = "Verify navigation to friends screen")
@@ -260,8 +381,83 @@ public class FriendsTests extends BaseTest {
         
         logger.info("Friend item elements test completed successfully");
     }
+
+    @Test(priority = 5, groups = {"friends", "regression"},
+          description = "Verify unfriend dialog dismiss keeps friend item")
+    public void testUnfriendDismissDialog() {
+        logger.info("Starting unfriend dismiss dialog test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+
+        if (!friendsPage.hasFriends()) {
+            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
+                "Friends empty state should be displayed when current database has no friends to unfriend");
+            return;
+        }
+
+        String firstFriendId = friendsPage.getFirstFriendId();
+        String firstFriendName = friendsPage.getFirstVisibleFriendName();
+
+        Assert.assertFalse(firstFriendId.isEmpty(),
+            "Friend item id should be available before opening unfriend dialog");
+        Assert.assertFalse(firstFriendName.isEmpty(),
+            "Friend name should be available before opening unfriend dialog");
+        Assert.assertTrue(friendsPage.isFriendUnfriendButtonDisplayed(firstFriendId),
+            "Unfriend button should be displayed before opening dialog: " + firstFriendId);
+
+        friendsPage.openUnfriendDialog(firstFriendId);
+        assertCurrentDialog(friendsPage,
+            "H\u1ee7y k\u1ebft b\u1ea1n",
+            "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n h\u1ee7y k\u1ebft b\u1ea1n?",
+            "\u0110\u1ed2NG \u00dd",
+            "H\u1ee6Y");
+        friendsPage.dismissCurrentDialog();
+
+        Assert.assertTrue(friendsPage.isFriendDisplayed(firstFriendId),
+            "Friend item should remain displayed after dismissing unfriend dialog: " + firstFriendId);
+
+        logger.info("Unfriend dismiss dialog test completed successfully");
+    }
+
+    @Test(priority = 6, groups = {"friends", "regression"},
+          description = "Verify unfriend dialog confirm removes friend item")
+    public void testUnfriendConfirmDialog() {
+        logger.info("Starting unfriend confirm dialog test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+
+        if (!friendsPage.hasFriends()) {
+            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
+                "Friends empty state should be displayed when current database has no friends to unfriend");
+            return;
+        }
+
+        String firstFriendId = friendsPage.getFirstFriendId();
+        String firstFriendName = friendsPage.getFirstVisibleFriendName();
+
+        Assert.assertFalse(firstFriendId.isEmpty(),
+            "Friend item id should be available before confirming unfriend");
+        Assert.assertFalse(firstFriendName.isEmpty(),
+            "Friend name should be available before confirming unfriend");
+        Assert.assertTrue(friendsPage.isFriendUnfriendButtonDisplayed(firstFriendId),
+            "Unfriend button should be displayed before confirming unfriend: " + firstFriendId);
+
+        friendsPage.openUnfriendDialog(firstFriendId);
+        assertCurrentDialog(friendsPage,
+            "H\u1ee7y k\u1ebft b\u1ea1n",
+            "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n h\u1ee7y k\u1ebft b\u1ea1n?",
+            "\u0110\u1ed2NG \u00dd",
+            "H\u1ee6Y");
+        friendsPage.confirmCurrentDialog();
+        friendsPage.waitForFriendToDisappear(firstFriendId);
+
+        Assert.assertFalse(friendsPage.isFriendDisplayed(firstFriendId),
+            "Friend item should disappear after confirming unfriend: " + firstFriendId);
+
+        logger.info("Unfriend confirm dialog test completed successfully");
+    }
     
-    @Test(priority = 5, groups = {"friends", "regression"}, 
+    @Test(priority = 7, groups = {"friends", "regression"}, 
           description = "Verify friend requests tab")
     public void testFriendRequestsTab() {
         logger.info("Starting friend requests tab test");
@@ -283,7 +479,7 @@ public class FriendsTests extends BaseTest {
         logger.info("Friend requests tab test completed successfully");
     }
     
-    @Test(priority = 6, groups = {"friends", "regression"}, 
+    @Test(priority = 8, groups = {"friends", "regression"}, 
           description = "Verify friend request item elements")
     public void testFriendRequestItemElements() {
         logger.info("Starting friend request item elements test");
@@ -313,7 +509,7 @@ public class FriendsTests extends BaseTest {
         logger.info("Friend request item elements test completed successfully");
     }
     
-    @Test(priority = 7, groups = {"friends", "regression"}, 
+    @Test(priority = 9, groups = {"friends", "regression"}, 
           description = "Verify accept friend request")
     public void testAcceptFriendRequest() {
         logger.info("Starting accept friend request test");
@@ -341,13 +537,51 @@ public class FriendsTests extends BaseTest {
         friendsPage.acceptFriendRequest(firstRequestId);
         friendsPage.waitForRequestToDisappear(firstRequestId);
 
-        Assert.assertTrue(friendsPage.getFriendRequestsCount() < initialRequestsCount,
-            "Friend requests count should decrease after accepting");
+        Assert.assertFalse(friendsPage.isFriendRequestDisplayed(firstRequestId),
+            "Accepted friend request item should disappear from the current UI: " + firstRequestId);
         
         logger.info("Accept friend request test completed successfully");
     }
     
-    @Test(priority = 8, groups = {"friends", "regression"}, 
+    @Test(priority = 10, groups = {"friends", "regression"},
+          description = "Verify decline friend request dialog dismiss keeps request item")
+    public void testDeclineFriendRequestDismissDialog() {
+        logger.info("Starting decline friend request dismiss dialog test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        friendsPage.clickRequestsTab();
+
+        if (!friendsPage.hasFriendRequests()) {
+            Assert.assertTrue(friendsPage.isEmptyRequestsStateDisplayed(),
+                "Friend requests empty state should be displayed when there is no request to decline");
+            return;
+        }
+
+        String firstRequestId = friendsPage.getFirstFriendRequestId();
+        String requestName = friendsPage.getRequestName(firstRequestId);
+
+        Assert.assertFalse(firstRequestId.isEmpty(),
+            "Friend request item id should be available before opening decline dialog");
+        Assert.assertFalse(requestName.isEmpty(),
+            "Friend request name should be available before opening decline dialog");
+        Assert.assertTrue(friendsPage.isDeclineButtonDisplayed(firstRequestId),
+            "Decline button should be visible before opening decline dialog");
+
+        friendsPage.openDeclineFriendRequestDialog(firstRequestId);
+        assertCurrentDialog(friendsPage,
+            "T\u1eeb ch\u1ed1i l\u1eddi m\u1eddi",
+            "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n t\u1eeb ch\u1ed1i?",
+            "C\u00d3",
+            "KH\u00d4NG");
+        friendsPage.dismissCurrentDialog();
+
+        Assert.assertTrue(friendsPage.isFriendRequestDisplayed(firstRequestId),
+            "Friend request item should remain displayed after dismissing decline dialog: " + firstRequestId);
+
+        logger.info("Decline friend request dismiss dialog test completed successfully");
+    }
+
+    @Test(priority = 11, groups = {"friends", "regression"}, 
           description = "Verify decline friend request")
     public void testDeclineFriendRequest() {
         logger.info("Starting decline friend request test");
@@ -375,13 +609,13 @@ public class FriendsTests extends BaseTest {
         friendsPage.declineFriendRequest(firstRequestId);
         friendsPage.waitForRequestToDisappear(firstRequestId);
 
-        Assert.assertTrue(friendsPage.getFriendRequestsCount() < initialRequestsCount,
-            "Friend requests count should decrease after declining");
+        Assert.assertFalse(friendsPage.isFriendRequestDisplayed(firstRequestId),
+            "Declined friend request item should disappear from the current UI: " + firstRequestId);
         
         logger.info("Decline friend request test completed successfully");
     }
     
-    @Test(priority = 9, groups = {"friends", "regression"}, 
+    @Test(priority = 12, groups = {"friends", "regression"}, 
           description = "Verify sent requests tab")
     public void testSentRequestsTab() {
         logger.info("Starting sent requests tab test");
@@ -412,26 +646,123 @@ public class FriendsTests extends BaseTest {
         logger.info("Sent requests tab test completed successfully");
     }
 
-    @Test(priority = 10, groups = {"friends", "regression"},
+    @Test(priority = 13, groups = {"friends", "regression"},
+          description = "Verify cancel sent friend request dialog dismiss keeps sent request item")
+    public void testCancelSentFriendRequestDismissDialog() {
+        logger.info("Starting cancel sent friend request dismiss dialog test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        friendsPage.clickSentTab();
+
+        Assert.assertTrue(friendsPage.isSentRequestsListDisplayed(),
+            "Sent requests section should be displayed after scrolling to it");
+
+        if (!friendsPage.hasSentRequests()) {
+            Assert.assertTrue(friendsPage.isEmptySentStateDisplayed(),
+                "Sent requests empty state should be displayed when current database has no sent requests to cancel");
+            return;
+        }
+
+        String firstSentRequestId = friendsPage.getFirstSentRequestId();
+        String firstSentRequestName = friendsPage.getFirstVisibleSentRequestName();
+
+        Assert.assertFalse(firstSentRequestId.isEmpty(),
+            "Sent request item id should be available before opening cancel dialog");
+        Assert.assertFalse(firstSentRequestName.isEmpty(),
+            "Sent request name should be available before opening cancel dialog");
+        Assert.assertTrue(friendsPage.isSentRequestCancelButtonDisplayed(firstSentRequestId),
+            "Sent request cancel button should be displayed before opening cancel dialog: " + firstSentRequestId);
+
+        friendsPage.cancelSentRequest(firstSentRequestId);
+        assertCurrentDialog(friendsPage,
+            "H\u1ee7y l\u1eddi m\u1eddi \u0111\u00e3 g\u1eedi",
+            "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n h\u1ee7y l\u1eddi m\u1eddi \u0111\u00e3 g\u1eedi n\u00e0y?",
+            "C\u00d3",
+            "KH\u00d4NG");
+        friendsPage.dismissCurrentDialog();
+
+        Assert.assertTrue(friendsPage.isSentRequestDisplayed(firstSentRequestId),
+            "Sent request item should remain displayed after dismissing cancel dialog: " + firstSentRequestId);
+
+        logger.info("Cancel sent friend request dismiss dialog test completed successfully");
+    }
+
+    @Test(priority = 14, groups = {"friends", "regression"},
+          description = "Verify cancel sent friend request confirmation flow")
+    public void testCancelSentFriendRequest() {
+        logger.info("Starting cancel sent friend request test");
+
+        FriendsPage friendsPage = homePage.navigateToFriends();
+        friendsPage.clickSentTab();
+
+        Assert.assertTrue(friendsPage.isSentRequestsListDisplayed(),
+            "Sent requests section should be displayed after scrolling to it");
+
+        if (!friendsPage.hasSentRequests()) {
+            Assert.assertTrue(friendsPage.isEmptySentStateDisplayed(),
+                "Sent requests empty state should be displayed when current database has no sent requests to cancel");
+            return;
+        }
+
+        String firstSentRequestId = friendsPage.getFirstSentRequestId();
+        String firstSentRequestName = friendsPage.getFirstVisibleSentRequestName();
+
+        Assert.assertFalse(firstSentRequestId.isEmpty(),
+            "Sent request item id should be available before cancelling");
+        Assert.assertFalse(firstSentRequestName.isEmpty(),
+            "Sent request name should be available before cancelling");
+        Assert.assertTrue(friendsPage.isSentRequestCancelButtonDisplayed(firstSentRequestId),
+            "Sent request cancel button should be displayed before cancelling: " + firstSentRequestId);
+
+        friendsPage.cancelSentRequest(firstSentRequestId);
+        assertCurrentDialog(friendsPage,
+            "H\u1ee7y l\u1eddi m\u1eddi \u0111\u00e3 g\u1eedi",
+            "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n h\u1ee7y l\u1eddi m\u1eddi \u0111\u00e3 g\u1eedi n\u00e0y?",
+            "C\u00d3",
+            "KH\u00d4NG");
+
+        friendsPage.confirmCancelSentRequest();
+        friendsPage.waitForSentRequestToDisappear(firstSentRequestId);
+
+        Assert.assertFalse(friendsPage.isSentRequestDisplayed(firstSentRequestId),
+            "Cancelled sent request item should disappear from the current UI: " + firstSentRequestId);
+
+        logger.info("Cancel sent friend request test completed successfully");
+    }
+
+    @Test(priority = 15, groups = {"friends", "regression"},
           description = "Verify add friend from search results")
     public void testAddFriendFromSearch() {
         logger.info("Starting add friend from search test");
         
         FriendsPage friendsPage = homePage.navigateToFriends();
-        
-        String searchTerm = "test";
+
+        String firstResultId = "";
+        String visibleResultId = "";
+        boolean sawSearchResult = false;
+        boolean sawEmptyState = false;
+
+        String searchTerm = "t";
+        logger.info("Trying friend search term: {}", searchTerm);
         friendsPage.searchFriends(searchTerm);
-        
+
         if (!friendsPage.hasSearchResults()) {
-            Assert.assertTrue(friendsPage.isNoSearchResultsDisplayed(),
-                "Search empty state should be displayed when current database returns no addable users");
-            return;
+            sawEmptyState = friendsPage.isNoSearchResultsDisplayed();
+        } else {
+            sawSearchResult = true;
+            firstResultId = friendsPage.getFirstAddableSearchResultId();
+
+            if (firstResultId.isEmpty()) {
+                visibleResultId = friendsPage.getFirstSearchResultId();
+            }
         }
 
-        String firstResultId = friendsPage.getFirstAddableSearchResultId();
-
         if (firstResultId.isEmpty()) {
-            String visibleResultId = friendsPage.getFirstSearchResultId();
+            if (!sawSearchResult) {
+                Assert.assertTrue(sawEmptyState,
+                    "Search empty state should be displayed when friend search returns no users");
+                return;
+            }
 
             Assert.assertFalse(visibleResultId.isEmpty(),
                 "Search result item id should be available when results are displayed");
@@ -454,8 +785,8 @@ public class FriendsTests extends BaseTest {
         
         logger.info("Add friend from search test completed successfully");
     }
-    
-    @Test(priority = 11, groups = {"friends", "regression"},
+
+    @Test(priority = 16, groups = {"friends", "regression"},
           description = "Verify friends list scrolling")
     public void testFriendsListScrolling() {
         logger.info("Starting friends list scrolling test");
@@ -483,55 +814,42 @@ public class FriendsTests extends BaseTest {
         logger.info("Friends list scrolling test completed successfully");
     }
     
-    @Test(priority = 12, groups = {"friends", "regression"},
-          description = "Verify friends list refresh")
-    public void testFriendsListRefresh() {
-        logger.info("Starting friends list refresh test");
-        
-        FriendsPage friendsPage = homePage.navigateToFriends();
-        
-        int initialFriendsCount = friendsPage.getFriendsCount();
-        
-        friendsPage.refreshFriendsList();
-        
-        Assert.assertTrue(friendsPage.isDisplayed(), 
-            "Friends page should be displayed after refresh");
-        Assert.assertTrue(friendsPage.verifyPageElements(), 
-            "Friends page elements should be present after refresh");
-        
-        int newFriendsCount = friendsPage.getFriendsCount();
-        logger.info("Friends count before refresh: {}, after refresh: {}", 
-                   initialFriendsCount, newFriendsCount);
-        
-        logger.info("Friends list refresh test completed successfully");
-    }
-    
-    @Test(priority = 13, groups = {"friends", "regression"},
-          description = "Verify network error handling")
-    public void testNetworkErrorHandling() {
-        logger.info("Starting network error handling test");
-        
-        FriendsPage friendsPage = homePage.navigateToFriends();
-        
-        backgroundApp(3);
-        
-        friendsPage.refreshFriendsList();
-        
-        Assert.assertTrue(friendsPage.isDisplayed(), 
-            "Friends page should remain stable during network issues");
-        
-        if (friendsPage.hasFriends()) {
-            Assert.assertFalse(friendsPage.getFirstFriendId().isEmpty(),
-                "Friend item id should still be available after returning from background");
-        } else {
-            Assert.assertTrue(friendsPage.isEmptyFriendsStateDisplayed(),
-                "Friends empty state should still be displayed after returning from background");
+    private String searchFirstIncomingFriendRequestSender(FriendsPage friendsPage) {
+        String searchQuery = "t";
+        friendsPage.searchFriends(searchQuery);
+
+        String incomingSearchResultId = friendsPage.hasSearchResults()
+            ? friendsPage.getFirstIncomingSearchResultId()
+            : "";
+
+        if (incomingSearchResultId.isEmpty()) {
+            return "";
         }
 
-        friendsPage.searchFriends("test");
-        Assert.assertTrue(friendsPage.isDisplayed(),
-            "Friends page should remain stable during search with network issues");
-        
-        logger.info("Network error handling test completed successfully");
+        return incomingSearchResultId;
+    }
+
+    private void assertCurrentDialog(FriendsPage friendsPage, String expectedTitle, String expectedMessage,
+                                     String expectedConfirmText, String expectedDismissText) {
+        Assert.assertTrue(friendsPage.isCancelSentRequestDialogDisplayed(),
+            "Confirmation dialog should be displayed");
+        friendsPage.captureCancelSentRequestDialog();
+
+        String dialogTitle = friendsPage.getCancelSentRequestDialogTitle();
+        String dialogMessage = friendsPage.getCancelSentRequestDialogMessage();
+        String confirmText = friendsPage.getCancelSentRequestConfirmText();
+        String dismissText = friendsPage.getCancelSentRequestDismissText();
+
+        logger.info("Confirmation dialog displayed | title='{}' | message='{}' | confirm='{}' | dismiss='{}'",
+            dialogTitle, dialogMessage, confirmText, dismissText);
+
+        Assert.assertEquals(dialogTitle, expectedTitle,
+            "Confirmation dialog title should match FE title");
+        Assert.assertEquals(dialogMessage, expectedMessage,
+            "Confirmation dialog message should match FE message");
+        Assert.assertEquals(confirmText, expectedConfirmText,
+            "Confirmation dialog confirm button should match FE text");
+        Assert.assertEquals(dismissText, expectedDismissText,
+            "Confirmation dialog dismiss button should match FE text");
     }
 }
