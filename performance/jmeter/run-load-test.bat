@@ -8,7 +8,7 @@ REM Default values
 set USERS=50
 set RAMP_UP=300
 set DURATION=600
-set BASE_URL=https://modis-backend.onrender.com
+set BASE_URL=modis-backend.onrender.com
 
 REM Override with command line arguments if provided
 if not "%1"=="" set USERS=%1
@@ -16,10 +16,13 @@ if not "%2"=="" set RAMP_UP=%2
 if not "%3"=="" set DURATION=%3
 
 REM Create timestamp for unique file names
-for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
-set "YY=%dt:~2,2%" & set "YYYY=%dt:~0,4%" & set "MM=%dt:~4,2%" & set "DD=%dt:~6,2%"
-set "HH=%dt:~8,2%" & set "Min=%dt:~10,2%" & set "Sec=%dt:~12,2%"
-set "timestamp=%YYYY%%MM%%DD%_%HH%%Min%%Sec%"
+for /f %%a in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "timestamp=%%a"
+
+REM Resolve JMeter executable. Prefer JMETER_HOME, then jmeter.bat from PATH.
+set "JMETER_CMD="
+if not "%JMETER_HOME%"=="" if exist "%JMETER_HOME%\bin\jmeter.bat" set "JMETER_CMD=%JMETER_HOME%\bin\jmeter.bat"
+if "%JMETER_CMD%"=="" for /f "delims=" %%i in ('where jmeter.bat 2^>nul') do if "%JMETER_CMD%"=="" set "JMETER_CMD=%%i"
+if "%JMETER_CMD%"=="" for /f "delims=" %%i in ('where jmeter 2^>nul') do if "%JMETER_CMD%"=="" set "JMETER_CMD=%%i"
 
 REM File paths
 set TEST_PLAN=test-plans\load-tests\modis-load-test.jmx
@@ -34,12 +37,20 @@ echo Users: %USERS%
 echo Ramp Up: %RAMP_UP% seconds
 echo Duration: %DURATION% seconds
 echo Base URL: %BASE_URL%
+echo JMeter: %JMETER_CMD%
 echo Result File: %RESULT_FILE%
 echo Report Directory: %REPORT_DIR%
 echo ========================================
 
 REM Check if JMeter is available
-jmeter -v >nul 2>&1
+if "%JMETER_CMD%"=="" (
+    echo ERROR: JMeter not found in PATH
+    echo Please install Apache JMeter and add it to your PATH
+    echo Download from: https://jmeter.apache.org/download_jmeter.cgi
+    pause
+    exit /b 1
+)
+call "%JMETER_CMD%" -v >nul 2>&1
 if errorlevel 1 (
     echo ERROR: JMeter not found in PATH
     echo Please install Apache JMeter and add it to your PATH
@@ -64,7 +75,7 @@ echo Starting JMeter test execution...
 echo.
 
 REM Run JMeter test
-jmeter -n -t "%TEST_PLAN%" ^
+call "%JMETER_CMD%" -n -t "%TEST_PLAN%" ^
     -Jusers=%USERS% ^
     -Jramp_up=%RAMP_UP% ^
     -Jduration=%DURATION% ^
@@ -75,6 +86,12 @@ jmeter -n -t "%TEST_PLAN%" ^
 if errorlevel 1 (
     echo.
     echo ERROR: JMeter test execution failed
+    pause
+    exit /b 1
+)
+if not exist "%REPORT_DIR%\index.html" (
+    echo.
+    echo ERROR: HTML report was not generated: %REPORT_DIR%\index.html
     pause
     exit /b 1
 )

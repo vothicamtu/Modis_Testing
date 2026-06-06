@@ -4,6 +4,17 @@ REM Runs all test types in sequence with proper intervals
 
 setlocal
 
+REM Resolve JMeter executable. Prefer JMETER_HOME, then jmeter.bat from PATH.
+set "JMETER_CMD="
+if not "%JMETER_HOME%"=="" if exist "%JMETER_HOME%\bin\jmeter.bat" set "JMETER_CMD=%JMETER_HOME%\bin\jmeter.bat"
+if "%JMETER_CMD%"=="" for /f "delims=" %%i in ('where jmeter.bat 2^>nul') do if "%JMETER_CMD%"=="" set "JMETER_CMD=%%i"
+if "%JMETER_CMD%"=="" for /f "delims=" %%i in ('where jmeter 2^>nul') do if "%JMETER_CMD%"=="" set "JMETER_CMD=%%i"
+if "%JMETER_CMD%"=="" (
+    echo ERROR: JMeter not found. Please install Apache JMeter and add it to PATH, or set JMETER_HOME.
+    pause
+    exit /b 1
+)
+
 echo ========================================
 echo Modis Complete Performance Test Suite
 echo ========================================
@@ -25,10 +36,7 @@ if /i not "%CONFIRM%"=="y" (
 )
 
 REM Create master results directory
-for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
-set "YY=%dt:~2,2%" & set "YYYY=%dt:~0,4%" & set "MM=%dt:~4,2%" & set "DD=%dt:~6,2%"
-set "HH=%dt:~8,2%" & set "Min=%dt:~10,2%" & set "Sec=%dt:~12,2%"
-set "master_timestamp=%YYYY%%MM%%DD%_%HH%%Min%%Sec%"
+for /f %%a in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "master_timestamp=%%a"
 
 set MASTER_DIR=reports\full-suite-%master_timestamp%
 mkdir "%MASTER_DIR%"
@@ -37,6 +45,7 @@ echo.
 echo ========================================
 echo Starting Test Suite at %date% %time%
 echo Master Results Directory: %MASTER_DIR%
+echo JMeter: %JMETER_CMD%
 echo ========================================
 
 REM Test 1: Load Test
@@ -81,7 +90,7 @@ timeout /t 120 /nobreak
 REM Test 4: WebSocket Test
 echo.
 echo [4/5] Running WebSocket Test...
-jmeter -n -t test-plans\load-tests\modis-websocket-test.jmx -Jusers=30 -Jramp_up=180 -Jduration=600 -l results\websocket-test-%master_timestamp%.jtl -e -o reports\websocket-test-%master_timestamp%
+call "%JMETER_CMD%" -n -t test-plans\load-tests\modis-websocket-test.jmx -Jusers=30 -Jramp_up=180 -Jduration=600 -l results\websocket-test-%master_timestamp%.jtl -e -o reports\websocket-test-%master_timestamp%
 if errorlevel 1 (
     echo ERROR: WebSocket test failed
     goto :error

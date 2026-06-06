@@ -9,14 +9,16 @@ USERS=${2:-50}
 DURATION=${3:-1800}
 RAMPUP=${4:-300}
 
-# Set JMeter path (adjust as needed)
-JMETER_HOME=${JMETER_HOME:-/opt/apache-jmeter}
-JMETER_BIN="$JMETER_HOME/bin/jmeter"
+# Use JMETER_HOME if configured, otherwise use jmeter from PATH
+if [ -n "$JMETER_HOME" ]; then
+    JMETER_BIN="$JMETER_HOME/bin/jmeter"
+else
+    JMETER_BIN="jmeter"
+fi
 
 # Check if JMeter exists
-if [ ! -f "$JMETER_BIN" ]; then
-    echo "ERROR: JMeter not found at $JMETER_BIN"
-    echo "Please install JMeter or set JMETER_HOME environment variable"
+if ! "$JMETER_BIN" -v >/dev/null 2>&1; then
+    echo "ERROR: JMeter not found. Please install Apache JMeter and add it to PATH, or set JMETER_HOME."
     exit 1
 fi
 
@@ -40,23 +42,23 @@ echo "========================================"
 # Set test plan file based on test type
 case $TEST_TYPE in
     "load")
-        TEST_PLAN="test-plans/modis-load-test.jmx"
+        TEST_PLAN="test-plans/load-tests/modis-load-test.jmx"
         REPORT_NAME="load-test-$TIMESTAMP"
         ;;
     "stress")
-        TEST_PLAN="test-plans/modis-stress-test.jmx"
+        TEST_PLAN="test-plans/stress-tests/modis-stress-test.jmx"
         REPORT_NAME="stress-test-$TIMESTAMP"
         ;;
     "spike")
-        TEST_PLAN="test-plans/modis-spike-test.jmx"
+        TEST_PLAN="test-plans/spike-tests/modis-spike-test.jmx"
         REPORT_NAME="spike-test-$TIMESTAMP"
         ;;
     "endurance")
-        TEST_PLAN="test-plans/modis-endurance-test.jmx"
+        TEST_PLAN="test-plans/endurance-tests/modis-endurance-test.jmx"
         REPORT_NAME="endurance-test-$TIMESTAMP"
         ;;
     "image")
-        TEST_PLAN="test-plans/modis-image-upload-test.jmx"
+        TEST_PLAN="test-plans/load-tests/modis-image-upload-test.jmx"
         REPORT_NAME="image-upload-test-$TIMESTAMP"
         ;;
     *)
@@ -81,9 +83,9 @@ export HEAP="-Xms2g -Xmx4g -XX:MaxMetaspaceSize=512m"
 # Run JMeter test
 "$JMETER_BIN" -n -t "$TEST_PLAN" \
     -Jusers=$USERS \
-    -Jrampup=$RAMPUP \
+    -Jramp_up=$RAMPUP \
     -Jduration=$DURATION \
-    -Jhost=modis-backend.onrender.com \
+    -Jbase_url=https://modis-backend.onrender.com \
     -l "results/$REPORT_NAME.jtl" \
     -e -o "reports/$REPORT_NAME"
 
