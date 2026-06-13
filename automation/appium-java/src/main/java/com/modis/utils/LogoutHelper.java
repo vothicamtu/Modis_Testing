@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.List;
 
 public final class LogoutHelper {
-
     private static final Logger logger = LoggerUtil.getLogger(LogoutHelper.class);
 
     private LogoutHelper() {
@@ -21,34 +20,24 @@ public final class LogoutHelper {
 
     public static void logoutIfLoggedIn(AppiumDriver driver) {
         if (driver == null) return;
-
         try {
-            // Nếu đang ở Login/Loading thì không cần logout
             if (isVisible(driver, AppiumBy.accessibilityId(TestIDs.LOGIN_SCREEN), 1) ||
                     isVisible(driver, AppiumBy.accessibilityId(TestIDs.LOADING_LOGIN_BUTTON), 1) ||
                     isVisible(driver, AppiumBy.accessibilityId(TestIDs.LOADING_SIGNUP_BUTTON), 1)) {
                 logger.info("Đã ở trạng thái chưa login (Login/Loading) -> skip logout");
                 return;
             }
-
-            // Tín hiệu logged-in thường gặp: topbar avatar button hoặc home_screen
             boolean looksLoggedIn =
                     isVisible(driver, AppiumBy.accessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON), 1) ||
                             isVisible(driver, AppiumBy.accessibilityId(TestIDs.HOME_SCREEN), 1);
-
             if (!looksLoggedIn) {
                 logger.info("Không detect trạng thái logged-in -> skip logout");
                 return;
             }
-
             logger.info("Detect logged-in -> thực hiện logout qua UI");
-
-            // 1) Vào Profile (tap avatar) nếu đang ở Home
             if (isVisible(driver, AppiumBy.accessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON), 1)) {
                 safeClick(driver, AppiumBy.accessibilityId(TestIDs.TOPBAR_AVATAR_BUTTON));
             }
-
-            // 2) Chờ nút logout xuất hiện (bounded)
             if (!isVisible(driver, AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON), 5)) {
                 try {
                     GestureUtils gestureUtils = new GestureUtils();
@@ -65,18 +54,13 @@ public final class LogoutHelper {
             } else {
                 safeClick(driver, AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON));
             }
-
-            // 3) Nếu có modal confirm -> confirm
             if (isVisible(driver, AppiumBy.accessibilityId(TestIDs.MODAL_CONFIRM_BUTTON), 2)) {
                 safeClick(driver, AppiumBy.accessibilityId(TestIDs.MODAL_CONFIRM_BUTTON));
             }
-
-            // 4) Chờ về Login/Loading (bounded)
             waitForAny(driver, 10,
                     AppiumBy.accessibilityId(TestIDs.LOGIN_SCREEN),
                     AppiumBy.accessibilityId(TestIDs.LOADING_LOGIN_BUTTON),
                     AppiumBy.accessibilityId(TestIDs.LOADING_SIGNUP_BUTTON));
-
             logger.info("Logout complete (best-effort)");
         } catch (Exception e) {
             logger.warn("logoutIfLoggedIn gặp lỗi nhưng sẽ bỏ qua để không crash suite: {}", e.getMessage());
@@ -109,7 +93,6 @@ public final class LogoutHelper {
             if (els == null || els.isEmpty()) return;
             els.get(0).click();
         } catch (Exception e) {
-            // fallback tap by coordinates not necessary here; just best-effort
             logger.debug("safeClick failed for {}: {}", locator, e.getMessage());
         }
     }

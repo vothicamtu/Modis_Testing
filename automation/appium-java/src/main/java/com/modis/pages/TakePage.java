@@ -8,40 +8,25 @@ import io.appium.java_client.pagefactory.AndroidFindBy;
 import org.openqa.selenium.WebElement;
 
 public class TakePage extends BasePage {
-
-    // PAGE ELEMENTS
-
     @AndroidFindBy(accessibility = TestIDs.TAKE_SCREEN)
     private WebElement takeScreen;
-
     @AndroidFindBy(accessibility = TestIDs.TAKE_CAMERA_AREA)
     private WebElement cameraArea;
-
     @AndroidFindBy(accessibility = TestIDs.TAKE_CAPTURE_BUTTON)
     private WebElement captureButton;
-
     @AndroidFindBy(accessibility = TestIDs.TAKE_FLASH_BUTTON)
     private WebElement flashButton;
-
     @AndroidFindBy(accessibility = TestIDs.TAKE_TOGGLE_CAMERA_BUTTON)
     private WebElement toggleCameraButton;
-
     @AndroidFindBy(accessibility = TestIDs.TAKE_HISTORY)
     private WebElement historyButton;
 
-    // CAMERA ACTIONS
     public SendPhotoPage capturePhoto() {
         logger.info("Capturing photo");
-
-        // Handle camera permissions if needed
         handleCameraPermissions();
         waitForCameraReady();
         findByAccessibilityId(TestIDs.TAKE_CAPTURE_BUTTON).click();
-
-        // Wait for capture animation and check navigation
         waitForAnimation();
-
-        // Check if we navigated to send photo screen
         if (isElementDisplayedByAccessibilityId(TestIDs.SEND_PHOTO_SCREEN)) {
             logger.info("Photo captured successfully - navigated to send photo screen");
             return new SendPhotoPage();
@@ -55,7 +40,6 @@ public class TakePage extends BasePage {
         logger.info("Toggling flash");
         findByAccessibilityId(TestIDs.TAKE_FLASH_BUTTON).click();
         waitForAnimation();
-
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -82,10 +66,7 @@ public class TakePage extends BasePage {
 
     public HomePage navigateBack() {
         logger.info("Navigating back from camera screen");
-
-        // Use swipe down gesture to go back
         swipeDown();
-
         return new HomePage();
     }
 
@@ -95,11 +76,10 @@ public class TakePage extends BasePage {
         return new HomePage();
     }
 
-    // CAMERA CONTROLS
     public TakePage tapToFocus(int x, int y) {
         logger.info("Tapping to focus at coordinates: ({}, {})", x, y);
         tapAtCoordinates(x, y);
-        waitForAnimation(); // Wait for focus animation
+        waitForAnimation();
         return this;
     }
 
@@ -142,15 +122,12 @@ public class TakePage extends BasePage {
         return this;
     }
 
-    // PERMISSION HANDLING
     public void handleCameraPermissions() {
         logger.debug("Checking for camera permission dialog");
-
         try {
             WebElement allowButton = driver.findElement(
                     AppiumBy.id("com.android.permissioncontroller:id/permission_allow_button")
             );
-
             if (allowButton != null && allowButton.isDisplayed()) {
                 clickElement(allowButton);
                 waitForAnimation();
@@ -161,20 +138,15 @@ public class TakePage extends BasePage {
     }
 
     public boolean isCaptureButtonDisplayed() {
-
         try {
-
             return isElementDisplayedByAccessibilityId(
                     TestIDs.TAKE_CAPTURE_BUTTON
             );
-
         } catch (Exception e) {
-
             logger.warn(
                     "Capture button check failed: {}",
                     e.getMessage()
             );
-
             return false;
         }
     }
@@ -199,36 +171,25 @@ public class TakePage extends BasePage {
     }
 
     public void waitForCameraReady() {
-
         logger.info("Waiting for camera initialization");
-
         long endTime =
                 System.currentTimeMillis() + 20000;
-
         while (System.currentTimeMillis() < endTime) {
-
             boolean cameraReady =
                     isElementDisplayedByAccessibilityId(
                             TestIDs.TAKE_CAMERA_AREA
                     );
-
             boolean captureReady =
                     isElementDisplayedByAccessibilityId(
                             TestIDs.TAKE_CAPTURE_BUTTON
                     );
-
             if (cameraReady && captureReady) {
-
                 logger.info("Camera ready");
-
                 waitFor(2);
-
                 return;
             }
-
             waitFor(1);
         }
-
         throw new RuntimeException(
                 "Camera did not become ready"
         );
@@ -237,8 +198,6 @@ public class TakePage extends BasePage {
     public void waitForCameraSwitchAnimation() {
         logger.debug("Waiting for camera switch animation");
         waitForAnimation();
-
-        // Additional wait for camera to reinitialize
         try {
             Thread.sleep(1500);
         } catch (InterruptedException e) {
@@ -249,15 +208,10 @@ public class TakePage extends BasePage {
 
     @Override
     public boolean isDisplayed() {
-
         try {
-
             waitForPageToLoad();
-
             return true;
-
         } catch (Exception e) {
-
             return false;
         }
     }
@@ -268,123 +222,90 @@ public class TakePage extends BasePage {
     }
 
     public TakePage waitForPageToLoad() {
-
         logger.info("Waiting for camera screen");
-
         handleCameraPermissions();
-
         long endTime = System.currentTimeMillis() + 20000;
-
         while (System.currentTimeMillis() < endTime) {
-
             if (
                     isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAPTURE_BUTTON)
                             ||
                             isElementDisplayedByAccessibilityId(TestIDs.TAKE_CAMERA_AREA)
             ) {
-
                 logger.info("Camera ready");
                 return this;
             }
-
             waitFor(1);
         }
-
         throw new RuntimeException(
                 "Camera screen did not become ready within 20 seconds"
         );
     }
 
     public boolean verifyPageElements() {
-
         logger.info("Verifying take page elements");
-
         try {
-
             handleCameraPermissions();
-
             waitForCameraReady();
-
             boolean captureVisible =
                     isElementDisplayedByAccessibilityId(
                             TestIDs.TAKE_CAPTURE_BUTTON
                     );
-
             boolean cameraVisible =
                     isElementDisplayedByAccessibilityId(
                             TestIDs.TAKE_CAMERA_AREA
                     );
-
             boolean result =
                     captureVisible || cameraVisible;
-
             logger.info(
                     "Take page verification result: {}",
                     result ? "PASSED" : "FAILED"
             );
-
             return result;
-
         } catch (Exception e) {
-
             logger.warn(
                     "Take page verification failed: {}",
                     e.getMessage()
             );
-
             return false;
         }
     }
 
     public boolean isToggleCameraButtonDisplayed() {
-
         return isElementDisplayedByAccessibilityId(
                 TestIDs.TAKE_TOGGLE_CAMERA_BUTTON
         );
     }
 
     public boolean isFlashButtonStateCorrect() {
-
         return isFlashButtonDisplayed();
     }
 
     public boolean hasMultipleCameras() {
-
         return isToggleCameraButtonDisplayed();
     }
 
     public boolean isFrontCameraActive() {
-
         try {
-
             String selected =
                     toggleCameraButton.getAttribute(
                             "selected"
                     );
-
             return "true".equals(selected);
-
         } catch (Exception e) {
-
             logger.warn(
                     "Failed to determine front camera state: {}",
                     e.getMessage()
             );
-
             return false;
         }
     }
 
     public TakePage toggleCamera() {
-
         return switchCamera();
     }
 
     public TakePage waitForCameraSwitch() {
-
         waitForCameraSwitchAnimation();
-
         return this;
     }
-
 }

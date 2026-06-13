@@ -13,89 +13,72 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ScreenshotUtils {
-    
     private static final Logger logger = LoggerUtil.getLogger(ScreenshotUtils.class);
     private static final String SCREENSHOT_DIR = "screenshots";
     private static final String SCREENSHOT_FORMAT = ".png";
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-    
+
     static {
-        // Create screenshots directory if it doesn't exist
         createScreenshotDirectory();
     }
-    
+
     public static String takeScreenshot(String screenshotName) {
         AppiumDriver driver = null;
-
         try {
             driver = DriverManager.getDriver();
-
-            //  Validate driver exists
             if (driver == null) {
                 logger.warn("Driver is null, cannot take screenshot");
                 return null;
             }
-
-            //  Validate UiAutomator2 health BEFORE proceeding
             if (!DriverManager.isUiAutomator2Healthy()) {
                 logger.warn(" UiAutomator2 not healthy, skipping screenshot to avoid crash");
                 return null;
             }
-
-            // Clean screenshot name
             String cleanName = cleanFileName(screenshotName);
             String timestamp = DATE_FORMAT.format(new Date());
             String fileName = String.format("%s_%s%s", cleanName, timestamp, SCREENSHOT_FORMAT);
-
-            // Take screenshot with error handling
             try {
                 File sourceFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-
                 if (sourceFile == null || !sourceFile.exists()) {
                     logger.warn("Screenshot file creation failed or file doesn't exist");
                     return null;
                 }
-
-                //  Copy file safely
                 File destFile = new File(SCREENSHOT_DIR, fileName);
                 FileUtils.copyFile(sourceFile, destFile);
-
                 String absolutePath = destFile.getAbsolutePath();
                 logger.info("âœ“ Screenshot saved: {}", absolutePath);
                 return absolutePath;
-
             } catch (IOException ioe) {
                 logger.error("IO error while saving screenshot: {}", ioe.getMessage());
                 return null;
             }
-
         } catch (Exception e) {
             logger.error("Failed to take screenshot '{}': {}", screenshotName, e.getMessage());
-
-            //  Detect and handle UiAutomator2 crash
             String errorMsg = e.getMessage();
             if (errorMsg != null && (errorMsg.contains("instrumentation") ||
                     errorMsg.contains("no longer running"))) {
                 logger.error(" UiAutomator2 crash detected during screenshot - attempting recovery");
-                // Don't call recovery here to avoid recursion, just log it
             }
-
             return null;
         }
     }
-public static String takeScreenshot() {
+
+    public static String takeScreenshot() {
         String methodName = getCurrentTestMethodName();
         return takeScreenshot(methodName);
     }
-public static String takeFailureScreenshot(String testClassName, String testMethodName) {
+
+    public static String takeFailureScreenshot(String testClassName, String testMethodName) {
         String screenshotName = String.format("%s_%s_FAILED", testClassName, testMethodName);
         return takeScreenshot(screenshotName);
     }
-public static String takeStepScreenshot(String testMethodName, String stepName) {
+
+    public static String takeStepScreenshot(String testMethodName, String stepName) {
         String screenshotName = String.format("%s_%s", testMethodName, stepName);
         return takeScreenshot(screenshotName);
     }
-public static String takeScreenshotWithDeviceInfo(String screenshotName) {
+
+    public static String takeScreenshotWithDeviceInfo(String screenshotName) {
         try {
             String platform = DriverManager.getCurrentPlatform();
             String deviceName = DriverManager.getCurrentDeviceName();
@@ -106,48 +89,45 @@ public static String takeScreenshotWithDeviceInfo(String screenshotName) {
             return takeScreenshot(screenshotName);
         }
     }
-public static byte[] takeScreenshotAsBytes() {
+
+    public static byte[] takeScreenshotAsBytes() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (driver == null) {
                 logger.warn("Driver is null, cannot take screenshot");
                 return new byte[0];
             }
-            
             byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             logger.debug("Screenshot taken as byte array, size: {} bytes", screenshot.length);
             return screenshot;
-            
         } catch (Exception e) {
             logger.error("Failed to take screenshot as bytes", e);
             return new byte[0];
         }
     }
-public static String takeScreenshotAsBase64() {
+
+    public static String takeScreenshotAsBase64() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (driver == null) {
                 logger.warn("Driver is null, cannot take screenshot");
                 return "";
             }
-            
             String base64Screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BASE64);
             logger.debug("Screenshot taken as base64, length: {} characters", base64Screenshot.length());
             return base64Screenshot;
-            
         } catch (Exception e) {
             logger.error("Failed to take screenshot as base64", e);
             return "";
         }
     }
-public static String[] takeMultipleScreenshots(String baseName, int count, int delayMs) {
+
+    public static String[] takeMultipleScreenshots(String baseName, int count, int delayMs) {
         String[] screenshots = new String[count];
-        
         for (int i = 0; i < count; i++) {
             String screenshotName = String.format("%s_%d", baseName, i + 1);
             screenshots[i] = takeScreenshot(screenshotName);
-            
-            if (i < count - 1) { // Don't wait after the last screenshot
+            if (i < count - 1) {
                 try {
                     Thread.sleep(delayMs);
                 } catch (InterruptedException e) {
@@ -157,34 +137,30 @@ public static String[] takeMultipleScreenshots(String baseName, int count, int d
                 }
             }
         }
-        
         logger.info("Took {} screenshots with base name: {}", count, baseName);
         return screenshots;
     }
-public static String[] takeBeforeAfterScreenshots(String actionName, Runnable action) {
+
+    public static String[] takeBeforeAfterScreenshots(String actionName, Runnable action) {
         String beforeScreenshot = takeScreenshot(actionName + "_BEFORE");
-        
         try {
             action.run();
         } catch (Exception e) {
             logger.error("Action failed during before/after screenshot capture", e);
             throw e;
         }
-        
         String afterScreenshot = takeScreenshot(actionName + "_AFTER");
-        
         return new String[]{beforeScreenshot, afterScreenshot};
     }
-public static int cleanupOldScreenshots(int daysOld) {
+
+    public static int cleanupOldScreenshots(int daysOld) {
         try {
             File screenshotDir = new File(SCREENSHOT_DIR);
             if (!screenshotDir.exists()) {
                 return 0;
             }
-            
             long cutoffTime = System.currentTimeMillis() - (daysOld * 24L * 60L * 60L * 1000L);
             int deletedCount = 0;
-            
             File[] files = screenshotDir.listFiles();
             if (files != null) {
                 for (File file : files) {
@@ -196,23 +172,24 @@ public static int cleanupOldScreenshots(int daysOld) {
                     }
                 }
             }
-            
             logger.info("Cleaned up {} old screenshots (older than {} days)", deletedCount, daysOld);
             return deletedCount;
-            
         } catch (Exception e) {
             logger.error("Failed to cleanup old screenshots", e);
             return 0;
         }
     }
-public static String getScreenshotDirectory() {
+
+    public static String getScreenshotDirectory() {
         return new File(SCREENSHOT_DIR).getAbsolutePath();
     }
-public static boolean isScreenshotDirectoryReady() {
+
+    public static boolean isScreenshotDirectoryReady() {
         File dir = new File(SCREENSHOT_DIR);
         return dir.exists() && dir.isDirectory() && dir.canWrite();
     }
-public static long getScreenshotFileSize(String screenshotPath) {
+
+    public static long getScreenshotFileSize(String screenshotPath) {
         try {
             File file = new File(screenshotPath);
             return file.exists() ? file.length() : -1;
@@ -221,34 +198,29 @@ public static long getScreenshotFileSize(String screenshotPath) {
             return -1;
         }
     }
-public static boolean copyScreenshot(String sourcePath, String destinationPath) {
+
+    public static boolean copyScreenshot(String sourcePath, String destinationPath) {
         try {
             File sourceFile = new File(sourcePath);
             File destFile = new File(destinationPath);
-            
             if (!sourceFile.exists()) {
                 logger.warn("Source screenshot file does not exist: {}", sourcePath);
                 return false;
             }
-            
-            // Create destination directory if it doesn't exist
             File destDir = destFile.getParentFile();
             if (destDir != null && !destDir.exists()) {
                 destDir.mkdirs();
             }
-            
             FileUtils.copyFile(sourceFile, destFile);
             logger.info("Screenshot copied from {} to {}", sourcePath, destinationPath);
             return true;
-            
         } catch (IOException e) {
             logger.error("Failed to copy screenshot from {} to {}", sourcePath, destinationPath, e);
             return false;
         }
     }
-    
-    // ==================== PRIVATE HELPER METHODS ====================
-private static void createScreenshotDirectory() {
+
+    private static void createScreenshotDirectory() {
         try {
             File dir = new File(SCREENSHOT_DIR);
             if (!dir.exists()) {
@@ -263,34 +235,30 @@ private static void createScreenshotDirectory() {
             logger.error("Error creating screenshot directory", e);
         }
     }
-private static String cleanFileName(String fileName) {
+
+    private static String cleanFileName(String fileName) {
         if (fileName == null || fileName.trim().isEmpty()) {
             return "screenshot";
         }
-        
-        // Remove invalid characters for filenames
         return fileName.replaceAll("[^a-zA-Z0-9._-]", "_")
-                      .replaceAll("_{2,}", "_") // Replace multiple underscores with single
-                      .trim();
+                .replaceAll("_{2,}", "_")
+                .trim();
     }
-private static String getCurrentTestMethodName() {
+
+    private static String getCurrentTestMethodName() {
         try {
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             for (StackTraceElement element : stackTrace) {
                 String className = element.getClassName();
                 String methodName = element.getMethodName();
-                
-                // Look for test methods (typically contain "test" or are in test packages)
-                if (className.contains("test") || methodName.contains("test") || 
-                    className.contains("Test") || methodName.startsWith("test")) {
+                if (className.contains("test") || methodName.contains("test") ||
+                        className.contains("Test") || methodName.startsWith("test")) {
                     return methodName;
                 }
             }
         } catch (Exception e) {
             logger.debug("Failed to get current test method name", e);
         }
-        
         return "unknown_test";
     }
-    
 }

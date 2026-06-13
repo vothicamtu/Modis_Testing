@@ -20,107 +20,66 @@ public class LoginPage extends BasePage {
     }
 
     public BasePage clickLoginButton() {
-
         logger.info("Preparing to click login button");
-
-        // Wait for UI stabilize
         waitFor(1);
-
-        // Hide keyboard because Android keyboard
-        // may cover submit button
         hideKeyboard();
-
         waitForAnimation();
-
-        // Small scroll adjustment
         try {
-
             scrollDownSlightly();
-
         } catch (Exception e) {
-
             logger.debug(
                     "Scroll adjustment skipped: {}",
                     e.getMessage()
             );
         }
-
-        // Final validation
         if (!isLoginButtonEnabled()) {
-
             logger.warn(
                     "Login button still disabled"
             );
-
             return this;
         }
-
         logger.info("Clicking login button");
-
         clickByAccessibilityId(
                 TestIDs.LOGIN_SUBMIT_BUTTON
         );
-
-        // Wait for RN render/navigation/dialog
         waitFor(2);
-
-        // INVALID LOGIN
         try {
-
             if (isAuthDialogVisible()) {
-
                 logger.info(
                         "Authentication dialog detected"
                 );
-
                 lastLoginErrorDialogMessage =
                         getAuthDialogMessage();
-
                 return this;
             }
-
         } catch (Exception e) {
-
             logger.debug(
                     "No auth dialog detected: {}",
                     e.getMessage()
             );
         }
-
-        // SUCCESS LOGIN
         try {
-
             HomePage homePage = new HomePage();
-
             logger.info("Waiting for HomePage after login");
-
             for (int i = 0; i < 8; i++) {
-
                 waitFor(1);
-
                 if (homePage.isTopbarAvatarDisplayed()
                         || homePage.isTopBarDisplayed()) {
-
                     logger.info(
                             "HomePage detected after successful login"
                     );
-
                     return homePage;
                 }
             }
-
         } catch (Exception e) {
-
             logger.warn(
                     "Failed verifying HomePage: {}",
                     e.getMessage()
             );
         }
-
         logger.warn(
                 "Could not determine login result, returning LoginPage"
         );
-
         return this;
     }
 
@@ -151,7 +110,6 @@ public class LoginPage extends BasePage {
         if (!isLoginErrorDialogDisplayed()) {
             return;
         }
-
         dismissAuthDialog();
         waitForAuthDialogDisappear();
     }

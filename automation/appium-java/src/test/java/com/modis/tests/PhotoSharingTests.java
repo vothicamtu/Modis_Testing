@@ -12,7 +12,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 public class PhotoSharingTests extends BaseTest {
-
     private HomePage homePage;
     private final TestDataReader testDataReader = new TestDataReader();
 
@@ -25,7 +24,6 @@ public class PhotoSharingTests extends BaseTest {
     public void testOpenCamera() {
         TakePage takePage = new TakePage();
         takePage.waitForPageToLoad();
-
         Assert.assertTrue(takePage.isDisplayed(), "Camera screen should be displayed");
         Assert.assertTrue(takePage.isCaptureButtonDisplayed(), "Capture button should be displayed");
         logger.info("PASS reason: camera screen loaded and capture button is visible");
@@ -74,17 +72,13 @@ public class PhotoSharingTests extends BaseTest {
     @Test(priority = 6, groups = {"photo-sharing", "regression"}, description = "Select recipient")
     public void testSelectRecipient() {
         SendPhotoPage sendPhotoPage = capturePhotoOrSkip();
-
         if (!sendPhotoPage.hasFriends()) {
             logger.info("SKIP reason: no friends are available for recipient selection");
             throw new SkipException("No friends available for recipient selection");
         }
-
         String friendId = sendPhotoPage.getFirstFriendId();
         Assert.assertNotNull(friendId, "Should be able to get first friend ID");
-
         sendPhotoPage.selectFriend(friendId);
-
         Assert.assertTrue(sendPhotoPage.isFriendSelected(friendId), "Selected recipient should be marked selected");
         logger.info("PASS reason: recipient was selected and marked selected | friendId={}", friendId);
     }
@@ -112,24 +106,17 @@ public class PhotoSharingTests extends BaseTest {
 
     @Test(priority = 9, groups = {"photo-sharing", "regression"}, description = "View feed after sending photo")
     public void testViewPhotoHistory() {
-
         SendPhotoPage sendPhotoPage =
                 capturePhotoOrSkip();
-
         sendPhotoPage.waitForPageToLoad();
-
         HomePage homePage =
                 sendPhotoPage.sendPhoto();
-
         homePage.waitForPageToLoad();
-
         homePage.performSwipeGesture("up");
-
         Assert.assertTrue(
                 homePage.isDisplayed(),
                 "Home page should remain displayed"
         );
-
         Assert.assertTrue(
                 homePage.isFeedDisplayed(),
                 "Feed should be displayed"
@@ -140,14 +127,11 @@ public class PhotoSharingTests extends BaseTest {
     private SendPhotoPage capturePhotoOrSkip() {
         TakePage takePage = new TakePage();
         takePage.waitForPageToLoad();
-
         SendPhotoPage sendPhotoPage = takePage.capturePhoto();
-
         if (sendPhotoPage == null) {
             logger.info("SKIP reason: photo capture did not navigate to Send Photo screen");
             throw new SkipException("Photo capture did not navigate to send photo screen");
         }
-
         sendPhotoPage.waitForPageToLoad();
         return sendPhotoPage;
     }

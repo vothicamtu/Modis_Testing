@@ -8,10 +8,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+
 public class TestDataReader {
     private static final Logger logger = LoggerFactory.getLogger(TestDataReader.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
-
     private JsonNode usersData;
     private JsonNode friendsData;
     private JsonNode messagesData;
@@ -42,10 +42,8 @@ public class TestDataReader {
         return objectMapper.readTree(inputStream);
     }
 
-    // ==================== LOGIN DATA METHODS ====================
-public List<Map<String, Object>> getValidLoginCredentials() {
+    public List<Map<String, Object>> getValidLoginCredentials() {
         List<Map<String, Object>> credentials = new ArrayList<>();
-
         JsonNode validCredentials = usersData.get("loginTestData").get("validCredentials");
         for (JsonNode credential : validCredentials) {
             Map<String, Object> credMap = new HashMap<>();
@@ -60,12 +58,11 @@ public List<Map<String, Object>> getValidLoginCredentials() {
             credMap.put("expectedResult", credential.get("expectedResult").asText());
             credentials.add(credMap);
         }
-
         return credentials;
     }
-public List<Map<String, Object>> getInvalidLoginCredentials() {
-        List<Map<String, Object>> credentials = new ArrayList<>();
 
+    public List<Map<String, Object>> getInvalidLoginCredentials() {
+        List<Map<String, Object>> credentials = new ArrayList<>();
         JsonNode invalidCredentials = usersData.get("loginTestData").get("invalidCredentials");
         for (JsonNode credential : invalidCredentials) {
             Map<String, Object> credMap = new HashMap<>();
@@ -77,18 +74,16 @@ public List<Map<String, Object>> getInvalidLoginCredentials() {
             credMap.put("description", credential.get("description").asText());
             credentials.add(credMap);
         }
-
         return credentials;
     }
-public List<Map<String, Object>> getRetryLoginScenarios() {
-        List<Map<String, Object>> scenarios = new ArrayList<>();
 
+    public List<Map<String, Object>> getRetryLoginScenarios() {
+        List<Map<String, Object>> scenarios = new ArrayList<>();
         JsonNode retryScenarios = usersData.get("retryTestScenarios");
         for (JsonNode scenario : retryScenarios) {
             Map<String, Object> scenarioMap = new HashMap<>();
             scenarioMap.put("id", scenario.get("id").asText());
             scenarioMap.put("description", scenario.get("description").asText());
-
             List<Map<String, Object>> attempts = new ArrayList<>();
             JsonNode attemptsNode = scenario.get("attempts");
             for (JsonNode attempt : attemptsNode) {
@@ -105,10 +100,10 @@ public List<Map<String, Object>> getRetryLoginScenarios() {
             scenarioMap.put("attempts", attempts);
             scenarios.add(scenarioMap);
         }
-
         return scenarios;
     }
-public Map<String, Object> getValidUserByUsername(String username) {
+
+    public Map<String, Object> getValidUserByUsername(String username) {
         JsonNode validCredentials = usersData.get("loginTestData").get("validCredentials");
         for (JsonNode credential : validCredentials) {
             if (credential.get("username").asText().equals(username)) {
@@ -126,7 +121,8 @@ public Map<String, Object> getValidUserByUsername(String username) {
         }
         return null;
     }
-public Map<String, Object> getTestUserByUsername(String username) {
+
+    public Map<String, Object> getTestUserByUsername(String username) {
         JsonNode testUsers = usersData.get("testUsers");
         if (testUsers != null) {
             for (JsonNode user : testUsers) {
@@ -142,10 +138,8 @@ public Map<String, Object> getTestUserByUsername(String username) {
         return null;
     }
 
-    // ==================== FRIENDS DATA METHODS ====================
-public List<Map<String, Object>> getTestFriends() {
+    public List<Map<String, Object>> getTestFriends() {
         List<Map<String, Object>> friends = new ArrayList<>();
-
         JsonNode testFriends = friendsData.get("testFriends");
         for (JsonNode friend : testFriends) {
             Map<String, Object> friendMap = new HashMap<>();
@@ -160,12 +154,11 @@ public List<Map<String, Object>> getTestFriends() {
             }
             friends.add(friendMap);
         }
-
         return friends;
     }
-public List<Map<String, Object>> getFriendRequests() {
-        List<Map<String, Object>> requests = new ArrayList<>();
 
+    public List<Map<String, Object>> getFriendRequests() {
+        List<Map<String, Object>> requests = new ArrayList<>();
         JsonNode friendRequests = friendsData.get("friendRequests");
         for (JsonNode request : friendRequests) {
             Map<String, Object> requestMap = new HashMap<>();
@@ -178,14 +171,11 @@ public List<Map<String, Object>> getFriendRequests() {
             requestMap.put("status", request.get("status").asText());
             requests.add(requestMap);
         }
-
         return requests;
     }
 
-    // ==================== MESSAGES DATA METHODS ====================
-public List<Map<String, Object>> getTestMessages() {
+    public List<Map<String, Object>> getTestMessages() {
         List<Map<String, Object>> messages = new ArrayList<>();
-
         JsonNode testMessages = messagesData.get("testMessages");
         for (JsonNode message : testMessages) {
             Map<String, Object> messageMap = new HashMap<>();
@@ -200,80 +190,64 @@ public List<Map<String, Object>> getTestMessages() {
             messageMap.put("category", message.get("category").asText());
             messages.add(messageMap);
         }
-
         return messages;
     }
 
     public String getTestData(String key) {
-
         JsonNode testData =
                 messagesData.get("testData");
-
         if (testData == null || !testData.has(key)) {
             logger.warn("Test data key not found: {}", key);
             return "";
         }
-
         return testData.get(key).asText();
     }
 
     public List<String> getRapidMessages() {
-
         List<String> rapidMessages = new ArrayList<>();
-
         JsonNode messages =
                 messagesData
                         .get("performanceTestData")
                         .get("rapidMessages");
-
         if (messages == null || !messages.isArray()) {
             return rapidMessages;
         }
-
         for (JsonNode message : messages) {
             rapidMessages.add(message.asText());
         }
-
         return rapidMessages;
     }
-    public String getRandomMessageTemplate(String category) {
 
+    public String getRandomMessageTemplate(String category) {
         JsonNode templates =
                 messagesData
                         .get("messageTemplates")
                         .get(category);
-
         if (templates == null
                 || !templates.isArray()
                 || templates.size() == 0) {
-
             logger.warn("Message category not found: {}", category);
             return "Test message";
         }
-
         Random random = new Random();
-
         int randomIndex =
                 random.nextInt(templates.size());
-
         return templates.get(randomIndex).asText();
     }
-public List<Map<String, Object>> getConversationScenarios() {
-        List<Map<String, Object>> scenarios = new ArrayList<>();
 
+    public List<Map<String, Object>> getConversationScenarios() {
+        List<Map<String, Object>> scenarios = new ArrayList<>();
         JsonNode conversationScenarios = messagesData.get("conversationScenarios");
         for (JsonNode scenario : conversationScenarios) {
             Map<String, Object> scenarioMap = new HashMap<>();
             scenarioMap.put("name", scenario.get("name").asText());
             scenarioMap.put("description", scenario.get("description").asText());
-
             List<String> participants = new ArrayList<>();
             JsonNode participantsNode = scenario.get("participants");
             for (JsonNode participant : participantsNode) {
                 participants.add(participant.asText());
             }
             scenarioMap.put("participants", participants);
-
             List<String> messages = new ArrayList<>();
             JsonNode messagesNode = scenario.get("messages");
             for (JsonNode message : messagesNode) {
@@ -282,14 +256,11 @@ public List<Map<String, Object>> getConversationScenarios() {
             scenarioMap.put("messages", messages);
             scenarios.add(scenarioMap);
         }
-
         return scenarios;
     }
 
-    // ==================== PHOTOS DATA METHODS ====================
-public List<Map<String, Object>> getTestPhotos() {
+    public List<Map<String, Object>> getTestPhotos() {
         List<Map<String, Object>> photos = new ArrayList<>();
-
         JsonNode testPhotos = photosData.get("testPhotos");
         for (JsonNode photo : testPhotos) {
             Map<String, Object> photoMap = new HashMap<>();
@@ -300,29 +271,25 @@ public List<Map<String, Object>> getTestPhotos() {
             photoMap.put("caption", photo.get("caption").asText());
             photoMap.put("urlImage", photo.get("urlImage").asText());
             photoMap.put("timestamp", photo.get("timestamp").asText());
-
             List<String> recipients = new ArrayList<>();
             JsonNode recipientsNode = photo.get("recipients");
             for (JsonNode recipient : recipientsNode) {
                 recipients.add(recipient.asText());
             }
             photoMap.put("recipients", recipients);
-
             List<String> recipientUsernames = new ArrayList<>();
             JsonNode recipientUsernamesNode = photo.get("recipientUsernames");
             for (JsonNode username : recipientUsernamesNode) {
                 recipientUsernames.add(username.asText());
             }
             photoMap.put("recipientUsernames", recipientUsernames);
-
             photos.add(photoMap);
         }
-
         return photos;
     }
-public Map<String, Map<String, Object>> getPhotoTestScenarios() {
-        Map<String, Map<String, Object>> scenarios = new HashMap<>();
 
+    public Map<String, Map<String, Object>> getPhotoTestScenarios() {
+        Map<String, Map<String, Object>> scenarios = new HashMap<>();
         JsonNode testScenarios = photosData.get("testScenarios");
         testScenarios.fieldNames().forEachRemaining(scenarioName -> {
             JsonNode scenario = testScenarios.get(scenarioName);
@@ -330,7 +297,6 @@ public Map<String, Map<String, Object>> getPhotoTestScenarios() {
             scenarioMap.put("description", scenario.get("description").asText());
             scenarioMap.put("caption", scenario.get("caption").asText());
             scenarioMap.put("expectedResult", scenario.get("expectedResult").asText());
-
             if (scenario.has("recipients")) {
                 List<String> recipients = new ArrayList<>();
                 JsonNode recipientsNode = scenario.get("recipients");
@@ -339,48 +305,42 @@ public Map<String, Map<String, Object>> getPhotoTestScenarios() {
                 }
                 scenarioMap.put("recipients", recipients);
             }
-
             if (scenario.has("selectAll")) {
                 scenarioMap.put("selectAll", scenario.get("selectAll").asBoolean());
             }
-
             scenarios.put(scenarioName, scenarioMap);
         });
-
         return scenarios;
     }
 
-    // ==================== UTILITY METHODS ====================
-public Map<String, Object> getRandomValidUser() {
+    public Map<String, Object> getRandomValidUser() {
         List<Map<String, Object>> validUsers = getValidLoginCredentials();
         if (validUsers.isEmpty()) {
             throw new RuntimeException("No valid users found in test data");
         }
-
         Random random = new Random();
         return validUsers.get(random.nextInt(validUsers.size()));
     }
-public Map<String, Object> getRandomTestMessage() {
+
+    public Map<String, Object> getRandomTestMessage() {
         List<Map<String, Object>> messages = getTestMessages();
         if (messages.isEmpty()) {
             throw new RuntimeException("No test messages found in test data");
         }
-
         Random random = new Random();
         return messages.get(random.nextInt(messages.size()));
     }
-public Map<String, Object> getRandomTestPhoto() {
+
+    public Map<String, Object> getRandomTestPhoto() {
         List<Map<String, Object>> photos = getTestPhotos();
         if (photos.isEmpty()) {
             throw new RuntimeException("No test photos found in test data");
         }
-
         Random random = new Random();
         return photos.get(random.nextInt(photos.size()));
     }
 
-    // ==================== INVALID LOGIN DATA METHODS ====================
-public static Object[][] getInvalidLoginData() {
+    public static Object[][] getInvalidLoginData() {
         return new Object[][]{
                 {"invalid_user", "invalid_pass", "TÃ i khoáº£n hoáº·c máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c"},
                 {"", "password123", "Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ thÃ´ng tin!"},
@@ -394,58 +354,61 @@ public static Object[][] getInvalidLoginData() {
                 {"verylongusernamethatexceedslimits", "password", "TÃªn Ä‘Äƒng nháº­p khÃ´ng chÃ­nh xÃ¡c!"}
         };
     }
-public static String[] getInvalidUsernames() {
+
+    public static String[] getInvalidUsernames() {
         return new String[]{
-                "",                              // Empty
-                " ",                             // Space only
-                "a",                             // Too short
-                "verylongusernamethatexceedsnormallimitsandshouldfail", // Too long
-                "user@#$%",                      // Special characters
-                "user with spaces",              // Spaces
-                "user\nwith\nnewlines",         // Newlines
-                "user'with'quotes",             // Single quotes
-                "user\"with\"doublequotes",     // Double quotes
-                "user<script>alert('xss')</script>", // XSS attempt
-                "../../etc/passwd",             // Path traversal
-                "SELECT * FROM users",          // SQL injection attempt
-                "null",                         // Null string
-                "undefined",                    // Undefined string
-                "0",                           // Numeric string
-                "false",                       // Boolean string
-                "{}",                          // JSON object
-                "[]"                           // JSON array
+                "",
+                " ",
+                "a",
+                "verylongusernamethatexceedsnormallimitsandshouldfail",
+                "user@#$%",
+                "user with spaces",
+                "user\nwith\nnewlines",
+                "user'with'quotes",
+                "user\"with\"doublequotes",
+                "user<script>alert('xss')</script>",
+                "../../etc/passwd",
+                "SELECT * FROM users",
+                "null",
+                "undefined",
+                "0",
+                "false",
+                "{}",
+                "[]"
         };
     }
-public static String[] getInvalidPasswords() {
+
+    public static String[] getInvalidPasswords() {
         return new String[]{
-                "",                              // Empty
-                " ",                             // Space only
-                "1",                             // Too short
-                "12",                            // Too short
-                "123",                           // Too short
-                "password",                      // Common weak password
-                "123456",                        // Common weak password
-                "admin",                         // Common weak password
-                "test",                          // Common weak password
-                "qwerty",                        // Common weak password
-                "abc123",                        // Common weak password
-                "password123",                   // Common pattern
-                "admin123",                      // Common pattern
-                "verylongpasswordthatexceedsnormallimitsandshouldfailvalidation", // Too long
-                "pass with spaces",              // Spaces
-                "pass\nwith\nnewlines",         // Newlines
-                "pass'with'quotes",             // Single quotes
-                "pass\"with\"doublequotes",     // Double quotes
-                "<script>alert('xss')</script>", // XSS attempt
-                "../../etc/passwd",             // Path traversal
-                "DROP TABLE users",             // SQL injection attempt
-                "null",                         // Null string
-                "undefined",                    // Undefined string
-                "false",                       // Boolean string
-                "{}"                           // JSON object
+                "",
+                " ",
+                "1",
+                "12",
+                "123",
+                "password",
+                "123456",
+                "admin",
+                "test",
+                "qwerty",
+                "abc123",
+                "password123",
+                "admin123",
+                "verylongpasswordthatexceedsnormallimitsandshouldfailvalidation",
+                "pass with spaces",
+                "pass\nwith\nnewlines",
+                "pass'with'quotes",
+                "pass\"with\"doublequotes",
+                "<script>alert('xss')</script>",
+                "../../etc/passwd",
+                "DROP TABLE users",
+                "null",
+                "undefined",
+                "false",
+                "{}"
         };
     }
-public static Object[][] getBoundaryLoginData() {
+
+    public static Object[][] getBoundaryLoginData() {
         return new Object[][]{
                 {"", "", "Both empty"},
                 {"a", "b", "Minimum length"},

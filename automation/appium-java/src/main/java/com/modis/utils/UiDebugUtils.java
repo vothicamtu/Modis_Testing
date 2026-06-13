@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Set;
 
 public final class UiDebugUtils {
-
     private static final Logger logger = LoggerUtil.getLogger(UiDebugUtils.class);
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
 
@@ -32,9 +31,7 @@ public final class UiDebugUtils {
             String safeTag = sanitize(reasonTag);
             Path outDir = Paths.get("target", "ui-dumps");
             Files.createDirectories(outDir);
-
             Path base = outDir.resolve(ts + "_" + safeTag);
-
             logAndroidContext(driver);
             logVisibleStrings(driver);
             saveScreenshot(driver, base.resolveSibling(base.getFileName() + ".png"));
@@ -59,9 +56,7 @@ public final class UiDebugUtils {
     }
 
     private static void logVisibleStrings(AppiumDriver driver) {
-        // Keep logs bounded (avoid flooding CI output)
         int limit = 10;
-
         try {
             Set<String> texts = new LinkedHashSet<>();
             List<WebElement> nodes =
@@ -79,7 +74,6 @@ public final class UiDebugUtils {
         } catch (Exception e) {
             logger.warn("[UI-DUMP] Collecting visible texts failed: {}", e.toString());
         }
-
         try {
             Set<String> descs = new LinkedHashSet<>();
             List<WebElement> nodes =
@@ -118,4 +112,3 @@ public final class UiDebugUtils {
         return input.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 }
-

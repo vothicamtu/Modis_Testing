@@ -20,7 +20,6 @@ import java.time.Duration;
 
 @Listeners({TestListener.class})
 public abstract class BaseTest {
-
     protected final Logger logger = LoggerUtil.getLogger(this.getClass());
     protected AppiumDriver driver;
 
@@ -29,29 +28,23 @@ public abstract class BaseTest {
     public void setUpClass(@Optional("android") String platform,
                            @Optional("Android") String deviceName,
                            @Optional("11.0") String platformVersion) {
-
         logger.info("=== Starting Test Class: {} ===", this.getClass().getSimpleName());
         logger.info("Platform: {}, Device: {}, Version: {}", platform, deviceName, platformVersion);
-
         System.setProperty("platform", platform);
         System.setProperty("deviceName", deviceName);
         System.setProperty("platformVersion", platformVersion);
-
         ConfigReader.loadConfiguration();
-
         driver = initializeDriver(platform);
     }
 
     @BeforeMethod(alwaysRun = true)
     public void setUpMethod(Method method) {
         logger.info("--- Starting Test Method: {} ---", method.getName());
-
         String platform = System.getProperty("platform", "android");
         AppiumDriver current = DriverManager.getDriver();
         if (current != null) {
             driver = current;
         }
-
         if (driver == null || !DriverManager.isSessionAlive()) {
             logger.info("Creating new driver for test method");
             driver = initializeDriver(platform);
@@ -59,7 +52,6 @@ public abstract class BaseTest {
             logger.info("Reusing existing driver session");
             relaunchApp();
         }
-
         try {
             LogoutHelper.logoutIfLoggedIn(driver);
         } catch (Exception e) {
@@ -80,7 +72,6 @@ public abstract class BaseTest {
             long durationMs = Math.max(0, result.getEndMillis() - result.getStartMillis());
             String platform = System.getProperty("platform", "unknown");
             String paramDeviceName = System.getProperty("deviceName", "unknown");
-
             String capDeviceName = "unknown";
             try {
                 AppiumDriver d = DriverManager.getDriver();
@@ -91,7 +82,6 @@ public abstract class BaseTest {
                 }
             } catch (Exception ignored) {
             }
-
             String deviceName = String.format("param=%s,cap=%s", paramDeviceName, capDeviceName);
             logger.info("PASS | {}ms | {} | {} | {}.{}",
                     durationMs,
@@ -127,9 +117,7 @@ public abstract class BaseTest {
 
     protected void relaunchApp() {
         if (driver == null) return;
-
         String platform = System.getProperty("platform", "android");
-
         if ("android".equalsIgnoreCase(platform) && !DriverManager.isUiAutomator2Healthy()) {
             logger.warn("UiAutomator2 không khỏe trước relaunch -> attempt recover");
             boolean ok = DriverManager.recoverFromUiAutomator2Crash();
@@ -140,14 +128,12 @@ public abstract class BaseTest {
                 return;
             }
         }
-
         try {
             if (driver instanceof AndroidDriver) {
                 AndroidDriver android = (AndroidDriver) driver;
                 logger.info("Relaunch app (Android): terminate + activate {}", AppConstants.APP_PACKAGE);
                 android.terminateApp(AppConstants.APP_PACKAGE);
                 android.activateApp(AppConstants.APP_PACKAGE);
-
                 new WebDriverWait(android, Duration.ofSeconds(10)).until(d -> {
                     try {
                         return AppConstants.APP_PACKAGE.equals(android.getCurrentPackage());

@@ -9,7 +9,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 public class SearchTests extends BaseTest {
-
     private HomePage homePage;
     private final TestDataReader testDataReader = new TestDataReader();
 
@@ -22,10 +21,8 @@ public class SearchTests extends BaseTest {
     public void testSearchUsersWithResults() {
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.searchUsers("t");
-
         if (friendsPage.hasSearchResults()) {
             String firstResultId = friendsPage.getFirstSearchResultId();
-
             Assert.assertFalse(firstResultId.isEmpty(), "Search result item id should be available");
             Assert.assertTrue(friendsPage.isSearchResultDisplayed(firstResultId), "Search result row should be displayed");
             Assert.assertTrue(friendsPage.isSearchResultNameDisplayed(firstResultId), "Search result name should be displayed");
@@ -50,11 +47,11 @@ public class SearchTests extends BaseTest {
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.enterSearchText("");
         Assert.assertTrue(friendsPage.isDisplayed(),
-            "Friends screen should remain displayed when search input is empty");
+                "Friends screen should remain displayed when search input is empty");
         Assert.assertTrue(friendsPage.isFriendsListDisplayed()
-                || !friendsPage.getFirstVisibleFriendName().isEmpty()
-                || friendsPage.isEmptyFriendsStateDisplayed(),
-            "Friends list or empty state should be displayed when search input is empty");
+                        || !friendsPage.getFirstVisibleFriendName().isEmpty()
+                        || friendsPage.isEmptyFriendsStateDisplayed(),
+                "Friends list or empty state should be displayed when search input is empty");
         Assert.assertFalse(friendsPage.hasSearchResults(), "No search results should be shown for empty search");
         logger.info("PASS reason: empty search kept Friends screen/list state and did not show search results");
     }
@@ -63,12 +60,11 @@ public class SearchTests extends BaseTest {
     public void testSearchInputValidationForShortValue() {
         FriendsPage friendsPage = homePage.navigateToFriends();
         friendsPage.searchUsers("t");
-
         Assert.assertTrue(friendsPage.isSearchQueryValid("t"), "Single-character search query should be valid");
         Assert.assertTrue(friendsPage.hasSearchResults()
-                || friendsPage.isSearchEmptyStateDisplayed()
-                || friendsPage.isNoSearchResultsDisplayed(),
-            "Single-character search should render search results or an empty state");
+                        || friendsPage.isSearchEmptyStateDisplayed()
+                        || friendsPage.isNoSearchResultsDisplayed(),
+                "Single-character search should render search results or an empty state");
         logger.info("PASS reason: single-character search is valid and rendered either results or empty state | query=t");
     }
 
@@ -84,12 +80,9 @@ public class SearchTests extends BaseTest {
     public void testSearchWithLongText() {
         FriendsPage friendsPage = homePage.navigateToFriends();
         Assert.assertTrue(friendsPage.isSearchInputIconDisplayed(), "Search input icon should be displayed before long search");
-
         friendsPage.searchUsers("testuser009b_long_query_123456789_!@#$%^&*()_+-=[]{}|;:'\",.<>/?_testuser009b_long_query_123456789");
-
         if (friendsPage.hasSearchResults()) {
             String firstResultId = friendsPage.getFirstSearchResultId();
-
             Assert.assertFalse(firstResultId.isEmpty(), "Search result item id should be available for long search text");
             Assert.assertTrue(friendsPage.isSearchResultDisplayed(firstResultId), "Search result row should be displayed for long search text");
             Assert.assertTrue(friendsPage.isSearchResultNameDisplayed(firstResultId), "Search result name should be displayed for long search text");

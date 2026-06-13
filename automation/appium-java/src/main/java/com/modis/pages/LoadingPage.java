@@ -7,15 +7,12 @@ import com.modis.utils.SmartWaitUtils;
 import io.appium.java_client.AppiumBy;
 
 public class LoadingPage extends BasePage {
-
     public LoadingPage waitForPageToLoad() {
         logger.info("Checking loading page readiness");
-
         if (isLoginScreenVisible() || isSignupScreenVisible()) {
             logger.info("Already on auth screen; skipping loading wait");
             return this;
         }
-
         try {
             waitForLoadingScreenVisible();
             waitForLoginSignupButtonsVisible();
@@ -100,14 +97,12 @@ public class LoadingPage extends BasePage {
     @Deprecated
     public LoginPage clickLoginButton() {
         logger.info("Clicking login button on loading page");
-
         if (isLoginScreenVisible()) {
             logger.info("Already on login screen, skipping loading button click");
             LoginPage loginPage = new LoginPage();
             loginPage.waitForPageToLoad();
             return loginPage;
         }
-
         try {
             if (!isLoadingScreenVisible()) {
                 logger.warn("Loading login button is not visible; falling back to login screen detection");
@@ -115,28 +110,23 @@ public class LoadingPage extends BasePage {
                 loginPage.waitForPageToLoad();
                 return loginPage;
             }
-
             clickByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
-
             SmartWaitUtils.ScreenDetectionResult screen = SmartWaitUtils.waitForAnyScreen(10);
             if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOGIN) {
                 LoginPage loginPage = new LoginPage();
                 loginPage.waitForPageToLoad();
                 return loginPage;
             }
-
             if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOADING) {
                 logger.warn("Login button tap did not advance to LOGIN screen; retrying once");
                 clickByAccessibilityId(TestIDs.LOADING_LOGIN_BUTTON);
                 screen = SmartWaitUtils.waitForAnyScreen(10);
             }
-
             if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOGIN) {
                 LoginPage loginPage = new LoginPage();
                 loginPage.waitForPageToLoad();
                 return loginPage;
             }
-
             logger.warn("Login button tap did not reach LOGIN screen, current screen: {}", screen.getScreenType());
             LoginPage loginPage = new LoginPage();
             loginPage.waitForPageToLoad();
@@ -150,29 +140,24 @@ public class LoadingPage extends BasePage {
     @Deprecated
     public SignupPage clickSignupButton() {
         logger.info("Clicking signup button on loading page");
-
         try {
             clickByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON);
-
             SmartWaitUtils.ScreenDetectionResult screen = SmartWaitUtils.waitForAnyScreen(10);
             if (screen.getScreenType() == SmartWaitUtils.ScreenType.SIGNUP) {
                 SignupPage signupPage = new SignupPage();
                 signupPage.waitForPageToLoad();
                 return signupPage;
             }
-
             if (screen.getScreenType() == SmartWaitUtils.ScreenType.LOADING) {
                 logger.warn("Signup button tap did not advance to SIGNUP screen; retrying once");
                 clickByAccessibilityId(TestIDs.LOADING_SIGNUP_BUTTON);
                 screen = SmartWaitUtils.waitForAnyScreen(10);
             }
-
             if (screen.getScreenType() == SmartWaitUtils.ScreenType.SIGNUP) {
                 SignupPage signupPage = new SignupPage();
                 signupPage.waitForPageToLoad();
                 return signupPage;
             }
-
             logger.warn("Signup button tap did not reach SIGNUP screen, current screen: {}", screen.getScreenType());
             SignupPage signupPage = new SignupPage();
             signupPage.waitForPageToLoad();

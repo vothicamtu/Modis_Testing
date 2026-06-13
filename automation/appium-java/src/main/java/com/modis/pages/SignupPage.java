@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SignupPage extends BasePage {
-
     private WebElement signupScreen;
     private WebElement titleText;
     private WebElement usernameInput;
@@ -24,7 +23,6 @@ public class SignupPage extends BasePage {
     private WebElement signupButton;
     private WebElement loginLink;
     private WebElement backButton;
-
     private String lastSignupErrorDialogMessage = "";
 
     public SignupPage enterUsername(String username) {
@@ -59,66 +57,47 @@ public class SignupPage extends BasePage {
 
     public SignupPage enterConfirmPassword(String confirmPassword) {
         logger.info("Entering signup confirm password");
-
         enterTextByAccessibilityId(
                 TestIDs.SIGNUP_CONFIRM_PASSWORD_INPUT,
                 confirmPassword
         );
-
         return this;
     }
 
     public BasePage clickSignupButton() {
-
         logger.info("Clicking signup button");
-
         lastSignupErrorDialogMessage = "";
-
         hideKeyboard();
-
         waitFor(1);
-
-        // SCROLL XUỐNG TỚI KHI THẤY NÚT
         WebElement signupTarget =
                 ensureSignupButtonVisible();
-
         clickElement(signupTarget);
-
         if (waitForAuthDialog(8)) {
-
             lastSignupErrorDialogMessage =
                     getAuthDialogMessage();
-
             logger.info(
                     "Signup dialog captured: {}",
                     lastSignupErrorDialogMessage
             );
-
             return this;
         }
-
         if (isHomePageDisplayed()) {
             return new HomePage();
         }
-
         return this;
     }
 
     private WebElement ensureSignupButtonVisible() {
         WebElement visibleSignupButton =
                 findVisibleSignupButton();
-
         if (visibleSignupButton != null) {
             return visibleSignupButton;
         }
-
         visibleSignupButton =
                 scrollSignupButtonIntoViewWithGesture();
-
         if (visibleSignupButton != null) {
             return visibleSignupButton;
         }
-
         throw new RuntimeException(
                 "Signup button is not visible on signup screen"
         );
@@ -127,13 +106,10 @@ public class SignupPage extends BasePage {
     private WebElement scrollSignupButtonIntoViewWithGesture() {
         AppiumDriver currentDriver =
                 DriverManager.getDriver();
-
         if (currentDriver == null) {
             return null;
         }
-
         Dimension size;
-
         try {
             size = currentDriver.manage().window().getSize();
         } catch (Exception e) {
@@ -141,41 +117,32 @@ public class SignupPage extends BasePage {
                     "Could not read screen size before signup scroll: {}",
                     e.getMessage()
             );
-
             return null;
         }
-
         int centerX = size.width / 2;
         int startY = (int) (size.height * 0.78);
         int endY = (int) (size.height * 0.32);
-
         for (int attempt = 1; attempt <= 4; attempt++) {
             try {
                 Map<String, Object> dragParams =
                         new HashMap<>();
-
                 dragParams.put("startX", centerX);
                 dragParams.put("startY", startY);
                 dragParams.put("endX", centerX);
                 dragParams.put("endY", endY);
                 dragParams.put("speed", 700);
-
                 currentDriver.executeScript(
                         "mobile: dragGesture",
                         dragParams
                 );
-
                 waitFor(1);
-
                 WebElement visibleSignupButton =
                         findVisibleSignupButton();
-
                 if (visibleSignupButton != null) {
                     logger.info(
                             "Signup button visible after dragGesture attempt {}",
                             attempt
                     );
-
                     return visibleSignupButton;
                 }
             } catch (Exception e) {
@@ -186,18 +153,15 @@ public class SignupPage extends BasePage {
                 );
             }
         }
-
         return null;
     }
 
     private WebElement findVisibleSignupButton() {
         AppiumDriver currentDriver =
                 DriverManager.getDriver();
-
         if (currentDriver == null) {
             return null;
         }
-
         try {
             for (WebElement element : currentDriver.findElements(AppiumBy.accessibilityId(TestIDs.SIGNUP_SUBMIT_BUTTON))) {
                 if (element != null && element.isDisplayed()) {
@@ -210,7 +174,6 @@ public class SignupPage extends BasePage {
                     e.getMessage()
             );
         }
-
         try {
             for (WebElement element : currentDriver.findElements(AppiumBy.id(TestIDs.SIGNUP_SUBMIT_BUTTON))) {
                 if (element != null && element.isDisplayed()) {
@@ -223,7 +186,6 @@ public class SignupPage extends BasePage {
                     e.getMessage()
             );
         }
-
         return null;
     }
 
@@ -258,7 +220,6 @@ public class SignupPage extends BasePage {
         if (!isSignupErrorDialogDisplayed()) {
             return;
         }
-
         dismissAuthDialog();
         waitForAuthDialogDisappear();
     }
@@ -412,8 +373,6 @@ public class SignupPage extends BasePage {
     public SignupPage waitForPageToLoad() {
         waitForElementVisible(TestIDs.SIGNUP_SCREEN);
         waitForElementVisible(TestIDs.SIGNUP_USERNAME_INPUT);
-
-        // KHÔNG wait submit button vì nằm ngoài viewport
         return this;
     }
 

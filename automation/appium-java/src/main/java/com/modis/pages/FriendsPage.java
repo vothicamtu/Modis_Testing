@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 import java.util.Set;
 
 public class FriendsPage extends BasePage {
-
     private String currentSearchText = "";
     private final Map<String, String> searchResultLabels = new HashMap<>();
     private final Map<String, String> searchResultTexts = new HashMap<>();
@@ -28,98 +27,72 @@ public class FriendsPage extends BasePage {
     private final Map<String, String> friendRequestNames = new HashMap<>();
     private boolean friendRequestsSectionReached = false;
     private boolean sentRequestsSectionReached = false;
-
-    // PAGE ELEMENTS
-
     @AndroidFindBy(accessibility = TestIDs.FRIENDS_SCREEN)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SCREEN)
     private WebElement friendsScreen;
-
     @AndroidFindBy(accessibility = TestIDs.FRIENDS_BACK_BUTTON)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_BACK_BUTTON)
     private WebElement backButton;
-
     @AndroidFindBy(accessibility = TestIDs.FRIENDS_SCROLL)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SCROLL)
     private WebElement friendsScrollView;
-
     @AndroidFindBy(accessibility = TestIDs.FRIENDS_SEARCH_INPUT)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_SEARCH_INPUT)
     private WebElement searchInput;
-
     @AndroidFindBy(accessibility = TestIDs.FRIENDS_CLEAR_SEARCH)
     @iOSXCUITFindBy(accessibility = TestIDs.FRIENDS_CLEAR_SEARCH)
     private WebElement clearSearchButton;
-
-    // Search results
     @AndroidFindBy(accessibility = TestIDs.SEARCH_RESULTS_LIST)
     @iOSXCUITFindBy(accessibility = TestIDs.SEARCH_RESULTS_LIST)
     private WebElement searchResultsList;
-
     @AndroidFindBy(accessibility = TestIDs.SEARCH_EMPTY_STATE)
     @iOSXCUITFindBy(accessibility = TestIDs.SEARCH_EMPTY_STATE)
     private WebElement searchEmptyState;
 
     public HomePage navigateBack() {
-
         logger.info(
                 "Navigating back from friends screen"
         );
-
         try {
             waitForElementClickable(
                     TestIDs.FRIENDS_BACK_BUTTON
             );
-
             clickByAccessibilityId(
                     TestIDs.FRIENDS_BACK_BUTTON
             );
-
             waitForAnimation();
         } catch (Exception e) {
-
             logger.warn(
                     "Device back navigation failed: {}",
                     e.getMessage()
             );
         }
-
         HomePage homePage = new HomePage();
-
         homePage.waitForTopbarReadyAfterLogin(10);
-
         return homePage;
     }
 
     public FriendsPage searchUsers(String searchQuery) {
-
         searchResultLabels.clear();
         searchResultTexts.clear();
         visibleSearchResultIds.clear();
-
         if (!isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT)) {
             scrollToTop();
             waitForElementVisible(
                     TestIDs.FRIENDS_SEARCH_INPUT
             );
         }
-
         WebElement input = findByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT);
         clearSearchInputIfNeeded(input);
         input = findByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT);
         enterText(input, searchQuery);
-
         logger.info(
                 "Search is auto-triggered by FE"
         );
-
         long endTime =
                 System.currentTimeMillis() + 10000;
-
         while (System.currentTimeMillis() < endTime) {
-
             try {
-
                 if (
                         isElementDisplayedByAccessibilityId(
                                 TestIDs.SEARCH_RESULTS_LIST
@@ -131,64 +104,48 @@ public class FriendsPage extends BasePage {
                                 ||
                                 !getSearchResultRows().isEmpty()
                 ) {
-
                     logger.info(
                             "Search results rendered"
                     );
-
                     return this;
                 }
-
             } catch (Exception ignored) {
             }
-
             waitFor(1);
         }
-
         logger.warn(
                 "Search results did not appear within timeout"
         );
-
         return this;
     }
 
     public FriendsPage clearSearch() {
-
         logger.info(
                 "Clearing search"
         );
-
         try {
-
             if (isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH)) {
                 clickByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH);
                 waitForAnimation();
                 return this;
             }
-
             waitForElementVisible(
                     TestIDs.FRIENDS_SEARCH_INPUT
             );
             findByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT).clear();
-
         } catch (Exception e) {
-
             logger.warn(
                     "Failed to clear search: {}",
                     e.getMessage()
             );
         }
-
         waitForAnimation();
-
         return this;
     }
 
     public void waitForSearchResults() {
         logger.debug("Waiting for search results");
         waitForAnimation();
-
-        // Wait for either results or empty state
         try {
             Thread.sleep(AppConstants.SEARCH_DEBOUNCE_MS);
         } catch (InterruptedException e) {
@@ -197,11 +154,9 @@ public class FriendsPage extends BasePage {
         }
     }
 
-    // FRIEND ACTIONS
     public FriendsPage acceptFriendRequest(String userId) {
         logger.info("Accepting friend request from user: {}", userId);
         String acceptButtonId = TestIDs.getFriendRequestAcceptButtonId(userId);
-
         WebElement acceptButton = findVisibleNodeByResourceId(acceptButtonId);
         if (acceptButton != null) {
             clickElement(acceptButton);
@@ -209,7 +164,6 @@ public class FriendsPage extends BasePage {
         } else {
             throw new RuntimeException("Accept button not found for user: " + userId);
         }
-
         return this;
     }
 
@@ -222,17 +176,13 @@ public class FriendsPage extends BasePage {
     private void clearSearchInputIfNeeded(WebElement input) {
         if (isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH)) {
             clickByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH);
-
             long endTime = System.currentTimeMillis() + 5000;
-
             while (System.currentTimeMillis() < endTime) {
                 if (!isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_CLEAR_SEARCH)) {
                     return;
                 }
-
                 waitFor(1);
             }
-
             logger.warn("Search clear button was still displayed after clear action");
         }
     }
@@ -240,7 +190,6 @@ public class FriendsPage extends BasePage {
     public FriendsPage openDeclineFriendRequestDialog(String userId) {
         logger.info("Opening decline friend request dialog for user: {}", userId);
         String declineButtonId = TestIDs.getFriendRequestRejectButtonId(userId);
-
         WebElement declineButton = findVisibleNodeByResourceId(declineButtonId);
         if (declineButton != null) {
             clickElement(declineButton);
@@ -248,11 +197,9 @@ public class FriendsPage extends BasePage {
         } else {
             throw new RuntimeException("Decline button not found for user: " + userId);
         }
-
         return this;
     }
 
-    // LIST ACTIONS
     public FriendsPage scrollFriendsList(String direction) {
         logger.debug("Scrolling friends list: {}", direction);
         waitForElementVisible(TestIDs.FRIENDS_SCROLL);
@@ -276,12 +223,10 @@ public class FriendsPage extends BasePage {
     public boolean findFriendInList(String userId) {
         logger.info("Searching for friend in list: {}", userId);
         String friendRowId = TestIDs.getFriendItemId(userId);
-
         WebElement friendElement = scrollToElementByAccessibilityId(friendRowId);
         return friendElement != null;
     }
 
-    // VALIDATION METHODS
     public boolean isSearchInputDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SEARCH_INPUT);
     }
@@ -308,25 +253,19 @@ public class FriendsPage extends BasePage {
     }
 
     public int getVisibleFriendsCount() {
-
         try {
-
             List<WebElement> friendRows =
                     findElementsByXPath(
                             "//*[contains(@resource-id,'" + TestIDs.FRIEND_ITEM_PREFIX + "')]"
                     );
-
             return friendRows != null
                     ? friendRows.size()
                     : 0;
-
         } catch (Exception e) {
-
             logger.warn(
                     "Failed to get visible friends count: {}",
                     e.getMessage()
             );
-
             return 0;
         }
     }
@@ -335,20 +274,16 @@ public class FriendsPage extends BasePage {
         return getSearchResultRows().size();
     }
 
-    // SEARCH VALIDATION
     public boolean isSearchQueryValid(String query) {
         return query != null && query.length() >= AppConstants.MIN_SEARCH_QUERY_LENGTH;
     }
 
     public boolean searchAndVerifyUser(String searchQuery, String expectedUserId) {
         logger.info("Searching for user '{}' and verifying user '{}' in results", searchQuery, expectedUserId);
-
         searchUsers(searchQuery);
-
         return isSearchResultDisplayed(expectedUserId);
     }
 
-    // NEGATIVE TEST METHODS
     public FriendsPage searchWithEmptyQuery() {
         logger.info("Searching with empty query");
         clearSearch();
@@ -365,30 +300,21 @@ public class FriendsPage extends BasePage {
         return searchUsers(AppConstants.TEST_SEARCH_NO_RESULTS);
     }
 
-    // INHERITED METHODS
-
     @Override
     public boolean isDisplayed() {
-
         logger.info("Verifying FriendsPage display state");
-
         try {
-
             waitForElementVisible(
                     TestIDs.FRIENDS_SEARCH_INPUT
             );
-
             return isElementDisplayedByAccessibilityId(
                     TestIDs.FRIENDS_SEARCH_INPUT
             );
-
         } catch (Exception e) {
-
             logger.warn(
                     "FriendsPage display verification failed: {}",
                     e.getMessage()
             );
-
             return false;
         }
     }
@@ -399,44 +325,34 @@ public class FriendsPage extends BasePage {
     }
 
     public FriendsPage waitForPageToLoad() {
-
         logger.info(
                 "Waiting for friends page to load"
         );
-
         waitForElementVisible(
                 TestIDs.FRIENDS_SEARCH_INPUT
         );
-
         if (!isElementDisplayedByAccessibilityId(
                 TestIDs.FRIENDS_SEARCH_INPUT
         )) {
-
             throw new RuntimeException(
                     "Friends page failed to load"
             );
         }
-
         logger.info(
                 "Friends page loaded successfully"
         );
-
         return this;
     }
 
     public boolean verifyPageElements() {
         logger.info("Verifying friends page elements");
-
         try {
             boolean allElementsPresent =
                     isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_SCREEN) &&
                             isElementDisplayedByAccessibilityId(TestIDs.FRIENDS_BACK_BUTTON);
-
             logger.info("Friends page elements verification: {}",
                     allElementsPresent ? "PASSED" : "FAILED");
-
             return allElementsPresent;
-
         } catch (Exception e) {
             logger.warn("Friends page verification failed: {}", e.getMessage());
             return false;
@@ -444,7 +360,6 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isFriendsTabSelected() {
-        // Android FE does not render tab buttons; the friends list is the default section.
         return isFriendsListDisplayed() || isEmptyFriendsStateDisplayed() || !getFirstVisibleFriendName().isEmpty();
     }
 
@@ -453,10 +368,8 @@ public class FriendsPage extends BasePage {
             if (getVisibleFriendsCount() > 0) {
                 return true;
             }
-
             waitFor(1);
         }
-
         return false;
     }
 
@@ -495,11 +408,9 @@ public class FriendsPage extends BasePage {
     public FriendsPage openUnfriendDialog(String id) {
         logger.info("Opening unfriend dialog for friend request id: {}", id);
         WebElement unfriendButton = findVisibleNodeByResourceId(TestIDs.FRIEND_UNFRIEND_PREFIX + id);
-
         if (unfriendButton == null) {
             throw new RuntimeException("Unfriend button not found for id: " + id);
         }
-
         clickElement(unfriendButton);
         waitFor(1);
         return this;
@@ -521,7 +432,6 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isFriendUsernameDisplayed(String id) {
-        // FriendsList.tsx only renders fullname/username in one name node.
         return false;
     }
 
@@ -532,21 +442,18 @@ public class FriendsPage extends BasePage {
     public FriendsPage clickRequestsTab() {
         friendRequestsSectionReached = false;
         scrollToTop();
-
         WebElement requestTitle = scrollIntoViewByDescription("friend_requests_title");
         if (requestTitle != null) {
             friendRequestsSectionReached = true;
             waitForFriendRequestsContent();
             return this;
         }
-
         WebElement requestEmpty = scrollIntoViewByDescription("friend_requests_empty");
         if (requestEmpty != null) {
             friendRequestsSectionReached = true;
             waitForFriendRequestsContent();
             return this;
         }
-
         while (true) {
             if (isFriendRequestsSectionInView()) {
                 friendRequestsSectionReached = true;
@@ -554,11 +461,9 @@ public class FriendsPage extends BasePage {
                 waitForFriendRequestsContent();
                 return this;
             }
-
             try {
                 String beforeScrollSource = getCurrentPageSource();
                 boolean canScrollMore;
-
                 if (isPastFriendRequestsSection()) {
                     friendRequestsSectionReached = true;
                     if (!hasFriendRequests()) {
@@ -566,30 +471,24 @@ public class FriendsPage extends BasePage {
                         waitForFriendRequestsContent();
                         return this;
                     }
-
                     canScrollMore = scrollFriendsContainerUp(0.18);
                 } else {
                     canScrollMore = scrollFriendsContainerDown(0.22);
                 }
-
                 waitFor(1);
-
                 if (isFriendRequestsSectionInView()) {
                     friendRequestsSectionReached = true;
                     alignFriendRequestsHeader();
                     waitForFriendRequestsContent();
                     return this;
                 }
-
                 if (isPastFriendRequestsSection() && !hasFriendRequests()) {
                     friendRequestsSectionReached = true;
                     alignFriendRequestsHeader();
                     waitForFriendRequestsContent();
                     return this;
                 }
-
                 String afterScrollSource = getCurrentPageSource();
-
                 if (!canScrollMore || beforeScrollSource.equals(afterScrollSource)) {
                     break;
                 }
@@ -598,17 +497,14 @@ public class FriendsPage extends BasePage {
                 break;
             }
         }
-
         if (isPastFriendRequestsSection()) {
             friendRequestsSectionReached = true;
             alignFriendRequestsHeader();
         }
-
         if (!hasFriendRequests()) {
             friendRequestsSectionReached = true;
             alignFriendRequestsHeader();
         }
-
         return this;
     }
 
@@ -639,11 +535,9 @@ public class FriendsPage extends BasePage {
                 TestIDs.FRIEND_REQUEST_NAME_SUFFIX,
                 TestIDs.FRIEND_REQUEST_ACCEPT_SUFFIX,
                 TestIDs.FRIEND_REQUEST_REJECT_SUFFIX);
-
         if (!id.isEmpty()) {
             rememberFriendRequestName(id);
         }
-
         return id;
     }
 
@@ -666,7 +560,6 @@ public class FriendsPage extends BasePage {
     }
 
     public boolean isSearchResultsDisplayed() {
-
         return isElementDisplayedByAccessibilityId(
                 TestIDs.SEARCH_RESULTS_LIST
         );
@@ -706,10 +599,8 @@ public class FriendsPage extends BasePage {
                     "//*[contains(@resource-id,'" + TestIDs.FRIEND_NAME_PREFIX + "') "
                             + "or contains(@content-desc,'" + TestIDs.FRIEND_NAME_PREFIX + "')]"
             );
-
             for (WebElement node : nameNodes) {
                 String name = getText(node).trim();
-
                 if (!name.isEmpty()) {
                     return name;
                 }
@@ -720,21 +611,17 @@ public class FriendsPage extends BasePage {
                     e.getMessage()
             );
         }
-
         try {
             String source = DriverManager.getDriver().getPageSource();
             Matcher matcher = Pattern
                     .compile("<node[^>]*resource-id=\"[^\"]*" + TestIDs.FRIEND_NAME_PREFIX + "[^\"]*\"[^>]*>")
                     .matcher(source);
-
             while (matcher.find()) {
                 Matcher textMatcher = Pattern
                         .compile("text=\"([^\"]*)\"")
                         .matcher(matcher.group());
-
                 if (textMatcher.find()) {
                     String name = textMatcher.group(1).trim();
-
                     if (!name.isEmpty()) {
                         return name;
                     }
@@ -746,22 +633,18 @@ public class FriendsPage extends BasePage {
                     e.getMessage()
             );
         }
-
         return "";
     }
 
     public String getFirstSearchResultId() {
         List<WebElement> results = getSearchResultRows();
-
         for (WebElement result : results) {
             String id = extractDynamicId(result, TestIDs.SEARCH_RESULT_ITEM_PREFIX);
-
             if (!id.isEmpty() && isElementDisplayed(result)) {
                 rememberSearchResult(id, result);
                 return id;
             }
         }
-
         return "";
     }
 
@@ -783,34 +666,27 @@ public class FriendsPage extends BasePage {
 
     public String getFirstAddableSearchResultId() {
         int maxAttempts = getSearchResultScrollAttempts();
-
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
             List<WebElement> results = getSearchResultRows();
-
             for (WebElement result : results) {
                 String id = extractDynamicId(result, TestIDs.SEARCH_RESULT_ITEM_PREFIX);
-
                 if (!id.isEmpty() && isSearchResultAddButtonEnabled(id)) {
                     rememberSearchResult(id, result);
                     return id;
                 }
             }
-
             if (attempt < maxAttempts - 1) {
                 scrollFriendsContainerDown(0.60);
                 waitFor(1);
             }
         }
-
         return "";
     }
 
     public String getFirstIncomingSearchResultId() {
         List<WebElement> results = getSearchResultRows();
-
         for (WebElement result : results) {
             String id = extractDynamicId(result, TestIDs.SEARCH_RESULT_ITEM_PREFIX);
-
             if (!id.isEmpty()
                     && isSearchResultAcceptButtonDisplayed(id)
                     && isSearchResultRejectButtonDisplayed(id)) {
@@ -819,7 +695,6 @@ public class FriendsPage extends BasePage {
                 return id;
             }
         }
-
         logger.info("No visible incoming search result actions found at top of search results");
         return "";
     }
@@ -830,10 +705,8 @@ public class FriendsPage extends BasePage {
         int maxAttempts = totalResults > 0
                 ? Math.max(1, (int) Math.ceil((double) totalResults / visibleResults) + 2)
                 : 12;
-
         logger.info("Search result scroll plan | total={} | visible={} | maxAttempts={}",
                 totalResults, visibleResults, maxAttempts);
-
         return maxAttempts;
     }
 
@@ -843,14 +716,12 @@ public class FriendsPage extends BasePage {
             Matcher matcher = Pattern
                     .compile("\\((\\d+)\\)")
                     .matcher(title);
-
             if (matcher.find()) {
                 return Integer.parseInt(matcher.group(1));
             }
         } catch (Exception e) {
             logger.warn("Could not read search result total count: {}", e.getMessage());
         }
-
         return 0;
     }
 
@@ -859,7 +730,6 @@ public class FriendsPage extends BasePage {
         if (!text.isEmpty()) {
             return text;
         }
-
         text = getSearchResultTextPart(id, 0);
         return text.isEmpty() ? getSearchResultChildText("search_result_name_" + id) : text;
     }
@@ -869,7 +739,6 @@ public class FriendsPage extends BasePage {
         if (!text.isEmpty()) {
             return text;
         }
-
         text = getSearchResultTextPart(id, 1);
         return text.isEmpty() ? getSearchResultChildText("search_result_username_" + id) : text;
     }
@@ -879,7 +748,6 @@ public class FriendsPage extends BasePage {
         if (!text.isEmpty()) {
             return text;
         }
-
         text = getSearchResultTextPart(id, 2);
         return text.isEmpty() ? getSearchResultChildText("search_result_status_" + id) : text;
     }
@@ -888,7 +756,6 @@ public class FriendsPage extends BasePage {
         if (visibleSearchResultIds.contains(id)) {
             return true;
         }
-
         return isNodeDisplayed(TestIDs.getSearchResultItemId(id));
     }
 
@@ -936,12 +803,10 @@ public class FriendsPage extends BasePage {
     public boolean isFriendRequestSent(String id) {
         String addButtonId = TestIDs.getSearchResultAddButtonId(id);
         String statusId = "search_result_status_" + id;
-
         try {
             waitUtils.waitForCondition(driver -> {
                 WebElement status = findVisibleNodeByResourceId(statusId);
                 WebElement button = findVisibleNodeByResourceId(addButtonId);
-
                 return status != null
                         && button != null
                         && status.isDisplayed()
@@ -958,48 +823,40 @@ public class FriendsPage extends BasePage {
     public FriendsPage clickSentTab() {
         sentRequestsSectionReached = false;
         scrollToTop();
-
         WebElement sentTitleText = scrollIntoViewByText("Lời mời đã gửi");
         if (sentTitleText != null) {
             sentRequestsSectionReached = true;
             waitForSentRequestsContent();
             return this;
         }
-
         WebElement sentTitle = scrollIntoViewByDescription("sent_requests_title");
         if (sentTitle != null) {
             sentRequestsSectionReached = true;
             waitForSentRequestsContent();
             return this;
         }
-
         WebElement sentEmpty = scrollIntoViewByDescription("sent_requests_empty");
         if (sentEmpty != null) {
             sentRequestsSectionReached = true;
             waitForSentRequestsContent();
             return this;
         }
-
         while (true) {
             if (isSentRequestsSectionInView()) {
                 sentRequestsSectionReached = true;
                 waitForSentRequestsContent();
                 return this;
             }
-
             try {
                 String beforeScrollSource = getCurrentPageSource();
                 boolean canScrollMore = scrollFriendsContainerDown(0.22);
                 waitFor(1);
-
                 if (isSentRequestsSectionInView()) {
                     sentRequestsSectionReached = true;
                     waitForSentRequestsContent();
                     return this;
                 }
-
                 String afterScrollSource = getCurrentPageSource();
-
                 if (!canScrollMore || beforeScrollSource.equals(afterScrollSource)) {
                     break;
                 }
@@ -1008,11 +865,9 @@ public class FriendsPage extends BasePage {
                 break;
             }
         }
-
         if (!hasSentRequests()) {
             sentRequestsSectionReached = true;
         }
-
         return this;
     }
 
@@ -1041,21 +896,16 @@ public class FriendsPage extends BasePage {
 
     public String getRequestName(String id) {
         String cachedName = friendRequestNames.get(id);
-
         if (cachedName != null && !cachedName.trim().isEmpty()) {
             return cachedName.trim();
         }
-
         String rowName = getFriendRequestNameFromRow(id);
-
         if (!rowName.isEmpty()) {
             friendRequestNames.put(id, rowName);
             return rowName;
         }
-
         try {
             String childName = getTextByAccessibilityId(TestIDs.getFriendRequestNameId(id)).trim();
-
             if (!childName.isEmpty() && !childName.equals(TestIDs.getFriendRequestNameId(id))) {
                 friendRequestNames.put(id, childName);
                 return childName;
@@ -1064,22 +914,18 @@ public class FriendsPage extends BasePage {
             logger.warn("Could not read friend request name child '{}': {}",
                     TestIDs.getFriendRequestNameId(id), e.getMessage());
         }
-
         return getFirstVisibleFriendRequestName();
     }
 
     public String getFirstVisibleFriendRequestName() {
         String nameSuffix = TestIDs.FRIEND_REQUEST_NAME_SUFFIX;
-
         try {
             List<WebElement> nameNodes = findElementsByXPath(
                     "//*[contains(@resource-id,'" + TestIDs.FRIEND_REQUEST_ITEM_PREFIX + "') "
                             + "and contains(@resource-id,'" + nameSuffix + "')]"
             );
-
             for (WebElement node : nameNodes) {
                 String name = getText(node).trim();
-
                 if (!name.isEmpty()) {
                     return name;
                 }
@@ -1090,22 +936,18 @@ public class FriendsPage extends BasePage {
                     e.getMessage()
             );
         }
-
         try {
             String source = DriverManager.getDriver().getPageSource();
             Matcher matcher = Pattern
                     .compile("<node[^>]*resource-id=\"[^\"]*" + TestIDs.FRIEND_REQUEST_ITEM_PREFIX + "[^\"]*"
                             + nameSuffix + "[^\"]*\"[^>]*>")
                     .matcher(source);
-
             while (matcher.find()) {
                 Matcher textMatcher = Pattern
                         .compile("text=\"([^\"]*)\"")
                         .matcher(matcher.group());
-
                 if (textMatcher.find()) {
                     String name = textMatcher.group(1).trim();
-
                     if (!name.isEmpty()) {
                         return name;
                     }
@@ -1117,7 +959,6 @@ public class FriendsPage extends BasePage {
                     e.getMessage()
             );
         }
-
         return "";
     }
 
@@ -1175,11 +1016,9 @@ public class FriendsPage extends BasePage {
     public FriendsPage cancelSentRequest(String id) {
         logger.info("Cancelling sent friend request: {}", id);
         WebElement cancelButton = findVisibleNodeByResourceId("sent_request_item_" + id + "_cancel_button");
-
         if (cancelButton == null) {
             throw new RuntimeException("Sent request cancel button not found for id: " + id);
         }
-
         clickElement(cancelButton);
         waitFor(1);
         return this;
@@ -1227,11 +1066,9 @@ public class FriendsPage extends BasePage {
 
     public FriendsPage confirmCurrentDialog() {
         WebElement confirmButton = findVisibleNodeByResourceId("android:id/button1");
-
         if (confirmButton == null) {
             throw new RuntimeException("Dialog confirmation button not found");
         }
-
         clickElement(confirmButton);
         waitForAnimation();
         return this;
@@ -1239,22 +1076,17 @@ public class FriendsPage extends BasePage {
 
     public FriendsPage dismissCurrentDialog() {
         WebElement dismissButton = findVisibleNodeByResourceId("android:id/button2");
-
         if (dismissButton == null) {
             throw new RuntimeException("Dialog dismiss button not found");
         }
-
         clickElement(dismissButton);
         waitForAnimation();
         return this;
     }
 
-    // FRIEND SEARCH AND REQUEST ACTIONS
     public boolean isUserInSearchResults(String username) {
         logger.info("Checking if user is in search results: " + username);
         waitForElementVisible(TestIDs.FRIENDS_SCROLL);
-
-        // Look for user in search results
         String userXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
         try {
             WebElement element = findByXPath(userXpath);
@@ -1267,8 +1099,6 @@ public class FriendsPage extends BasePage {
     public boolean isRequestFromUser(String username) {
         logger.info("Checking if friend request is from user: " + username);
         waitForElementVisible(TestIDs.FRIENDS_SCROLL);
-
-        // Look for friend request from specific user
         String requestXpath = String.format("//android.widget.TextView[contains(@text,'%s')]", username);
         try {
             WebElement element = findByXPath(requestXpath);
@@ -1297,13 +1127,11 @@ public class FriendsPage extends BasePage {
 
     private List<WebElement> getVisibleFriendRequestRows() {
         List<WebElement> visibleRows = new ArrayList<>();
-
         for (WebElement row : getFriendRequestRows()) {
             if (isElementInViewport(row)) {
                 visibleRows.add(row);
             }
         }
-
         return visibleRows;
     }
 
@@ -1320,14 +1148,12 @@ public class FriendsPage extends BasePage {
             params.put("height", 1200);
             params.put("direction", "down");
             params.put("percent", percent);
-
             Object result = driver.executeScript("mobile: scrollGesture", params);
             logger.info("Scrolled friends container down with scrollGesture");
             return !(result instanceof Boolean) || (Boolean) result;
         } catch (Exception e) {
             logger.warn("friends_scroll scrollGesture failed: {}", e.getMessage());
         }
-
         scrollDownBase();
         return true;
     }
@@ -1341,14 +1167,12 @@ public class FriendsPage extends BasePage {
             params.put("height", 1200);
             params.put("direction", "up");
             params.put("percent", percent);
-
             Object result = driver.executeScript("mobile: scrollGesture", params);
             logger.info("Scrolled friends container up with scrollGesture");
             return !(result instanceof Boolean) || (Boolean) result;
         } catch (Exception e) {
             logger.warn("friends_scroll upward scrollGesture failed: {}", e.getMessage());
         }
-
         scrollUpBase();
         return true;
     }
@@ -1371,7 +1195,6 @@ public class FriendsPage extends BasePage {
             boolean canScrollMore = scrollFriendsContainerUp(0.10);
             waitFor(1);
             String afterScrollSource = getCurrentPageSource();
-
             if (!canScrollMore || beforeScrollSource.equals(afterScrollSource)) {
                 return;
             }
@@ -1412,7 +1235,6 @@ public class FriendsPage extends BasePage {
             String selector = "new UiScrollable(new UiSelector().scrollable(true))"
                     + ".scrollIntoView(new UiSelector().descriptionContains(\"" + accessibilityId + "\"))";
             WebElement element = DriverManager.getDriver().findElement(AppiumBy.androidUIAutomator(selector));
-
             if (element != null && isElementInViewport(element)) {
                 logger.info("Scrolled into view by accessibility id: {}", accessibilityId);
                 return element;
@@ -1420,7 +1242,6 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not scroll into view by accessibility id '{}': {}", accessibilityId, e.getMessage());
         }
-
         return null;
     }
 
@@ -1429,7 +1250,6 @@ public class FriendsPage extends BasePage {
             String selector = "new UiScrollable(new UiSelector().scrollable(true))"
                     + ".scrollIntoView(new UiSelector().textContains(\"" + text + "\"))";
             WebElement element = DriverManager.getDriver().findElement(AppiumBy.androidUIAutomator(selector));
-
             if (element != null && isElementInViewport(element)) {
                 logger.info("Scrolled into view by text: {}", text);
                 return element;
@@ -1437,41 +1257,34 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not scroll into view by text '{}': {}", text, e.getMessage());
         }
-
         return null;
     }
 
     private void waitForFriendRequestsContent() {
         long endTime = System.currentTimeMillis() + 6000;
-
         while (System.currentTimeMillis() < endTime) {
             if (hasFriendRequests() || isNodeVisible("friend_requests_empty")) {
                 return;
             }
-
             if (friendRequestsSectionReached && isPastFriendRequestsSection()) {
                 return;
             }
-
             waitFor(1);
         }
     }
 
     private void waitForSentRequestsContent() {
         long endTime = System.currentTimeMillis() + 6000;
-
         while (System.currentTimeMillis() < endTime) {
             if (hasSentRequests() || isNodeVisible("sent_requests_empty")) {
                 return;
             }
-
             waitFor(1);
         }
     }
 
     private void rememberFriendRequestName(String id) {
         String name = getFriendRequestNameFromRow(id);
-
         if (!name.isEmpty()) {
             friendRequestNames.put(id, name);
         }
@@ -1479,22 +1292,17 @@ public class FriendsPage extends BasePage {
 
     private String getFriendRequestNameFromRow(String id) {
         String itemId = TestIDs.getFriendRequestItemId(id);
-
         try {
             List<WebElement> rows = findElementsByXPath(
                     "//*[contains(@resource-id,'" + itemId + "') "
                             + "or contains(@content-desc,'" + itemId + "')]"
             );
-
             for (WebElement row : rows) {
                 String name = parseFriendRequestName(row.getAttribute("content-desc"));
-
                 if (!name.isEmpty()) {
                     return name;
                 }
-
                 name = parseFriendRequestName(row.getText());
-
                 if (!name.isEmpty()) {
                     return name;
                 }
@@ -1502,24 +1310,19 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not read friend request row for id '{}': {}", id, e.getMessage());
         }
-
         try {
             String source = DriverManager.getDriver().getPageSource();
             Matcher matcher = Pattern
                     .compile("<node[^>]*(resource-id|content-desc)=\"[^\"]*" + itemId
                             + "[^\"]*\"[^>]*>")
                     .matcher(source);
-
             while (matcher.find()) {
                 String node = matcher.group();
                 String name = parseFriendRequestName(readXmlAttribute(node, "content-desc"));
-
                 if (!name.isEmpty()) {
                     return name;
                 }
-
                 name = parseFriendRequestName(readXmlAttribute(node, "text"));
-
                 if (!name.isEmpty()) {
                     return name;
                 }
@@ -1527,7 +1330,6 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not read friend request row source for id '{}': {}", id, e.getMessage());
         }
-
         return "";
     }
 
@@ -1535,20 +1337,15 @@ public class FriendsPage extends BasePage {
         if (value == null) {
             return "";
         }
-
         String text = value.trim();
-
         if (text.isEmpty() || text.startsWith(TestIDs.FRIEND_REQUEST_ITEM_PREFIX)) {
             return "";
         }
-
         String marker = " từ ";
         int markerIndex = text.lastIndexOf(marker);
-
         if (markerIndex >= 0 && markerIndex + marker.length() < text.length()) {
             return text.substring(markerIndex + marker.length()).trim();
         }
-
         return text;
     }
 
@@ -1556,7 +1353,6 @@ public class FriendsPage extends BasePage {
         Matcher matcher = Pattern
                 .compile(attributeName + "=\"([^\"]*)\"")
                 .matcher(node);
-
         return matcher.find() ? matcher.group(1).trim() : "";
     }
 
@@ -1564,7 +1360,6 @@ public class FriendsPage extends BasePage {
         List<WebElement> nodes = findElementsByXPath(
                 "//*[@resource-id='" + resourceId + "' or contains(@resource-id,'" + resourceId + "')]"
         );
-
         for (WebElement node : nodes) {
             try {
                 if (node.isDisplayed() && isElementInViewport(node)) {
@@ -1574,29 +1369,24 @@ public class FriendsPage extends BasePage {
                 logger.warn("Could not verify visible resource-id '{}': {}", resourceId, e.getMessage());
             }
         }
-
         return null;
     }
 
     private void tapVisibleResource(String resourceId) {
         WebElement element = findVisibleNodeByResourceId(resourceId);
-
         if (element == null) {
             clickByAccessibilityId(resourceId);
             return;
         }
-
         tapElement(element);
         logger.info("Tapped visible resource-id: {}", resourceId);
     }
 
     private String getVisibleResourceText(String resourceId) {
         WebElement node = findVisibleNodeByResourceId(resourceId);
-
         if (node == null) {
             return "";
         }
-
         return getText(node).trim();
     }
 
@@ -1608,11 +1398,9 @@ public class FriendsPage extends BasePage {
                                 + "\")"
                 )
         );
-
         if (rows != null && !rows.isEmpty()) {
             return rows;
         }
-
         rows = DriverManager.safelyFindElements(
                 AppiumBy.androidUIAutomator(
                         "new UiSelector().resourceIdMatches(\".*"
@@ -1620,43 +1408,34 @@ public class FriendsPage extends BasePage {
                                 + ".*\")"
                 )
         );
-
         return rows != null ? rows : List.of();
     }
 
     private String getFirstDynamicId(String prefix, String... excludedSuffixes) {
         String xpath = "//*[contains(@resource-id,'" + prefix + "') or contains(@content-desc,'" + prefix + "')]";
         List<WebElement> rows = findElementsByXPath(xpath);
-
         for (WebElement row : rows) {
             String value = row.getAttribute("content-desc");
-
             if (value == null || !value.contains(prefix)) {
                 value = row.getAttribute("resource-id");
             }
-
             if (value == null || !value.contains(prefix)) {
                 continue;
             }
-
             boolean childNode = false;
-
             for (String suffix : excludedSuffixes) {
                 if (value.contains(suffix)) {
                     childNode = true;
                     break;
                 }
             }
-
             if (!childNode) {
                 String id = extractDynamicId(row, prefix);
-
                 if (!id.isEmpty()) {
                     return id;
                 }
             }
         }
-
         return "";
     }
 
@@ -1666,10 +1445,8 @@ public class FriendsPage extends BasePage {
                     "//*[contains(@resource-id,'" + prefix + "') and contains(@resource-id,'" + nameSuffix + "')]"
                             + " | //*[contains(@content-desc,'" + prefix + "') and contains(@content-desc,'" + nameSuffix + "')]"
             );
-
             for (WebElement node : nameNodes) {
                 String name = getText(node).trim();
-
                 if (!name.isEmpty()) {
                     return name;
                 }
@@ -1677,22 +1454,18 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not read visible item name for prefix '{}': {}", prefix, e.getMessage());
         }
-
         try {
             String source = DriverManager.getDriver().getPageSource();
             Matcher matcher = Pattern
                     .compile("<node[^>]*(resource-id|content-desc)=\"[^\"]*" + prefix + "[^\"]*"
                             + nameSuffix + "[^\"]*\"[^>]*>")
                     .matcher(source);
-
             while (matcher.find()) {
                 Matcher textMatcher = Pattern
                         .compile("text=\"([^\"]*)\"")
                         .matcher(matcher.group());
-
                 if (textMatcher.find()) {
                     String name = textMatcher.group(1).trim();
-
                     if (!name.isEmpty()) {
                         return name;
                     }
@@ -1701,7 +1474,6 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not read visible item name from page source for prefix '{}': {}", prefix, e.getMessage());
         }
-
         return "";
     }
 
@@ -1713,7 +1485,6 @@ public class FriendsPage extends BasePage {
                             + "or contains(@resource-id,'" + testId + "') "
                             + "or contains(@content-desc,'" + testId + "')]"
             );
-
             for (WebElement node : nodes) {
                 if (node.isDisplayed()) {
                     return true;
@@ -1722,7 +1493,6 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not verify friend request node '{}' from elements: {}", testId, e.getMessage());
         }
-
         try {
             String source = DriverManager.getDriver().getPageSource();
             return source.contains("resource-id=\"" + testId + "\"")
@@ -1740,13 +1510,11 @@ public class FriendsPage extends BasePage {
             Matcher nodeMatcher = Pattern
                     .compile("<node[^>]*" + Pattern.quote(testId) + "[^>]*>")
                     .matcher(source);
-
             while (nodeMatcher.find()) {
                 String node = nodeMatcher.group();
                 Matcher boundsMatcher = Pattern
                         .compile("bounds=\"\\[(\\d+),(\\d+)]\\[(\\d+),(\\d+)]\"")
                         .matcher(node);
-
                 if (boundsMatcher.find() && isBoundsInViewport(
                         Integer.parseInt(boundsMatcher.group(1)),
                         Integer.parseInt(boundsMatcher.group(2)),
@@ -1758,14 +1526,12 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not verify visible node '{}': {}", testId, e.getMessage());
         }
-
         return false;
     }
 
     private boolean isBoundsInViewport(int left, int top, int right, int bottom) {
         int screenWidth = 720;
         int screenHeight = 1604;
-
         try {
             org.openqa.selenium.Dimension screen = DriverManager.getDriver().manage().window().getSize();
             screenWidth = screen.getWidth();
@@ -1773,7 +1539,6 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not read screen size for bounds check: {}", e.getMessage());
         }
-
         return right > left
                 && bottom > top
                 && right > 0
@@ -1787,10 +1552,8 @@ public class FriendsPage extends BasePage {
             if (node == null || !node.isDisplayed()) {
                 return false;
             }
-
             Rectangle rect = node.getRect();
             org.openqa.selenium.Dimension screen = DriverManager.getDriver().manage().window().getSize();
-
             return rect.getHeight() > 0
                     && rect.getWidth() > 0
                     && rect.getY() < screen.getHeight()
@@ -1808,11 +1571,9 @@ public class FriendsPage extends BasePage {
             if (!isElementInViewport(node)) {
                 return false;
             }
-
             Rectangle rect = node.getRect();
             org.openqa.selenium.Dimension screen = DriverManager.getDriver().manage().window().getSize();
             int bottomSafeMargin = Math.max(96, screen.getHeight() / 14);
-
             return rect.getY() >= 0
                     && rect.getY() + rect.getHeight() <= screen.getHeight() - bottomSafeMargin;
         } catch (Exception e) {
@@ -1835,12 +1596,10 @@ public class FriendsPage extends BasePage {
             Matcher nodeMatcher = Pattern
                     .compile("<node[^>]*(text|content-desc)=\"[^\"]*" + Pattern.quote(text) + "[^\"]*\"[^>]*>")
                     .matcher(source);
-
             while (nodeMatcher.find()) {
                 Matcher boundsMatcher = Pattern
                         .compile("bounds=\"\\[(\\d+),(\\d+)]\\[(\\d+),(\\d+)]\"")
                         .matcher(nodeMatcher.group());
-
                 if (boundsMatcher.find() && isBoundsInViewport(
                         Integer.parseInt(boundsMatcher.group(1)),
                         Integer.parseInt(boundsMatcher.group(2)),
@@ -1852,21 +1611,17 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not verify visible text '{}': {}", text, e.getMessage());
         }
-
         return false;
     }
 
     private String getSearchResultLabelPart(String id, int index) {
         String cachedLabel = searchResultLabels.get(id);
-
         if (cachedLabel != null && !cachedLabel.isEmpty()) {
             String[] cachedParts = cachedLabel.split("\\|", -1);
-
             if (cachedParts.length > index) {
                 return cachedParts[index].trim();
             }
         }
-
         try {
             List<WebElement> rows = DriverManager.safelyFindElements(
                     AppiumBy.androidUIAutomator(
@@ -1875,7 +1630,6 @@ public class FriendsPage extends BasePage {
                                     + "\")"
                     )
             );
-
             if (rows == null || rows.isEmpty()) {
                 rows = DriverManager.safelyFindElements(
                         AppiumBy.androidUIAutomator(
@@ -1885,31 +1639,23 @@ public class FriendsPage extends BasePage {
                         )
                 );
             }
-
             for (WebElement row : rows) {
                 String label = row.getAttribute("content-desc");
-
                 if (label == null || label.isEmpty()) {
                     continue;
                 }
-
                 rememberSearchResult(id, row);
-
                 String[] parts = label.split("\\|", -1);
-
                 if (parts.length > index) {
                     return parts[index].trim();
                 }
             }
-
             String source = DriverManager.getDriver().getPageSource();
             Matcher matcher = Pattern
                     .compile("content-desc=\"([^\"]*" + TestIDs.getSearchResultItemId(id) + "[^\"]*)\"")
                     .matcher(source);
-
             if (matcher.find()) {
                 String[] parts = matcher.group(1).split("\\|", -1);
-
                 if (parts.length > index) {
                     return parts[index].trim();
                 }
@@ -1917,93 +1663,74 @@ public class FriendsPage extends BasePage {
         } catch (Exception e) {
             logger.warn("Could not read search result label part for id '{}': {}", id, e.getMessage());
         }
-
         return "";
     }
 
     private String getSearchResultChildText(String testId) {
         try {
             String text = getTextByAccessibilityId(testId).trim();
-
             if (!text.isEmpty() && !text.equals(testId)) {
                 return text;
             }
         } catch (Exception e) {
             logger.warn("Could not read search result child text '{}': {}", testId, e.getMessage());
         }
-
         return "";
     }
 
     private String getSearchResultTextPart(String id, int index) {
         String rowText = searchResultTexts.get(id);
-
         if (rowText == null || rowText.trim().isEmpty()) {
             return "";
         }
-
         String normalized = rowText
                 .replace("\r", "\n")
                 .replaceAll("\\s*\\n\\s*", "\n")
                 .trim();
-
         String[] lines = normalized.split("\\n+");
-
         if (lines.length > index) {
             return lines[index].trim();
         }
-
         if (index == 1) {
             Matcher usernameMatcher = Pattern
                     .compile("@\\S+")
                     .matcher(normalized);
-
             if (usernameMatcher.find()) {
                 return usernameMatcher.group().trim();
             }
         }
-
         if (index == 2) {
             if (normalized.contains("Đã gửi")) {
                 return "Đã gửi";
             }
-
             if (normalized.contains("Kết bạn")) {
                 return "Kết bạn";
             }
-
             if (normalized.contains("Bạn bè")) {
                 return "Bạn bè";
             }
         }
-
         return "";
     }
 
     private void rememberSearchResult(String id, WebElement result) {
         visibleSearchResultIds.add(id);
-
         try {
             String label = result.getAttribute("content-desc");
-
             if (label != null && !label.isEmpty()) {
                 searchResultLabels.put(id, label);
             }
         } catch (Exception e) {
             logger.warn("Could not cache search result label for id '{}': {}", id, e.getMessage());
         }
-
         try {
             String text = result.getText();
-
             if (text == null || text.isEmpty()) {
                 text = result.getAttribute("text");
             }
-
             if (text == null || text.isEmpty()) {
                 text = getVisibleTextInsideRow(result);
             }
-
             if (text != null && !text.isEmpty()) {
                 searchResultTexts.put(id, text);
             }
@@ -2020,34 +1747,27 @@ public class FriendsPage extends BasePage {
                     .compile("<node[^>]*text=\"([^\"]*)\"[^>]*bounds=\"\\[(\\d+),(\\d+)]\\[(\\d+),(\\d+)]\"[^>]*>")
                     .matcher(source);
             StringBuilder text = new StringBuilder();
-
             while (nodeMatcher.find()) {
                 String nodeText = nodeMatcher.group(1).trim();
-
                 if (nodeText.isEmpty()) {
                     continue;
                 }
-
                 int left = Integer.parseInt(nodeMatcher.group(2));
                 int top = Integer.parseInt(nodeMatcher.group(3));
                 int right = Integer.parseInt(nodeMatcher.group(4));
                 int bottom = Integer.parseInt(nodeMatcher.group(5));
-
                 boolean insideRow =
                         left >= rowRect.getX()
                                 && right <= rowRect.getX() + rowRect.getWidth()
                                 && top >= rowRect.getY()
                                 && bottom <= rowRect.getY() + rowRect.getHeight();
-
                 if (insideRow) {
                     if (text.length() > 0) {
                         text.append("\n");
                     }
-
                     text.append(nodeText);
                 }
             }
-
             return text.toString();
         } catch (Exception e) {
             logger.warn("Could not read visible text inside search result row: {}", e.getMessage());
@@ -2057,28 +1777,21 @@ public class FriendsPage extends BasePage {
 
     private String extractDynamicId(WebElement element, String prefix) {
         String value = element.getAttribute("content-desc");
-
         if (value == null || !value.contains(prefix)) {
             value = element.getAttribute("resource-id");
         }
-
         if (value == null || !value.contains(prefix)) {
             return "";
         }
-
         String id = value.substring(value.indexOf(prefix) + prefix.length());
         int separatorIndex = id.indexOf('/');
-
         if (separatorIndex >= 0) {
             id = id.substring(separatorIndex + 1);
         }
-
         int metadataIndex = id.indexOf('|');
-
         if (metadataIndex >= 0) {
             id = id.substring(0, metadataIndex);
         }
-
         return id;
     }
 }

@@ -10,22 +10,20 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+
 public class DeviceUtils {
-    
     private static final Logger logger = LoggerUtil.getLogger(DeviceUtils.class);
-    
-    // Private constructor to prevent instantiation
+
     private DeviceUtils() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
-    
-    // ==================== DEVICE INFORMATION ====================
-public static Dimension getScreenSize() {
+
+    public static Dimension getScreenSize() {
         AppiumDriver driver = DriverManager.getDriver();
         return getScreenSize(driver);
     }
-public static Dimension getScreenSize(AppiumDriver driver) {
-        // 1) Capability-first: deviceScreenSize (e.g. "720x1604")
+
+    public static Dimension getScreenSize(AppiumDriver driver) {
         try {
             if (driver != null && driver.getCapabilities() != null) {
                 Object cap = driver.getCapabilities().getCapability("appium:deviceScreenSize");
@@ -44,8 +42,6 @@ public static Dimension getScreenSize(AppiumDriver driver) {
         } catch (Exception e) {
             logger.debug("Could not parse deviceScreenSize capability", e);
         }
-
-        // 2) viewportRect (width/height)
         try {
             if (driver != null && driver.getCapabilities() != null) {
                 Object viewportRect = driver.getCapabilities().getCapability("appium:viewportRect");
@@ -63,8 +59,6 @@ public static Dimension getScreenSize(AppiumDriver driver) {
         } catch (Exception e) {
             logger.debug("Could not parse viewportRect capability", e);
         }
-
-        // 3) Last resort: driver command (can hang in bad states, so keep as fallback)
         try {
             if (driver != null) {
                 Dimension size = driver.manage().window().getSize();
@@ -74,20 +68,20 @@ public static Dimension getScreenSize(AppiumDriver driver) {
         } catch (Exception e) {
             logger.warn("Failed to get screen size from Appium, using safe default 1080x1920", e);
         }
-
         return new Dimension(1080, 1920);
     }
-public static int getScreenWidth() {
+
+    public static int getScreenWidth() {
         return getScreenSize().width;
     }
-public static int getScreenHeight() {
+
+    public static int getScreenHeight() {
         return getScreenSize().height;
     }
-public static ScreenOrientation getOrientation() {
+
+    public static ScreenOrientation getOrientation() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
-            // org.openqa.selenium.Rotatable was removed in Selenium 4
-            // and using AndroidDriver directly causes ContextAware compiler issues.
             ScreenOrientation orientation = ScreenOrientation.PORTRAIT;
             return orientation;
         } catch (Exception e) {
@@ -95,50 +89,52 @@ public static ScreenOrientation getOrientation() {
             return ScreenOrientation.PORTRAIT;
         }
     }
-public static boolean isPortrait() {
+
+    public static boolean isPortrait() {
         return getOrientation() == ScreenOrientation.PORTRAIT;
     }
-public static boolean isLandscape() {
+
+    public static boolean isLandscape() {
         return getOrientation() == ScreenOrientation.LANDSCAPE;
     }
-public static String getPlatform() {
+
+    public static String getPlatform() {
         return DriverManager.getCurrentPlatform();
     }
-public static boolean isAndroid() {
+
+    public static boolean isAndroid() {
         return "android".equalsIgnoreCase(getPlatform());
     }
-public static boolean isIOS() {
+
+    public static boolean isIOS() {
         return "ios".equalsIgnoreCase(getPlatform());
     }
-    
-    // ==================== DEVICE OPERATIONS ====================
-public static void rotateToPortrait() {
+
+    public static void rotateToPortrait() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (getOrientation() != ScreenOrientation.PORTRAIT) {
                 logger.info("Device rotated to portrait (mocked)");
-                
-                // Wait for rotation to complete
                 Thread.sleep(2000);
             }
         } catch (Exception e) {
             logger.error("Failed to rotate device to portrait", e);
         }
     }
-public static void rotateToLandscape() {
+
+    public static void rotateToLandscape() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (getOrientation() != ScreenOrientation.LANDSCAPE) {
                 logger.info("Device rotated to landscape (mocked)");
-                
-                // Wait for rotation to complete
                 Thread.sleep(2000);
             }
         } catch (Exception e) {
             logger.error("Failed to rotate device to landscape", e);
         }
     }
-public static void lockDevice() {
+
+    public static void lockDevice() {
         try {
             if (isAndroid()) {
                 DriverManager.getDriver().executeScript("mobile: lock");
@@ -150,7 +146,8 @@ public static void lockDevice() {
             logger.error("Failed to lock device", e);
         }
     }
-public static void unlockDevice() {
+
+    public static void unlockDevice() {
         try {
             if (isAndroid()) {
                 DriverManager.getDriver().executeScript("mobile: unlock");
@@ -162,7 +159,8 @@ public static void unlockDevice() {
             logger.error("Failed to unlock device", e);
         }
     }
-public static boolean isDeviceLocked() {
+
+    public static boolean isDeviceLocked() {
         try {
             if (isAndroid()) {
                 return (Boolean) DriverManager.getDriver().executeScript("mobile: isLocked");
@@ -173,12 +171,10 @@ public static boolean isDeviceLocked() {
             return false;
         }
     }
-    
-    // ==================== NETWORK OPERATIONS ====================
-public static void toggleAirplaneMode() {
+
+    public static void toggleAirplaneMode() {
         try {
             if (isAndroid()) {
-                // Mocked since toggle airplane requires specific adb shell command via executeScript
                 logger.info("Airplane mode toggled");
             } else {
                 logger.warn("Airplane mode toggle not supported on iOS");
@@ -187,10 +183,10 @@ public static void toggleAirplaneMode() {
             logger.error("Failed to toggle airplane mode", e);
         }
     }
-public static void toggleWiFi() {
+
+    public static void toggleWiFi() {
         try {
             if (isAndroid()) {
-                // Mocked
                 logger.info("WiFi toggled");
             } else {
                 logger.warn("WiFi toggle not supported on iOS");
@@ -199,10 +195,10 @@ public static void toggleWiFi() {
             logger.error("Failed to toggle WiFi", e);
         }
     }
-public static void toggleMobileData() {
+
+    public static void toggleMobileData() {
         try {
             if (isAndroid()) {
-                // Mocked
                 logger.info("Mobile data toggled");
             } else {
                 logger.warn("Mobile data toggle not supported on iOS");
@@ -211,9 +207,8 @@ public static void toggleMobileData() {
             logger.error("Failed to toggle mobile data", e);
         }
     }
-    
-    // ==================== KEYBOARD OPERATIONS ====================
-public static boolean isKeyboardShown() {
+
+    public static boolean isKeyboardShown() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             return (Boolean) driver.executeScript("mobile: isKeyboardShown");
@@ -222,7 +217,8 @@ public static boolean isKeyboardShown() {
             return false;
         }
     }
-public static void hideKeyboard() {
+
+    public static void hideKeyboard() {
         try {
             AppiumDriver driver = DriverManager.getDriver();
             if (isKeyboardShown()) {
@@ -233,99 +229,76 @@ public static void hideKeyboard() {
             logger.debug("Failed to hide keyboard", e);
         }
     }
-    
-    // ==================== DEVICE CAPABILITIES ====================
-public static Map<String, Object> getDeviceCapabilities() {
+
+    public static Map<String, Object> getDeviceCapabilities() {
         Map<String, Object> capabilities = new HashMap<>();
-        
         try {
             AppiumDriver driver = DriverManager.getDriver();
-            
-            // Basic capabilities
             capabilities.put("platform", getPlatform());
             capabilities.put("screenWidth", getScreenWidth());
             capabilities.put("screenHeight", getScreenHeight());
             capabilities.put("orientation", getOrientation().toString());
-            
-            // Platform-specific capabilities
             if (isAndroid()) {
                 capabilities.put("deviceLocked", isDeviceLocked());
-                
-                // Get additional Android capabilities
                 try {
                     capabilities.put("currentPackage", driver.executeScript("mobile: getCurrentPackage"));
                 } catch (Exception e) {
                     logger.debug("Could not get current package", e);
                 }
             }
-            
         } catch (Exception e) {
             logger.error("Failed to get device capabilities", e);
         }
-        
         return capabilities;
     }
-public static boolean hasMultipleCameras() {
-        // This is a simplified check - in real implementation,
-        // you might need to check device specifications or capabilities
-        return true; // Most modern devices have front and back cameras
+
+    public static boolean hasMultipleCameras() {
+        return true;
     }
-public static boolean hasFlash() {
-        // This is a simplified check - in real implementation,
-        // you might need to check device specifications
-        return true; // Most devices with cameras have flash
+
+    public static boolean hasFlash() {
+        return true;
     }
-    
-    // ==================== PERFORMANCE UTILITIES ====================
-public static Map<String, Object> getPerformanceInfo() {
+
+    public static Map<String, Object> getPerformanceInfo() {
         Map<String, Object> perfInfo = new HashMap<>();
-        
         try {
             if (isAndroid()) {
                 perfInfo.put("platform", "android");
                 perfInfo.put("timestamp", System.currentTimeMillis());
-                
             } else if (isIOS()) {
                 perfInfo.put("platform", "ios");
                 perfInfo.put("timestamp", System.currentTimeMillis());
             }
-            
         } catch (Exception e) {
             logger.error("Failed to get performance info", e);
         }
-        
         return perfInfo;
     }
-    
-    // ==================== UTILITY METHODS ====================
-public static void waitForDeviceReady(int timeoutSeconds) {
+
+    public static void waitForDeviceReady(int timeoutSeconds) {
         try {
             long startTime = System.currentTimeMillis();
             long timeout = timeoutSeconds * 1000L;
-            
             while (System.currentTimeMillis() - startTime < timeout) {
                 try {
                     AppiumDriver driver = DriverManager.getDriver();
-                    
-                    // Try to get screen size as a readiness check
                     driver.manage().window().getSize();
                     logger.info("Device is ready");
                     return;
-                    
                 } catch (Exception e) {
                     logger.debug("Device not ready yet, waiting...");
                     Thread.sleep(1000);
                 }
             }
-            
             logger.warn("Device readiness timeout after {} seconds", timeoutSeconds);
-            
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warn("Wait for device ready interrupted", e);
         }
     }
-public static boolean takeScreenshot(String fileName) {
+
+    public static boolean takeScreenshot(String fileName) {
         try {
             String path = ScreenshotUtils.takeScreenshot(fileName);
             return path != null && !path.isEmpty();
@@ -334,36 +307,30 @@ public static boolean takeScreenshot(String fileName) {
             return false;
         }
     }
-public static Map<String, Integer> getSafeAreaCoordinates() {
+
+    public static Map<String, Integer> getSafeAreaCoordinates() {
         Map<String, Integer> safeArea = new HashMap<>();
-        
         Dimension screenSize = getScreenSize();
-        
-        // Default safe area (adjust based on device type and orientation)
-        int statusBarHeight = isAndroid() ? 60 : 44; // Approximate values
+        int statusBarHeight = isAndroid() ? 60 : 44;
         int navigationBarHeight = isAndroid() ? 48 : 34;
-        
         safeArea.put("top", statusBarHeight);
         safeArea.put("bottom", screenSize.height - navigationBarHeight);
         safeArea.put("left", 0);
         safeArea.put("right", screenSize.width);
-        
         return safeArea;
     }
-public static void logDeviceInfo() {
+
+    public static void logDeviceInfo() {
         try {
             logger.info("=== Device Information ===");
             logger.info("Platform: {}", getPlatform());
             logger.info("Screen Size: {}x{}", getScreenWidth(), getScreenHeight());
             logger.info("Orientation: {}", getOrientation());
             logger.info("Keyboard Shown: {}", isKeyboardShown());
-            
             if (isAndroid()) {
                 logger.info("Device Locked: {}", isDeviceLocked());
             }
-            
             logger.info("========================");
-            
         } catch (Exception e) {
             logger.error("Failed to log device info", e);
         }

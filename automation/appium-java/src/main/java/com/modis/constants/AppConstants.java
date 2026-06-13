@@ -1,24 +1,16 @@
 package com.modis.constants;
 
 public class AppConstants {
-    
-    // APP INFORMATION 
     public static final String APP_NAME = "Modis";
     public static final String APP_PACKAGE = "com.modis";
     public static final String APP_ACTIVITY = "com.modis.MainActivity";
     public static final String APP_BUNDLE_ID = "com.modis.app";
-    
-    // APPIUM SERVER CONFIGURATION 
     public static final String APPIUM_SERVER_URL = "http://127.0.0.1:4723";
     public static final String APPIUM_SERVER_PATH = "";
-    
-    // DEVICE CONFIGURATION 
     public static final String DEFAULT_PLATFORM = "Android";
     public static final String DEFAULT_DEVICE_NAME = "Android Emulator";
     public static final String DEFAULT_PLATFORM_VERSION = "11.0";
     public static final String DEFAULT_AUTOMATION_NAME = "UiAutomator2";
-    
-    // TIMEOUT CONSTANTS (in seconds) 
     public static final int IMPLICIT_WAIT = 10;
     public static final int EXPLICIT_WAIT = 20;
     public static final int SHORT_WAIT = 5;
@@ -27,90 +19,57 @@ public class AppConstants {
     public static final int PAGE_LOAD_TIMEOUT = 30;
     public static final int NETWORK_WAIT = 3;
     public static final int ANIMATION_WAIT = 2;
-
-    // REACT NATIVE SPECIFIC TIMEOUTS 
-    public static final int RN_BRIDGE_WAIT = 15; // React Native bridge ready timeout
-    public static final int RN_APP_LAUNCH_TIMEOUT = 20; // React Native app launch timeout
-    public static final int RN_ELEMENT_WAIT = 8; // React Native element wait timeout
-    public static final int MAX_APP_LAUNCH_TIME_MS = 20000; // 20s for React Native apps
-    public static final int RN_BRIDGE_RETRY_ATTEMPTS = 3; // Max retry attempts for RN bridge
-    public static final int RN_BRIDGE_RETRY_DELAY_MS = 500; // Delay between RN bridge retries
-
-    // UIAUTOMATOR2 STABILITY IMPROVEMENTS 
-    // Element finding optimization
-    public static final int MAX_ELEMENT_FIND_ATTEMPTS = 2;        // Reduced from 3
-    public static final int ELEMENT_FIND_TIMEOUT_SEC = 10;         // Reduced from 15
-    public static final int ELEMENT_OPERATION_RETRY_DELAY_MS = 500; // Reduced from 2000
-
-    // React Native bridge check optimization
-    public static final boolean USE_ACTIVITY_BASED_BRIDGE_CHECK = true;   // Fast method
+    public static final int RN_BRIDGE_WAIT = 15;
+    public static final int RN_APP_LAUNCH_TIMEOUT = 20;
+    public static final int RN_ELEMENT_WAIT = 8;
+    public static final int MAX_APP_LAUNCH_TIME_MS = 20000;
+    public static final int RN_BRIDGE_RETRY_ATTEMPTS = 3;
+    public static final int RN_BRIDGE_RETRY_DELAY_MS = 500;
+    public static final int MAX_ELEMENT_FIND_ATTEMPTS = 2;
+    public static final int ELEMENT_FIND_TIMEOUT_SEC = 10;
+    public static final int ELEMENT_OPERATION_RETRY_DELAY_MS = 500;
+    public static final boolean USE_ACTIVITY_BASED_BRIDGE_CHECK = true;
     public static final int BRIDGE_ACTIVITY_CHECK_TIMEOUT_SEC = 8;
-
-    // Recovery configuration
-    public static final int UIAUTOMATOR2_RECOVERY_WAIT_MS = 5000;   // Increased from 3000
+    public static final int UIAUTOMATOR2_RECOVERY_WAIT_MS = 5000;
     public static final int UIAUTOMATOR2_RECOVERY_MAX_ATTEMPTS = 2;
     public static final int UIAUTOMATOR2_HEALTH_CHECK_TIMEOUT_MS = 8000;
     public static final int ADB_CLEANUP_WAIT_MS = 5000;
-
-    // Disable expensive operations that crash UiAutomator2
-    public static final boolean SKIP_PAGE_SOURCE_CHECKS = true;    // Never call getPageSource()
-    public static final boolean SKIP_SCREENSHOT_ON_CRASH = true;   // Skip screenshot if UiAutomator2 crashed
-    public static final boolean ENABLE_QUICK_APP_STATE_LOGGING = true;  // Use activity-only checks
-
-    // RETRY CONFIGURATION 
+    public static final boolean SKIP_PAGE_SOURCE_CHECKS = true;
+    public static final boolean SKIP_SCREENSHOT_ON_CRASH = true;
+    public static final boolean ENABLE_QUICK_APP_STATE_LOGGING = true;
     public static final int MAX_RETRY_COUNT = 3;
     public static final int RETRY_DELAY_MS = 1000;
     public static final int MAX_SCROLL_ATTEMPTS = 10;
-    
-    // SCREENSHOT CONFIGURATION 
     public static final String SCREENSHOT_DIR = "screenshots";
     public static final String SCREENSHOT_FORMAT = "png";
     public static final boolean TAKE_SCREENSHOT_ON_FAILURE = true;
     public static final boolean TAKE_SCREENSHOT_ON_PASS = false;
-    
-    // LOGGING CONFIGURATION 
     public static final String LOG_DIR = "logs";
     public static final String LOG_FILE_NAME = "automation.log";
     public static final boolean ENABLE_DEBUG_LOGGING = true;
     public static final boolean LOG_PAGE_SOURCE_ON_FAILURE = false;
-    
-    // REPORT CONFIGURATION 
     public static final String REPORTS_DIR = "reports";
     public static final String EXTENT_REPORT_NAME = "ModisAutomationReport.html";
     public static final String ALLURE_RESULTS_DIR = "allure-results";
-    
-    // TEST DATA CONFIGURATION 
     public static final String TEST_DATA_DIR = "src/test/resources/testdata";
     public static final String TEST_USERS_FILE = "users.json";
     public static final String TEST_MESSAGES_FILE = "messages.json";
-    
-    // GESTURE CONFIGURATION 
     public static final int SWIPE_DURATION_MS = 1000;
     public static final int TAP_DURATION_MS = 100;
     public static final int LONG_PRESS_DURATION_MS = 2000;
     public static final double SWIPE_START_PERCENTAGE = 0.8;
     public static final double SWIPE_END_PERCENTAGE = 0.2;
-    
-    // PERFORMANCE THRESHOLDS 
     public static final int MAX_SCREEN_LOAD_TIME_MS = 5000;
     public static final int MAX_API_RESPONSE_TIME_MS = 3000;
     public static final int MAX_IMAGE_LOAD_TIME_MS = 8000;
-    
-    // NETWORK CONFIGURATION 
     public static final String DEFAULT_NETWORK_SPEED = "full";
     public static final boolean ENABLE_GPS = true;
     public static final boolean AUTO_GRANT_PERMISSIONS = true;
     public static final boolean AUTO_ACCEPT_ALERTS = true;
-    
-    // TEST ENVIRONMENT 
     public static final String DEFAULT_ENVIRONMENT = "dev";
     public static final String DEV_BASE_URL = "https://dev-api.modis.com";
     public static final String STAGING_BASE_URL = "https://staging-api.modis.com";
     public static final String PROD_BASE_URL = "https://api.modis.com";
-    
-    // MODIS APP SPECIFIC CONSTANTS 
-    
-    // Screen Names
     public static final String LOADING_SCREEN = "LoadingScreen";
     public static final String LOGIN_SCREEN = "LoginScreen";
     public static final String SIGNUP_SCREEN = "SignupScreen";
@@ -122,69 +81,37 @@ public class AppConstants {
     public static final String MESSAGE_SCREEN = "MessageScreen";
     public static final String CONVERSATION_SCREEN = "ConversationScreen";
     public static final String ALL_IMAGES_SCREEN = "AllImagesScreen";
-    
-    // Navigation Flow
     public static final String INITIAL_ROUTE = "LoadingScreen";
-    
-    // User Roles
     public static final String ROLE_USER = "user";
     public static final String ROLE_ADMIN = "admin";
-    
-    // Friend Request States
     public static final String FRIEND_STATUS_PENDING = "pending";
     public static final String FRIEND_STATUS_ACCEPTED = "accepted";
     public static final String FRIEND_STATUS_DECLINED = "declined";
-    
-    // Message Types
     public static final String MESSAGE_TYPE_TEXT = "text";
     public static final String MESSAGE_TYPE_IMAGE = "image";
     public static final String MESSAGE_TYPE_EMOJI = "emoji";
-    
-    // Image Upload
     public static final int MAX_IMAGE_SIZE_MB = 10;
     public static final String[] SUPPORTED_IMAGE_FORMATS = {"jpg", "jpeg", "png", "gif"};
-    
-    // Feed Configuration
     public static final int FEED_PAGE_SIZE = 20;
     public static final int MAX_FEED_SCROLL_ATTEMPTS = 5;
-    
-    // Search Configuration
     public static final int MIN_SEARCH_QUERY_LENGTH = 1;
     public static final int SEARCH_DEBOUNCE_MS = 500;
-    
-    // Camera Configuration
     public static final String CAMERA_PERMISSION = "android.permission.CAMERA";
     public static final String STORAGE_PERMISSION = "android.permission.WRITE_EXTERNAL_STORAGE";
     public static final String LOCATION_PERMISSION = "android.permission.ACCESS_FINE_LOCATION";
-    
-    // Notification Types
     public static final String NOTIFICATION_FRIEND_REQUEST = "friend_request";
     public static final String NOTIFICATION_MESSAGE = "message";
     public static final String NOTIFICATION_PHOTO_RECEIVED = "photo_received";
-    
-    // Theme Configuration
     public static final String THEME_LIGHT = "light";
     public static final String THEME_DARK = "dark";
     public static final String THEME_SYSTEM = "system";
-    
-    // VALIDATION CONSTANTS 
-    
-    // Username validation
     public static final int MIN_USERNAME_LENGTH = 3;
     public static final int MAX_USERNAME_LENGTH = 20;
     public static final String USERNAME_PATTERN = "^[a-zA-Z0-9_]+$";
-    
-    // Password validation
     public static final int MIN_PASSWORD_LENGTH = 6;
     public static final int MAX_PASSWORD_LENGTH = 50;
-    
-    // Email validation
     public static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-    
-    // Phone validation
     public static final String PHONE_PATTERN = "^[0-9]{10,15}$";
-    
-    // ERROR MESSAGES 
     public static final String ERROR_INVALID_CREDENTIALS = "Invalid username or password";
     public static final String ERROR_USERNAME_TAKEN = "Username is already taken";
     public static final String ERROR_EMAIL_TAKEN = "Email is already registered";
@@ -192,48 +119,30 @@ public class AppConstants {
     public static final String ERROR_SERVER_ERROR = "Server error occurred";
     public static final String ERROR_PERMISSION_DENIED = "Permission denied";
     public static final String ERROR_CAMERA_NOT_AVAILABLE = "Camera not available";
-    
-    // SUCCESS MESSAGES 
     public static final String SUCCESS_LOGIN = "Login successful";
     public static final String SUCCESS_SIGNUP = "Account created successfully";
     public static final String SUCCESS_PHOTO_SENT = "Photo sent successfully";
     public static final String SUCCESS_FRIEND_REQUEST_SENT = "Friend request sent";
     public static final String SUCCESS_FRIEND_REQUEST_ACCEPTED = "Friend request accepted";
     public static final String SUCCESS_MESSAGE_SENT = "Message sent";
-    
-    // TEST DATA CONSTANTS 
-    
-    // Test Users
     public static final String TEST_USER_USERNAME = "testuser";
     public static final String TEST_USER_PASSWORD = "testpass123";
     public static final String TEST_USER_EMAIL = "testuser@example.com";
     public static final String TEST_USER_PHONE = "1234567890";
     public static final String TEST_USER_FULLNAME = "Test User";
-    
     public static final String TEST_ADMIN_USERNAME = "testadmin";
     public static final String TEST_ADMIN_PASSWORD = "adminpass123";
-    
-    // Test Messages
     public static final String TEST_MESSAGE_TEXT = "Hello, this is a test message!";
     public static final String TEST_MESSAGE_LONG = "This is a very long test message that should test the message display and wrapping functionality in the chat interface.";
-    
-    // Test Search Queries
     public static final String TEST_SEARCH_QUERY = "test";
     public static final String TEST_SEARCH_NO_RESULTS = "xyzabc123";
-    
-    // PLATFORM SPECIFIC CONSTANTS 
-    
-    // Android specific
     public static final String ANDROID_SETTINGS_PACKAGE = "com.android.settings";
     public static final String ANDROID_CAMERA_PACKAGE = "com.android.camera2";
     public static final String ANDROID_GALLERY_PACKAGE = "com.google.android.apps.photos";
-    
-    // iOS specific
     public static final String IOS_SETTINGS_BUNDLE = "com.apple.Preferences";
     public static final String IOS_CAMERA_BUNDLE = "com.apple.camera";
     public static final String IOS_PHOTOS_BUNDLE = "com.apple.mobileslideshow";
-    
-    // UTILITY METHODS 
+
     public static String getBaseUrl(String environment) {
         switch (environment.toLowerCase()) {
             case "dev":
@@ -249,18 +158,19 @@ public class AppConstants {
                 return DEV_BASE_URL;
         }
     }
-    
+
     public static String getAppPackage(String platform) {
         return platform.toLowerCase().equals("ios") ? APP_BUNDLE_ID : APP_PACKAGE;
     }
+
     public static String getSettingsPackage(String platform) {
         return platform.toLowerCase().equals("ios") ? IOS_SETTINGS_BUNDLE : ANDROID_SETTINGS_PACKAGE;
     }
-    
+
     public static boolean isProduction(String environment) {
         return "prod".equalsIgnoreCase(environment) || "production".equalsIgnoreCase(environment);
     }
-    
+
     public static int getTimeout(String operationType) {
         switch (operationType.toLowerCase()) {
             case "element":
@@ -277,7 +187,7 @@ public class AppConstants {
                 return EXPLICIT_WAIT;
         }
     }
-    
+
     private AppConstants() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }

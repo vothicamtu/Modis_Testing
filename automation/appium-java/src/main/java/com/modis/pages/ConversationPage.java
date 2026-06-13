@@ -12,27 +12,19 @@ import java.util.List;
 import static com.modis.drivers.DriverManager.getDriver;
 
 public class ConversationPage extends BasePage {
-
-    // PAGE ELEMENTS
     @AndroidFindBy(accessibility = TestIDs.CONVERSATION_SCREEN)
     private WebElement conversationScreen;
-
     @AndroidFindBy(accessibility = TestIDs.CONVERSATION_BACK_BUTTON)
     private WebElement backButton;
-
     @AndroidFindBy(accessibility = TestIDs.CONVERSATION_HEADER)
     private WebElement conversationHeader;
-
     @AndroidFindBy(accessibility = TestIDs.CONVERSATION_MESSAGES_LIST)
     private WebElement messagesList;
-
     @AndroidFindBy(accessibility = TestIDs.CONVERSATION_INPUT)
     private WebElement messageInput;
-
     @AndroidFindBy(accessibility = TestIDs.CONVERSATION_SEND_BUTTON)
     private WebElement sendButton;
 
-    // NAVIGATION ACTIONS
     public MessagePage navigateBack() {
         logger.info("Navigating back from conversation screen");
         waitForElementVisible(TestIDs.CONVERSATION_BACK_BUTTON);
@@ -40,39 +32,30 @@ public class ConversationPage extends BasePage {
         clickByAccessibilityId(
                 TestIDs.CONVERSATION_BACK_BUTTON
         );
-
         waitForAnimation();
         return new MessagePage();
     }
 
-    // MESSAGE ACTIONS
     public ConversationPage sendMessage(String messageText) {
         logger.info("Sending message: {}", messageText);
-
         waitForElementVisible(TestIDs.CONVERSATION_INPUT);
-
         clearMessageInput();
-
         enterText(
                 messageInput,
                 messageText
         );
-
         waitForElementClickable(TestIDs.CONVERSATION_SEND_BUTTON);
         clickElement(sendButton);
-
         waitForMessageToSend();
         return this;
     }
 
     public ConversationPage sendMessages(String[] messages) {
         logger.info("Sending {} messages", messages.length);
-
         for (String message : messages) {
             sendMessage(message);
-            waitFor(1); // Small delay between messages
+            waitFor(1);
         }
-
         return this;
     }
 
@@ -91,9 +74,7 @@ public class ConversationPage extends BasePage {
     public ConversationPage typeMessage(String messageText) {
         logger.debug("Typing message: {}", messageText);
         waitForElementVisible(TestIDs.CONVERSATION_INPUT);
-
         clearMessageInput();
-
         enterText(
                 messageInput,
                 messageText
@@ -101,7 +82,6 @@ public class ConversationPage extends BasePage {
         return this;
     }
 
-    // MESSAGE LIST ACTIONS
     public ConversationPage scrollMessages(String direction) {
         logger.debug("Scrolling messages: {}", direction);
         waitForElementVisible(TestIDs.CONVERSATION_MESSAGES_LIST);
@@ -124,32 +104,27 @@ public class ConversationPage extends BasePage {
     public ConversationPage longPressMessage(String messageId) {
         logger.info("Long pressing message: {}", messageId);
         String messageTestId = TestIDs.CONVERSATION_MESSAGE_PREFIX + messageId;
-
         WebElement messageElement = scrollToElementByAccessibilityId(messageTestId);
         if (messageElement != null) {
             longPressElement(messageElement, AppConstants.LONG_PRESS_DURATION_MS);
         } else {
             logger.warn("Message {} not found for long press", messageId);
         }
-
         return this;
     }
 
     public ConversationPage tapMessage(String messageId) {
         logger.info("Tapping message: {}", messageId);
         String messageTestId = TestIDs.CONVERSATION_MESSAGE_PREFIX + messageId;
-
         WebElement messageElement = scrollToElementByAccessibilityId(messageTestId);
         if (messageElement != null) {
             clickElement(messageElement);
         } else {
             logger.warn("Message {} not found for tap", messageId);
         }
-
         return this;
     }
 
-    // VALIDATION METHODS
     public boolean isMessagesListDisplayed() {
         return isElementDisplayedByAccessibilityId(TestIDs.CONVERSATION_MESSAGES_LIST);
     }
@@ -186,42 +161,30 @@ public class ConversationPage extends BasePage {
     }
 
     public int getVisibleMessagesCount() {
-
         try {
-
             waitForElementVisible(
                     TestIDs.CONVERSATION_MESSAGES_LIST
             );
-
             List<WebElement> messages =
                     getDriver().findElements(
                             AppiumBy.xpath(
                                     "//android.widget.TextView"
                             )
                     );
-
             int count = 0;
-
             for (WebElement element : messages) {
-
                 String text = element.getText();
-
                 if (text != null
                         && !text.trim().isEmpty()) {
-
                     count++;
                 }
             }
-
             return count;
-
         } catch (Exception e) {
-
             logger.warn(
                     "Failed getting visible messages count: {}",
                     e.getMessage()
             );
-
             return 0;
         }
     }
@@ -233,28 +196,21 @@ public class ConversationPage extends BasePage {
         return "";
     }
 
-    // MESSAGE TIMING
     public void waitForMessageToSend() {
-
         logger.debug(
                 "Waiting for message to send"
         );
-
         waitForAnimation();
-
         waitFor(2);
     }
 
     public boolean waitForNewMessage(int timeoutSeconds) {
         logger.info("Waiting for new message for {} seconds", timeoutSeconds);
-
         int initialMessageCount = getVisibleMessagesCount();
-
         for (int i = 0; i < timeoutSeconds; i++) {
             try {
                 Thread.sleep(1000);
                 int currentMessageCount = getVisibleMessagesCount();
-
                 if (currentMessageCount > initialMessageCount) {
                     logger.info("New message received");
                     return true;
@@ -265,43 +221,33 @@ public class ConversationPage extends BasePage {
                 break;
             }
         }
-
         logger.info("No new message received within timeout");
         return false;
     }
 
     public ConversationPage simulateTyping(String text) {
         logger.info("Simulating typing: {}", text);
-
         waitForElementVisible(TestIDs.CONVERSATION_INPUT);
-
-        // Type character by character to simulate real typing
         for (char c : text.toCharArray()) {
             messageInput.sendKeys(String.valueOf(c));
-
             try {
-                Thread.sleep(100); // Delay between characters
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
         }
-
         return this;
     }
 
-    // NEGATIVE TEST METHODS
     public ConversationPage sendEmptyMessage() {
         logger.info("Attempting to send empty message");
-
         clearMessageInput();
-
         if (isSendButtonEnabled()) {
             clickElement(sendButton);
         } else {
             logger.info("Send button disabled for empty message as expected");
         }
-
         return this;
     }
 
@@ -312,27 +258,21 @@ public class ConversationPage extends BasePage {
 
     public ConversationPage sendExtremelyLongMessage() {
         logger.info("Sending extremely long message");
-
         StringBuilder longMessage = new StringBuilder();
         for (int i = 0; i < 1000; i++) {
             longMessage.append("This is a very long message. ");
         }
-
         return sendMessage(longMessage.toString());
     }
 
     public ConversationPage sendRapidMessages(int messageCount) {
         logger.info("Sending {} messages rapidly", messageCount);
-
         for (int i = 0; i < messageCount; i++) {
             sendMessage("Rapid message " + (i + 1));
-            // No delay between messages for rapid testing
         }
-
         return this;
     }
 
-    // KEYBOARD HANDLING
     public ConversationPage focusMessageInput() {
         logger.debug("Focusing message input");
         waitForElementClickable(TestIDs.CONVERSATION_INPUT);
@@ -345,8 +285,6 @@ public class ConversationPage extends BasePage {
         super.hideKeyboard();
         return this;
     }
-
-    // INHERITED METHODS 
 
     @Override
     public boolean isDisplayed() {
@@ -375,14 +313,12 @@ public class ConversationPage extends BasePage {
 
     public boolean verifyPageElements() {
         logger.info("Verifying conversation page elements");
-
         boolean allElementsPresent =
                 isElementDisplayedByAccessibilityId(TestIDs.CONVERSATION_SCREEN) &&
                         isElementDisplayedByAccessibilityId(TestIDs.CONVERSATION_BACK_BUTTON) &&
                         isElementDisplayedByAccessibilityId(TestIDs.CONVERSATION_MESSAGES_LIST) &&
                         isElementDisplayedByAccessibilityId(TestIDs.CONVERSATION_INPUT) &&
                         isElementDisplayedByAccessibilityId(TestIDs.CONVERSATION_SEND_BUTTON);
-
         logger.info("Conversation page elements verification: {}", allElementsPresent ? "PASSED" : "FAILED");
         return allElementsPresent;
     }
@@ -397,29 +333,22 @@ public class ConversationPage extends BasePage {
         summary.append("- Visible messages count: ").append(getVisibleMessagesCount()).append("\n");
         summary.append("- Input text: '").append(getMessageInputText()).append("'\n");
         summary.append("- Header text: '").append(getConversationHeaderText()).append("'\n");
-
         return summary.toString();
     }
 
     public boolean hasMessages() {
-
         try {
-
             waitForElementVisible(
                     TestIDs.CONVERSATION_MESSAGES_LIST
             );
-
             List<WebElement> textViews =
                     getDriver().findElements(
                             AppiumBy.className(
                                     "android.widget.TextView"
                             )
                     );
-
             return !textViews.isEmpty();
-
         } catch (Exception e) {
-
             return false;
         }
     }
@@ -431,32 +360,24 @@ public class ConversationPage extends BasePage {
     public ConversationPage waitForMessageToAppear(
             String messageText
     ) {
-
         logger.info(
                 "Waiting for message: {}",
                 messageText
         );
-
         String expectedText =
                 messageText.length() > 20
                         ? messageText.substring(0, 20)
                         : messageText;
-
         for (int i = 0; i < 15; i++) {
-
             if (hasMessageWithContent(expectedText)) {
-
                 logger.info(
                         "Message appeared: {}",
                         expectedText
                 );
-
                 return this;
             }
-
             waitFor(1);
         }
-
         throw new RuntimeException(
                 "Message did not appear: "
                         + expectedText
@@ -464,162 +385,124 @@ public class ConversationPage extends BasePage {
     }
 
     public ConversationPage enterMessage(String msg) {
-
         logger.info(
                 "Entering message: {}",
                 msg
         );
-
         waitForElementVisible(
                 TestIDs.CONVERSATION_INPUT
         );
-
         clearMessageInput();
-
         enterText(
                 messageInput,
                 msg
         );
-
         return this;
     }
 
     public boolean isMessageTimeDisplayed(
             String msgId
     ) {
-
         try {
-
             String timeId =
                     TestIDs.CONVERSATION_MESSAGE_PREFIX
                             + msgId
                             + "_time";
-
             return isElementDisplayedByAccessibilityId(
                     timeId
             );
-
         } catch (Exception e) {
-
             return false;
         }
     }
 
     public boolean isHeaderDisplayed() {
-
         return isElementDisplayedByAccessibilityId(
                 TestIDs.CONVERSATION_HEADER
         );
     }
 
     public boolean isBackButtonDisplayed() {
-
         return isElementDisplayedByAccessibilityId(
                 TestIDs.CONVERSATION_BACK_BUTTON
         );
     }
 
     public boolean isMessageListDisplayed() {
-
         return isElementDisplayedByAccessibilityId(
                 TestIDs.CONVERSATION_MESSAGES_LIST
         );
     }
 
     public ConversationPage clickSendButton() {
-
         waitForElementClickable(
                 TestIDs.CONVERSATION_SEND_BUTTON
         );
-
         clickElement(sendButton);
-
         return this;
     }
 
     public ConversationPage refreshConversation() {
-
         logger.info(
                 "Refreshing conversation"
         );
-
         pullToRefresh();
-
         waitForAnimation();
-
         return this;
     }
 
-    // MESSAGE VALIDATION ACTIONS
     public boolean hasMessageWithContent(
             String content
     ) {
-
         try {
-
             waitForElementVisible(
                     TestIDs.CONVERSATION_MESSAGES_LIST
             );
-
             List<WebElement> textViews =
                     getDriver().findElements(
                             AppiumBy.className(
                                     "android.widget.TextView"
                             )
                     );
-
             for (WebElement element : textViews) {
-
                 String text =
                         element.getText();
-
                 if (text == null) {
                     continue;
                 }
-
                 if (text.contains(content)) {
                     return true;
                 }
             }
-
             return false;
-
         } catch (Exception e) {
-
             logger.warn(
                     "Failed checking message content: {}",
                     e.getMessage()
             );
-
             return false;
         }
     }
 
     public boolean isMessageSent(String message) {
         logger.info("Checking if message was sent: " + message);
-
-        // Wait a moment for message to appear
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-
         return hasMessageWithContent(message);
     }
 
     public boolean hasVisibleSentImageMessage() {
         try {
             waitForElementVisible(TestIDs.CONVERSATION_MESSAGES_LIST);
-
             for (int i = 0; i < 10; i++) {
                 if (getDriver().getPageSource().contains(TestIDs.CONVERSATION_SENT_IMAGE_SUFFIX)) {
                     return true;
                 }
-
                 waitFor(1);
             }
-
             return false;
         } catch (Exception e) {
             logger.warn("Failed checking sent image message: {}", e.getMessage());

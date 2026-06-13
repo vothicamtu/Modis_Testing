@@ -10,113 +10,76 @@ import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.WebElement;
 
 public class ProfilePage extends BasePage {
-
-    // PAGE ELEMENTS 
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_SCREEN)
     private WebElement profileScreen;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_BACK_BUTTON)
     private WebElement backButton;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_AVATAR)
     private WebElement avatarImage;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_USERNAME)
     private WebElement usernameText;
-
-    // Profile edit items
     @AndroidFindBy(accessibility = TestIDs.PROFILE_EDIT_USERNAME_ITEM)
     private WebElement editUsernameItem;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_EDIT_PHONE_ITEM)
     private WebElement editPhoneItem;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_EDIT_EMAIL_ITEM)
     private WebElement editEmailItem;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_CHANGE_PASSWORD_ITEM)
     private WebElement changePasswordItem;
-
-    // Settings items
     @AndroidFindBy(accessibility = TestIDs.PROFILE_THEME_TOGGLE)
     private WebElement themeToggle;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_SHARE_APP)
     private WebElement shareAppItem;
-
-    // Action buttons
     @AndroidFindBy(accessibility = TestIDs.PROFILE_DELETE_ACCOUNT)
     private WebElement deleteAccountItem;
-
     @AndroidFindBy(accessibility = TestIDs.PROFILE_LOGOUT_BUTTON)
     private WebElement logoutButton;
-
-    // Modal and dialog elements
     @AndroidFindBy(accessibility = TestIDs.MODAL_CONTAINER)
     private WebElement modalContainer;
-
     @AndroidFindBy(accessibility = TestIDs.MODAL_CONFIRM_BUTTON)
     private WebElement confirmButton;
-
     @AndroidFindBy(accessibility = TestIDs.MODAL_CANCEL_BUTTON)
     private WebElement cancelButton;
 
-    // NAVIGATION ACTIONS
     public HomePage navigateBack() {
-
         logger.info("Navigating back from profile screen");
-
         try {
             clickByAccessibilityId(
                     TestIDs.PROFILE_BACK_BUTTON
             );
             waitForAnimation();
         } catch (Exception e) {
-
             logger.warn(
                     "Device back navigation failed: {}",
                     e.getMessage()
             );
         }
-
         HomePage homePage = new HomePage();
-
         homePage.waitForTopbarReadyAfterLogin(10);
-
         return homePage;
     }
 
     public LoadingPage logout() {
-
         logger.info("Logging out from profile screen");
-
         WebElement logoutTarget = ensureLogoutButtonVisible();
-
         clickElement(logoutTarget);
-
         handleLogoutConfirmation();
-
         waitForElementVisible(TestIDs.LOADING_SCREEN);
-
         return new LoadingPage();
     }
 
     private WebElement ensureLogoutButtonVisible() {
         WebElement visibleLogout = null;
-
         try {
             String uiScrollable =
                     "new UiScrollable(new UiSelector().scrollable(true))"
                             + ".scrollIntoView(new UiSelector().description(\""
                             + TestIDs.PROFILE_LOGOUT_BUTTON
                             + "\"))";
-
             WebElement logoutTarget =
                     DriverManager.getDriver().findElement(
                             AppiumBy.androidUIAutomator(uiScrollable)
                     );
-
             if (logoutTarget != null && logoutTarget.isDisplayed()) {
                 return logoutTarget;
             }
@@ -126,17 +89,14 @@ public class ProfilePage extends BasePage {
                     e.getMessage()
             );
         }
-
         if (visibleLogout != null) {
             return visibleLogout;
         }
-
         try {
             WebElement logoutTarget =
                     gestureUtils.scrollToElementByAccessibilityId(
                             TestIDs.PROFILE_LOGOUT_BUTTON
                     );
-
             if (logoutTarget != null && logoutTarget.isDisplayed()) {
                 return logoutTarget;
             }
@@ -146,7 +106,6 @@ public class ProfilePage extends BasePage {
                     e.getMessage()
             );
         }
-
         for (int i = 0; i < 4; i++) {
             try {
                 scrollDownBase();
@@ -158,23 +117,19 @@ public class ProfilePage extends BasePage {
                 );
                 continue;
             }
-
             visibleLogout = findVisibleLogoutButton();
             if (visibleLogout != null) {
                 return visibleLogout;
             }
         }
-
         throw new RuntimeException("Logout button is not visible on profile screen");
     }
 
     private WebElement findVisibleLogoutButton() {
         AppiumDriver currentDriver = DriverManager.getDriver();
-
         if (currentDriver == null) {
             return null;
         }
-
         try {
             for (WebElement element : currentDriver.findElements(AppiumBy.accessibilityId(TestIDs.PROFILE_LOGOUT_BUTTON))) {
                 if (element != null && element.isDisplayed()) {
@@ -187,7 +142,6 @@ public class ProfilePage extends BasePage {
                     e.getMessage()
             );
         }
-
         try {
             for (WebElement element : currentDriver.findElements(AppiumBy.id(TestIDs.PROFILE_LOGOUT_BUTTON))) {
                 if (element != null && element.isDisplayed()) {
@@ -200,11 +154,9 @@ public class ProfilePage extends BasePage {
                     e.getMessage()
             );
         }
-
         return null;
     }
 
-    // PROFILE EDIT ACTIONS 
     public ProfilePage editUsername() {
         logger.info("Opening edit username");
         waitForElementClickable(TestIDs.PROFILE_EDIT_USERNAME_ITEM);
@@ -245,7 +197,6 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    // SETTINGS ACTIONS 
     public ProfilePage toggleTheme() {
         logger.info("Toggling theme");
         waitForElementClickable(TestIDs.PROFILE_THEME_TOGGLE);
@@ -266,40 +217,30 @@ public class ProfilePage extends BasePage {
         logger.info("Initiating delete account");
         waitForElementClickable(TestIDs.PROFILE_DELETE_ACCOUNT);
         clickElement(deleteAccountItem);
-
-        // Handle delete confirmation
         if (isModalDisplayed()) {
             logger.warn("Delete account confirmation modal appeared");
-            // For safety, we'll cancel by default in automation
             cancelAction();
             return this;
         }
-
         return this;
     }
 
     public LoginPage deleteAccountWithConfirmation() {
         logger.warn("Deleting account with confirmation - DANGEROUS OPERATION");
         clickElement(deleteAccountItem);
-
         if (isModalDisplayed()) {
             confirmAction();
-            // Wait for navigation to login/loading screen
             waitForElementVisible(TestIDs.LOGIN_SCREEN);
             return new LoginPage();
         }
-
         return new LoginPage();
     }
 
-    // MODAL HANDLING 
     private void handleLogoutConfirmation() {
         logger.debug("Handling logout confirmation");
-
         if (isModalDisplayed()) {
             confirmAction();
         }
-
         waitForAnimation();
     }
 
@@ -325,23 +266,16 @@ public class ProfilePage extends BasePage {
 
     public ProfilePage closeModal() {
         logger.info("Closing modal by tapping outside");
-
         if (isModalDisplayed()) {
-            // Tap outside modal area
             tapAtCoordinates(50, 50);
             waitForAnimation();
         }
-
         return this;
     }
 
-    // VALIDATION METHODS 
     public String getDisplayedUsername() {
-
         logger.info("Getting displayed username");
-
         waitForElementVisible(TestIDs.PROFILE_USERNAME);
-
         return getTextByAccessibilityId(TestIDs.PROFILE_USERNAME);
     }
 
@@ -378,7 +312,6 @@ public class ProfilePage extends BasePage {
                 isElementDisplayedByAccessibilityId(TestIDs.PROFILE_CHANGE_PASSWORD_ITEM);
     }
 
-    // SCROLL ACTIONS 
     public ProfilePage scrollDown() {
         logger.debug("Scrolling down in profile screen");
         scrollDownBase();
@@ -393,40 +326,28 @@ public class ProfilePage extends BasePage {
 
     public ProfilePage scrollToAndClickElement(String elementId) {
         logger.info("Scrolling to and clicking element: {}", elementId);
-
         WebElement element = scrollToElementByAccessibilityId(elementId);
         if (element != null) {
             clickElement(element);
         } else {
             logger.warn("Element {} not found after scrolling", elementId);
         }
-
         return this;
     }
 
-    // NEGATIVE TEST METHODS 
     public ProfilePage attemptRestrictedAccess() {
         logger.info("Attempting to access restricted settings");
-
-        // Try to access elements that might be restricted
-        // Implementation depends on actual app restrictions
-
         return this;
     }
 
     public ProfilePage testLogoutCancellation() {
         logger.info("Testing logout cancellation");
-
         clickElement(logoutButton);
-
         if (isModalDisplayed()) {
             cancelAction();
         }
-
         return this;
     }
-
-    // INHERITED METHODS 
 
     @Override
     public boolean isDisplayed() {
@@ -609,57 +530,42 @@ public class ProfilePage extends BasePage {
 
     public ProfilePage waitForPageToLoad() {
         logger.info("Waiting for profile page to load");
-
         waitForElementVisible(TestIDs.PROFILE_SCREEN);
         waitForElementVisible(TestIDs.PROFILE_AVATAR);
         waitForElementVisible(TestIDs.PROFILE_USERNAME);
-
         logger.info("Profile page loaded successfully");
         return this;
     }
 
     public boolean verifyPageElements() {
-
         logger.info("Verifying profile page elements");
-
         try {
-
             waitForElementVisible(TestIDs.PROFILE_SCREEN);
-
             waitFor(1);
-
             boolean usernameVisible =
                     isElementDisplayedByAccessibilityId(
                             TestIDs.PROFILE_USERNAME
                     );
-
             logger.info(
                     "Profile page elements verification: {}",
                     usernameVisible ? "PASSED" : "FAILED"
             );
-
             return usernameVisible;
-
         } catch (Exception e) {
-
             logger.warn(
                     "Profile page verification failed: {}",
                     e.getMessage()
             );
-
             return false;
         }
     }
 
     public boolean verifyProfileInfo(String expectedUsername) {
         logger.info("Verifying profile information");
-
         String actualUsername = getDisplayedUsername();
         boolean usernameMatches = expectedUsername.equals(actualUsername);
-
         logger.info("Username verification - Expected: {}, Actual: {}, Match: {}",
                 expectedUsername, actualUsername, usernameMatches);
-
         return usernameMatches && isAvatarDisplayed();
     }
 
@@ -759,18 +665,12 @@ public class ProfilePage extends BasePage {
         return true;
     }
 
-    // PROFILE INFORMATION ACTIONS 
     public String getDisplayedUserName() {
-
         logger.info("Getting displayed username");
-
         waitForElementVisible(TestIDs.PROFILE_USERNAME);
-
         String username =
                 getTextByAccessibilityId(TestIDs.PROFILE_USERNAME);
-
         logger.info("Displayed username: {}", username);
-
         return username;
     }
 }
