@@ -1,16 +1,5 @@
 # JMeter Performance Testing - Generated Files
 
-# Results và Reports (auto-generated)
-results/*.jtl
-results/*.csv
-results/*.log
-reports/*/
-reports/*.html
-
-# JMeter logs
-jmeter.log
-jmeter_*.log
-
 # Temporary files
 *.tmp
 *.temp
@@ -34,11 +23,13 @@ Thumbs.db
 *.bak
 *.backup
 
-# Keep directory structure
-!results/.gitkeep
-!reports/.gitkeep
-
-# Sensitive data (nếu có)
+# Sensitive data
 *.key
 *.pem
 secrets.properties
+
+# -----------------------------------------------
+# Kết quả kiểm thử hiệu năng - GIỮ LẠI trong git
+# -----------------------------------------------
+# results/*.jtl và reports/**/ đều được track
+# (không ignore nữa để lưu bằng chứng kiểm thử)

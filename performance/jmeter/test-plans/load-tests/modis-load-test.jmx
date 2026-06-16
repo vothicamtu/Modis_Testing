@@ -36,7 +36,8 @@
         <intProp name="HTTPSampler.connect_timeout">30000</intProp>
         <intProp name="HTTPSampler.response_timeout">90000</intProp>
         <stringProp name="HTTPSampler.domain">${__P(base_url,modis-backend.onrender.com)}</stringProp>
-        <stringProp name="HTTPSampler.protocol">https</stringProp>
+        <stringProp name="HTTPSampler.port">${__P(port,)}</stringProp>
+        <stringProp name="HTTPSampler.protocol">${__P(protocol,https)}</stringProp>
         <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
           <collectionProp name="Arguments.arguments"/>

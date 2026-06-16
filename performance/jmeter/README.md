@@ -3,17 +3,17 @@
 
 ---
 
-## 🎯 Tổng quan Framework
+##  Tổng quan Framework
 
 **Modis Performance Framework** là hệ thống kiểm thử hiệu năng chuyên nghiệp cho backend API của Modis, sử dụng **Apache JMeter** kết hợp với **Java 17 utilities** để đạt hiệu suất tối ưu.
 
-### 🏗️ **Kiến trúc thực tế:**
+###  **Kiến trúc thực tế:**
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │              MODIS PERFORMANCE ARCHITECTURE                 │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  🎯 JMeter Tests        🔧 Java Utilities   📊 Results      │
+│   JMeter Tests         Java Utilities    Results      │
 │  ┌─────────────────┐    ┌─────────────────┐   ┌──────────┐  │
 │  │ .jmx Test Plans │◄──►│ AuthHelper      │──►│ HTML     │  │
 │  │ Load/Stress     │    │ DataHelper      │   │ Reports  │  │
@@ -23,13 +23,13 @@
 │  │ Non-GUI Mode    │    │ Maven 3.9.x     │   │ Charts   │  │
 │  └─────────────────┘    └─────────────────┘   └──────────┘  │
 │                                                             │
-│  🌐 Target: https://modis-backend.onrender.com             │
-│  ⏱️  Timeouts: 90s (Render.com cold start)                 │
-│  📈 Metrics: Response Time, Throughput, Error Rate         │
+│   Target: https://modis-backend.onrender.com             │
+│   Timeouts: 90s (Render.com cold start)                 │
+│   Metrics: Response Time, Throughput, Error Rate         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 🔧 **Tech Stack thực tế:**
+###  **Tech Stack thực tế:**
 - **Java Version**: Java 17 (theo pom.xml)
 - **JMeter Version**: 5.6.2 với custom Java utilities
 - **Build Tool**: Maven 3.9.x
@@ -40,55 +40,55 @@
 
 ---
 
-## 📁 Cấu trúc thư mục thực tế
+##  Cấu trúc thư mục thực tế
 
 Framework được tổ chức để tách biệt **Java utilities**, **JMeter test plans**, và **test data** dựa trên source code thực tế:
 
 ```text
 testing/performance/jmeter/
-├── src/main/java/com/modis/performance/ # 🏗️ Java Utilities cho JMeter
-│   ├── auth/                         # 🔐 Authentication & JWT Handling
+├── src/main/java/com/modis/performance/ #  Java Utilities cho JMeter
+│   ├── auth/                         #  Authentication & JWT Handling
 │   │   └── AuthHelper.java           # JWT token generation/validation
-│   ├── generators/                   # 🎲 Test Data Generators
+│   ├── generators/                   #  Test Data Generators
 │   │   └── DataHelper.java           # Random data generation (users, messages, posts)
-│   ├── parsers/                      # 📊 Results Parsing
+│   ├── parsers/                      #  Results Parsing
 │   │   └── JTLResultsParser.java     # Parse .jtl files to Java objects
-│   ├── reports/                      # 📈 Custom Report Generation
+│   ├── reports/                      #  Custom Report Generation
 │   │   └── ReportGenerator.java      # Generate custom JSON/HTML reports
-│   ├── utils/                        # 🛠️ Utilities
+│   ├── utils/                        #  Utilities
 │   │   └── ResultsComparator.java    # Compare performance results between runs
-│   ├── model/                        # 📋 Data Models
+│   ├── model/                        #  Data Models
 │   │   ├── PerformanceMetrics.java   # Performance metrics model
 │   │   ├── ComparisonResult.java     # Comparison result model
 │   │   ├── LabelComparison.java      # Label-specific comparison
 │   │   └── RegressionDetail.java     # Regression analysis details
-│   ├── comparator/                   # 📊 Performance Comparison
+│   ├── comparator/                   #  Performance Comparison
 │   │   └── PerformanceComparator.java # Advanced performance comparison logic
-│   ├── listeners/                    # 👂 JMeter Listeners (empty - future use)
-│   ├── assertions/                   # ✅ Custom Assertions (empty - future use)
-│   └── config/                       # 🔧 Configuration (empty - future use)
-├── configs/                          # ⚙️ JMeter Configuration Files
-│   ├── modis-config.properties       # 🌐 Environment config (API URLs, timeouts, thresholds)
-│   ├── auth-config.jmx              # 🔐 Authentication setup fragment
-│   ├── http-defaults.jmx            # 🌐 HTTP defaults fragment (headers, timeouts)
-│   └── websocket-config.jmx         # 🔌 WebSocket configuration fragment
-├── test-plans/                       # 🎯 JMeter Test Plans (.jmx files)
-│   ├── load-tests/                   # 📈 Load Testing Scenarios
+│   ├── listeners/                    # JMeter Listeners (empty - future use)
+│   ├── assertions/                   # Custom Assertions (empty - future use)
+│   └── config/                       #  Configuration (empty - future use)
+├── configs/                          # JMeter Configuration Files
+│   ├── modis-config.properties       #  Environment config (API URLs, timeouts, thresholds)
+│   ├── auth-config.jmx              #  Authentication setup fragment
+│   ├── http-defaults.jmx            #  HTTP defaults fragment (headers, timeouts)
+│   └── websocket-config.jmx         # WebSocket configuration fragment
+├── test-plans/                       #  JMeter Test Plans (.jmx files)
+│   ├── load-tests/                   #  Load Testing Scenarios
 │   │   ├── modis-load-test.jmx       # Standard load test (50 users, 10min)
 │   │   ├── modis-image-upload-test.jmx # Image upload performance test
 │   │   └── modis-websocket-test.jmx  # Real-time messaging load test
-│   ├── stress-tests/                 # 🔥 Stress Testing Scenarios
+│   ├── stress-tests/                 #  Stress Testing Scenarios
 │   │   └── modis-stress-test.jmx     # Maximum capacity test (200 users)
-│   ├── spike-tests/                  # ⚡ Spike Testing Scenarios
+│   ├── spike-tests/                  # Spike Testing Scenarios
 │   │   └── modis-spike-test.jmx      # Traffic spike simulation (500 users)
-│   ├── endurance-tests/              # ⏰ Endurance Testing Scenarios
-│   │   └── modis-endurance-test.jmx  # Long-running stability test (30 users, 2h)
+│   ├── endurance-tests/              # Endurance Testing Scenarios
+│   │   └── modis-endurance-test.jmx  # Long-running stability test (30 users, 1h)
 │   ├── modis-load-test.jmx           # Main load test plan
 │   ├── modis-stress-test.jmx         # Main stress test plan
 │   ├── modis-spike-test.jmx          # Main spike test plan
 │   ├── modis-endurance-test.jmx      # Main endurance test plan
 │   └── modis-image-upload-test.jmx   # Image upload specific test
-├── test-data/                        # 📊 CSV Test Data Files
+├── test-data/                        #  CSV Test Data Files
 │   ├── users.csv                     # User credentials (username, password, email)
 │   ├── messages.csv                  # Sample messages cho chat performance
 │   ├── post-content.csv              # Social media post content templates
@@ -99,40 +99,40 @@ testing/performance/jmeter/
 │   ├── search-queries.csv            # Search query examples
 │   ├── sample-image-urls.csv         # Image URLs cho upload performance testing
 │   └── sample-image-info.txt         # Image metadata và guidelines
-├── results/                          # 📈 Test Execution Results (.jtl files)
+├── results/                          #  Test Execution Results (.jtl files)
 │   └── .gitkeep                      # Placeholder (results generated at runtime)
-├── reports/                          # 📊 Generated HTML Reports
+├── reports/                          #  Generated HTML Reports
 │   └── .gitkeep                      # Placeholder (reports generated at runtime)
-├── docs/                             # 📖 Documentation
+├── docs/                             #  Documentation
 │   ├── BEST_PRACTICES.md             # Performance testing best practices
 │   └── METRICS_GUIDE.md              # Metrics analysis guide
-├── scripts/                          # 🛠️ Environment Setup Scripts
+├── scripts/                          #  Environment Setup Scripts
 │   ├── setup-environment.bat         # Windows environment setup
 │   └── setup-environment.sh          # Linux/Mac environment setup
-├── target/                           # 🎯 Maven Build Output (generated)
+├── target/                           #  Maven Build Output (generated)
 │   ├── classes/                      # Compiled Java utilities
 │   ├── modis-performance-tests-2.0.0.jar # Main JAR file
 │   └── modis-performance-tests-2.0.0-jar-with-dependencies.jar # Fat JAR với all dependencies
-├── pom.xml                           # 🔧 Maven Configuration (Java 17, JMeter 5.6.2)
-├── run-*.bat                         # 🚀 Windows Execution Scripts
+├── pom.xml                           #  Maven Configuration (Java 17, JMeter 5.6.2)
+├── run-*.bat                         #  Windows Execution Scripts
 │   ├── run-load-test.bat             # Load test runner với parameters
 │   ├── run-stress-test.bat           # Stress test runner
 │   ├── run-spike-test.bat            # Spike test runner
 │   ├── run-endurance-test.bat        # Endurance test runner
 │   ├── run-image-upload-test.bat     # Image upload test runner
 │   └── run-all-tests.bat             # All tests runner sequentially
-├── run-*.sh                          # 🐧 Linux/Mac Execution Scripts
+├── run-*.sh                          #  Linux/Mac Execution Scripts
 │   ├── run-load-test.sh              # Load test runner
 │   └── run-stress-test.sh            # Stress test runner
-├── .gitignore                        # 📝 Git ignore rules
-├── CHANGELOG.md                      # 📋 Version history
-├── DEPLOYMENT_GUIDE.md               # 🚀 Production deployment guide
-└── README.md                         # 📚 Performance framework documentation
+├── .gitignore                        #  Git ignore rules
+├── CHANGELOG.md                      #  Version history
+├── DEPLOYMENT_GUIDE.md               #  Production deployment guide
+└── README.md                         #  Performance framework documentation
 ```
 
-### 📋 Giải thích chức năng từng component:
+###  Giải thích chức năng từng component:
 
-#### 🏗️ **Java Utilities** (`src/main/java/`)
+####  **Java Utilities** (`src/main/java/`)
 - **`auth/AuthHelper.java`**: JWT token generation và validation cho secure API testing
 - **`generators/DataHelper.java`**: Generate realistic test data (users, messages, posts)
 - **`parsers/JTLResultsParser.java`**: Parse JMeter .jtl results thành Java objects
@@ -141,33 +141,33 @@ testing/performance/jmeter/
 - **`model/`**: Data models cho type-safe operations (PerformanceMetrics, etc.)
 - **`comparator/PerformanceComparator.java`**: Advanced performance comparison logic
 
-#### ⚙️ **Configuration** (`configs/`)
+#### **Configuration** (`configs/`)
 - **`modis-config.properties`**: Environment variables (API URLs, timeouts, thresholds)
 - **`auth-config.jmx`**: Authentication setup có thể tái sử dụng
 - **`http-defaults.jmx`**: HTTP request defaults (headers, timeouts, SSL)
 - **`websocket-config.jmx`**: WebSocket configuration cho real-time features
 
-#### 🎯 **Test Plans** (`test-plans/`)
+####  **Test Plans** (`test-plans/`)
 - **`load-tests/`**: Normal traffic simulation (50 users, 10 minutes)
 - **`stress-tests/`**: Maximum capacity testing (200 users, 15 minutes)
 - **`spike-tests/`**: Sudden traffic spike (500 users, 5 minutes)
-- **`endurance-tests/`**: Long-running stability (30 users, 2 hours)
+- **`endurance-tests/`**: Long-running stability (30 users, 1 hour)
 - **Image upload tests**: Specific cho file upload performance
 
-#### 📊 **Test Data** (`test-data/`)
+####  **Test Data** (`test-data/`)
 - **CSV files**: Realistic social media data cho data-driven testing
 - **User credentials**: Authentication testing data
 - **Content templates**: Posts, messages, captions cho realistic load
 - **Image URLs**: File upload performance testing
 
-#### 🎯 **Build & Execution**
+####  **Build & Execution**
 - **`pom.xml`**: Maven config với Java 17, JMeter 5.6.2, custom dependencies
 - **`run-*.bat`**: Windows scripts với command-line parameters
 - **Target API**: `https://modis-backend.onrender.com` (deployed backend)
 
-## 🚀 Hướng dẫn chạy đầy đủ
+##  Hướng dẫn chạy đầy đủ
 
-### 1. 🛠️ Setup môi trường
+### 1.  Setup môi trường
 
 #### 1.1 Cài đặt Java 17
 ```bash
@@ -228,9 +228,9 @@ set HEAP=-Xms2g -Xmx4g -XX:MaxMetaspaceSize=256m -XX:+UseG1GC
 # -XX:+UseG1GC: Use G1 garbage collector (better for large heaps)
 ```
 
-### 2. 🏃‍♂️ Hướng dẫn chạy Backend trước khi test
+### 2.  Hướng dẫn chạy Backend trước khi test
 
-**⚠️ QUAN TRỌNG**: Backend phải chạy và stable trước khi thực hiện performance testing!
+** QUAN TRỌNG**: Backend phải chạy và stable trước khi thực hiện performance testing!
 
 ```bash
 # Điều hướng đến thư mục backend
@@ -258,7 +258,7 @@ curl http://localhost:8080/api/health
 # Hoặc mở browser: http://localhost:8080
 ```
 
-### 3. ⚡ Hướng dẫn chạy Performance Testing (JMeter)
+### 3. Hướng dẫn chạy Performance Testing (JMeter)
 
 #### Bước 1: Build Java Utilities (Bắt buộc)
 ```bash
@@ -275,7 +275,7 @@ dir target\modis-performance-tests-2.0.0-jar-with-dependencies.jar
 
 #### Bước 2: Chạy JMeter GUI Mode (chỉ để debug/tạo test)
 
-**⚠️ Chú ý**: GUI mode chỉ dùng để tạo/edit test plans và debug với ít users (<50)
+** Chú ý**: GUI mode chỉ dùng để tạo/edit test plans và debug với ít users (<50)
 
 ```bash
 # Mở JMeter GUI
@@ -303,7 +303,7 @@ jmeter
 
 #### Bước 3: Chạy Non-GUI Mode (Production mode - Khuyến nghị)
 
-**🔥 Quy tắc vàng**: KHÔNG BAO GIỜ dùng GUI mode cho production testing với >50 users
+** Quy tắc vàng**: KHÔNG BAO GIỜ dùng GUI mode cho production testing với >50 users
 
 ```bash
 # Xóa reports cũ trước khi chạy
@@ -380,7 +380,7 @@ jmeter -g results\current-results.jtl -o reports\current-html
 java -cp target\modis-performance-tests-2.0.0-jar-with-dependencies.jar com.modis.performance.utils.ResultsComparator results\baseline-results.jtl results\current-results.jtl
 ```
 
-### 4. 📊 Xem Performance Reports
+### 4.  Xem Performance Reports
 
 #### 4.1 Mở HTML Dashboard
 ```bash
@@ -425,7 +425,7 @@ findstr "ERROR" jmeter.log
 findstr "WARN" jmeter.log
 ```
 
-### 5. 🔄 Flow hoạt động Performance Framework
+### 5.  Flow hoạt động Performance Framework
 
 ```text
 1. Test Plan Initialization
@@ -460,7 +460,7 @@ findstr "WARN" jmeter.log
    └── Performance comparison analysis
 ```
 
-### 6. 📈 Reports & Kết quả
+### 6.  Reports & Kết quả
 
 #### 6.1 JMeter HTML Dashboard
 - **Location**: `reports/{test-type}-html/index.html`
@@ -486,7 +486,7 @@ findstr "WARN" jmeter.log
 - **Application Logs**: Backend application logs during test
 - **System Logs**: OS-level performance metrics (if monitored)
 
-### 7. 🚨 Troubleshooting cực kỳ chi tiết
+### 7.  Troubleshooting cực kỳ chi tiết
 
 #### 7.1 Environment Issues
 | Lỗi | Nguyên nhân | Cách fix |
@@ -528,35 +528,35 @@ findstr "WARN" jmeter.log
 | `Lock wait timeout exceeded` | Database deadlocks | Optimize queries, reduce concurrent writes |
 | Slow query performance | Database not optimized | Add indexes, optimize queries |
 
-### 8. 💡 Best Practices
+### 8.  Best Practices
 
 #### 8.1 Test Design
-- ✅ **Start với baseline test** để establish performance benchmark
-- ✅ **Use realistic test data** từ production-like datasets
-- ✅ **Implement proper ramp-up** để avoid sudden load spikes
-- ✅ **Monitor system resources** during test execution
-- ✅ **Test one variable at a time** để isolate performance factors
-- ❌ **Không chạy GUI mode** với > 50 concurrent users
-- ❌ **Không skip warm-up period** cho JVM-based applications
+- **Start với baseline test** để establish performance benchmark
+- **Use realistic test data** từ production-like datasets
+- **Implement proper ramp-up** để avoid sudden load spikes
+- **Monitor system resources** during test execution
+- **Test one variable at a time** để isolate performance factors
+-  **Không chạy GUI mode** với > 50 concurrent users
+-  **Không skip warm-up period** cho JVM-based applications
 
 #### 8.2 Test Execution
-- ✅ **Always run non-GUI mode** cho production tests
-- ✅ **Clean up results** trước mỗi test run
-- ✅ **Monitor backend logs** during test execution
-- ✅ **Use distributed testing** cho very high loads
-- ✅ **Validate test environment** trước khi chạy
-- ❌ **Không chạy tests** trên shared/unstable environments
-- ❌ **Không ignore error rates** > 1%
+- **Always run non-GUI mode** cho production tests
+- **Clean up results** trước mỗi test run
+- **Monitor backend logs** during test execution
+- **Use distributed testing** cho very high loads
+- **Validate test environment** trước khi chạy
+-  **Không chạy tests** trên shared/unstable environments
+-  **Không ignore error rates** > 1%
 
 #### 8.3 Results Analysis
-- ✅ **Focus on percentiles** (90th, 95th) hơn là averages
-- ✅ **Compare với baseline** để identify regressions
-- ✅ **Analyze trends over time** thay vì single point metrics
-- ✅ **Correlate với system metrics** (CPU, memory, disk I/O)
-- ❌ **Không rely solely on average** response times
-- ❌ **Không ignore outliers** without investigation
+- **Focus on percentiles** (90th, 95th) hơn là averages
+- **Compare với baseline** để identify regressions
+- **Analyze trends over time** thay vì single point metrics
+- **Correlate với system metrics** (CPU, memory, disk I/O)
+-  **Không rely solely on average** response times
+-  **Không ignore outliers** without investigation
 
-### 9. 📋 Commands Cheatsheet
+### 9.  Commands Cheatsheet
 
 #### 9.1 Maven Commands
 ```bash
@@ -681,7 +681,7 @@ set HEAP=-Xms2g -Xmx2g -XX:MaxMetaspaceSize=256m -XX:+UseG1GC
 
 ## 4. Thực Thi Kịch Bản (Execution Guide)
 
-⚠️ **CHÚ Ý:** GUI Mode (Giao diện phần mềm) chỉ dành cho việc tạo kịch bản (Edit .jmx) và kiểm tra lỗi logic (Debug 1-2 Users).
+ **CHÚ Ý:** GUI Mode (Giao diện phần mềm) chỉ dành cho việc tạo kịch bản (Edit .jmx) và kiểm tra lỗi logic (Debug 1-2 Users).
 
 ### 4.1. Chuẩn Bị Workspace
 Trước khi chạy test, luôn phải dọn dẹp kết quả cũ:
@@ -743,9 +743,9 @@ java -cp target/modis-performance-tests-2.0.0-jar-with-dependencies.jar com.modi
 
 ## Tôn Chỉ (Mantra)
 > "Không ai đoán được hệ thống chịu được bao nhiêu User, cho đến khi nó thực sự sập. Hãy chạy Stress Test một cách có trách nhiệm."
-## 🚀 Hướng dẫn chạy đầy đủ
+##  Hướng dẫn chạy đầy đủ
 
-### 1. 🛠️ Setup môi trường
+### 1.  Setup môi trường
 
 #### 1.1 Cài đặt Java 17 (Bắt buộc)
 ```bash
@@ -803,9 +803,9 @@ set HEAP=-Xms2g -Xmx4g -XX:MaxMetaspaceSize=256m -XX:+UseG1GC
 # -XX:+UseG1GC: Use G1 garbage collector (better for large heaps)
 ```
 
-### 2. 🌐 Kiểm tra Backend API (Render.com)
+### 2.  Kiểm tra Backend API (Render.com)
 
-**⚠️ QUAN TRỌNG**: Framework test với deployed backend trên Render.com!
+** QUAN TRỌNG**: Framework test với deployed backend trên Render.com!
 
 ```bash
 # Backend API đang chạy tại (theo config thực tế):
@@ -819,7 +819,7 @@ curl https://modis-backend.onrender.com/actuator/health
 curl https://modis-backend.onrender.com/api/auth/health
 # Hoặc mở browser: https://modis-backend.onrender.com
 
-# ⚠️ Note: Render free tier có cold start ~30-90s nếu không có traffic
+#  Note: Render free tier có cold start ~30-90s nếu không có traffic
 # Timeout trong config đã được set 90s để handle cold start
 ```
 
@@ -830,7 +830,7 @@ curl https://modis-backend.onrender.com/api/auth/health
 - **Database**: MongoDB Atlas (cloud)
 - **Cache**: Redis Cloud
 
-### 3. ⚡ Build Java Utilities (Bắt buộc)
+### 3. Build Java Utilities (Bắt buộc)
 
 #### Bước 1: Switch to Java 17
 ```bash
@@ -857,9 +857,54 @@ dir target\modis-performance-tests-2.0.0-jar-with-dependencies.jar
 # [INFO] Total time: XX.XXX s
 ```
 
-### 4. 🎯 Chạy Performance Tests
+### 4.  Chạy Performance Tests
 
 #### 4.1 Sử dụng Execution Scripts (Khuyến nghị)
+
+**Bộ lệnh khuyến nghị cho báo cáo TLTN (Render/free tier):**
+```bash
+run-load-test.bat 20 120 300
+run-image-upload-test.bat 10 60 300
+run-stress-test.bat 80 120 300
+run-spike-test.bat 150 30 180
+run-endurance-test.bat 20 300 3600
+```
+
+**Bộ lệnh chạy local để không tốn quota Render:**
+
+Trước tiên chạy backend local:
+```bash
+cd C:\DATLTN\Modis_BE_TL
+mvn spring-boot:run
+```
+
+Sau đó mở terminal khác tại thư mục JMeter:
+```bash
+cd C:\DATLTN\testing\performance\jmeter
+```
+
+Chạy từng loại test local bằng JMeter CLI:
+```bash
+jmeter -n -t test-plans\load-tests\modis-load-test.jmx -Jusers=20 -Jramp_up=120 -Jduration=300 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-load-test.jtl -e -o reports\local-load-test
+
+jmeter -n -t test-plans\load-tests\modis-image-upload-test.jmx -Jusers=10 -Jramp_up=60 -Jduration=300 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-image-upload-test.jtl -e -o reports\local-image-upload-test
+
+jmeter -n -t test-plans\stress-tests\modis-stress-test.jmx -Jusers=80 -Jramp_up=120 -Jduration=300 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-stress-test.jtl -e -o reports\local-stress-test
+
+jmeter -n -t test-plans\spike-tests\modis-spike-test.jmx -Jusers=150 -Jramp_up=30 -Jduration=180 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-spike-test.jtl -e -o reports\local-spike-test
+
+jmeter -n -t test-plans\endurance-tests\modis-endurance-test.jmx -Jusers=20 -Jramp_up=300 -Jduration=3600 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-endurance-test.jtl -e -o reports\local-endurance-test
+```
+
+Smoke test local đã kiểm tra thành công với `2 users`, `30s`, `0%` lỗi. Khi chạy local, dữ liệu request không đi qua Render nên không tiêu tốn quota bandwidth của Render.
+
+| Test type | Users | Ramp-up | Duration | Mục đích |
+| --- | ---: | ---: | ---: | --- |
+| Load Test | 20 | 120s | 300s | Đánh giá tải thông thường |
+| Image Upload Test | 10 | 60s | 300s | Đánh giá upload ảnh |
+| Stress Test | 80 | 120s | 300s | Kiểm tra tải cao hơn bình thường |
+| Spike Test | 150 | 30s | 180s | Kiểm tra tải tăng đột ngột |
+| Endurance Test | 20 | 300s | 3600s | Kiểm tra ổn định trong 1 giờ |
 
 **Load Test (Normal traffic):**
 ```bash
@@ -893,12 +938,12 @@ run-spike-test.bat 1000 60 300
 
 **Endurance Test (Long-running):**
 ```bash
-# Chạy endurance test (30 users, 2 hours)
+# Chạy endurance test (30 users, 1 hour)
 run-endurance-test.bat
 
 # Custom endurance test
-run-endurance-test.bat 50 600 7200
-# 50 users, 600s ramp-up, 7200s (2h) duration
+run-endurance-test.bat 50 600 3600
+# 50 users, 600s ramp-up, 3600s (1h) duration
 ```
 
 **Image Upload Test:**
@@ -949,7 +994,7 @@ mvn test -Pspike-test
 mvn test -Pendurance-test
 ```
 
-### 5. 📊 Xem Performance Reports
+### 5.  Xem Performance Reports
 
 #### 5.1 HTML Dashboard
 ```bash
@@ -995,7 +1040,7 @@ java -cp target\modis-performance-tests-2.0.0-jar-with-dependencies.jar com.modi
 java -cp target\modis-performance-tests-2.0.0-jar-with-dependencies.jar com.modis.performance.comparator.PerformanceComparator
 ```
 
-### 6. 🔄 Flow hoạt động thực tế
+### 6.  Flow hoạt động thực tế
 
 #### 6.1 Performance Testing Flow
 ```text
@@ -1029,14 +1074,14 @@ Spike Test (500 users, 5min):
 ├── Target: Traffic spike simulation
 └── Metrics: System resilience
 
-Endurance Test (30 users, 2h):
+Endurance Test (30 users, 1h):
 ├── Ramp-up: 10 minutes
 ├── Steady state: 110 minutes
 ├── Target: Memory leaks, stability
 └── Metrics: Long-term performance
 ```
 
-### 7. 🚨 Troubleshooting theo Render.com
+### 7.  Troubleshooting theo Render.com
 
 #### 7.1 Environment Issues
 | Lỗi | Nguyên nhân | Cách fix |
@@ -1070,35 +1115,35 @@ Endurance Test (30 users, 2h):
 | High error rate (>5%) | Render overload hoặc config sai | Reduce users, check Render logs |
 | Zero throughput | Test plan configuration issue | Verify .jmx file và parameters |
 
-### 8. 💡 Best Practices theo Render.com
+### 8.  Best Practices theo Render.com
 
 #### 8.1 Test Design
-- ✅ **Handle cold start delays** với 90s timeout
-- ✅ **Use realistic ramp-up** để avoid overwhelming Render
-- ✅ **Monitor Render metrics** during test execution
-- ✅ **Test with realistic data** từ CSV files
-- ✅ **Implement proper delays** giữa requests
-- ❌ **Không ignore cold start** của Render free tier
-- ❌ **Không chạy quá nhiều concurrent users** với free tier
+- **Handle cold start delays** với 90s timeout
+- **Use realistic ramp-up** để avoid overwhelming Render
+- **Monitor Render metrics** during test execution
+- **Test with realistic data** từ CSV files
+- **Implement proper delays** giữa requests
+-  **Không ignore cold start** của Render free tier
+-  **Không chạy quá nhiều concurrent users** với free tier
 
 #### 8.2 Test Execution
-- ✅ **Always run non-GUI mode** cho production tests
-- ✅ **Clean up results** trước mỗi test run
-- ✅ **Monitor backend logs** during test execution
-- ✅ **Use Java utilities** thay vì Groovy scripts
-- ✅ **Validate test environment** trước khi chạy
-- ❌ **Không chạy tests** khi Render đang deploy
-- ❌ **Không ignore error rates** > 1%
+- **Always run non-GUI mode** cho production tests
+- **Clean up results** trước mỗi test run
+- **Monitor backend logs** during test execution
+- **Use Java utilities** thay vì Groovy scripts
+- **Validate test environment** trước khi chạy
+-  **Không chạy tests** khi Render đang deploy
+-  **Không ignore error rates** > 1%
 
 #### 8.3 Results Analysis
-- ✅ **Focus on percentiles** (90th, 95th) hơn là averages
-- ✅ **Account for cold start** trong analysis
-- ✅ **Compare với baseline** để identify regressions
-- ✅ **Use custom Java tools** cho advanced analysis
-- ❌ **Không rely solely on average** response times
-- ❌ **Không ignore Render-specific** performance characteristics
+- **Focus on percentiles** (90th, 95th) hơn là averages
+- **Account for cold start** trong analysis
+- **Compare với baseline** để identify regressions
+- **Use custom Java tools** cho advanced analysis
+-  **Không rely solely on average** response times
+-  **Không ignore Render-specific** performance characteristics
 
-### 9. 📋 Commands Cheatsheet
+### 9.  Commands Cheatsheet
 
 #### 9.1 Environment Commands
 ```bash
@@ -1122,9 +1167,18 @@ jmeter -?
 mvn clean package -DskipTests
 
 # Run tests với scripts
-run-load-test.bat 50 300 600
-run-stress-test.bat 200 180 900
-run-spike-test.bat 500 60 300
+run-load-test.bat 20 120 300
+run-image-upload-test.bat 10 60 300
+run-stress-test.bat 80 120 300
+run-spike-test.bat 150 30 180
+run-endurance-test.bat 20 300 3600
+
+# Run local để không tốn quota Render
+jmeter -n -t test-plans\load-tests\modis-load-test.jmx -Jusers=20 -Jramp_up=120 -Jduration=300 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-load-test.jtl -e -o reports\local-load-test
+jmeter -n -t test-plans\load-tests\modis-image-upload-test.jmx -Jusers=10 -Jramp_up=60 -Jduration=300 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-image-upload-test.jtl -e -o reports\local-image-upload-test
+jmeter -n -t test-plans\stress-tests\modis-stress-test.jmx -Jusers=80 -Jramp_up=120 -Jduration=300 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-stress-test.jtl -e -o reports\local-stress-test
+jmeter -n -t test-plans\spike-tests\modis-spike-test.jmx -Jusers=150 -Jramp_up=30 -Jduration=180 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-spike-test.jtl -e -o reports\local-spike-test
+jmeter -n -t test-plans\endurance-tests\modis-endurance-test.jmx -Jusers=20 -Jramp_up=300 -Jduration=3600 -Jbase_url=localhost -Jprotocol=http -Jport=8080 -l results\local-endurance-test.jtl -e -o reports\local-endurance-test
 
 # Run tests với JMeter CLI
 jmeter -n -t test-plans\load-tests\modis-load-test.jmx -l results\test.jtl -e -o reports\html
@@ -1156,7 +1210,7 @@ curl -w "@curl-format.txt" -o /dev/null -s https://modis-backend.onrender.com
 
 ---
 
-## 🎯 Kết luận
+##  Kết luận
 
 **Modis Performance Framework** là một framework production-ready với:
 

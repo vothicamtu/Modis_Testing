@@ -5,9 +5,6 @@
 # Maven
 target/
 
-# Logs
-*.log
-
 # Build
 *.class
 *.jar
@@ -16,26 +13,27 @@ target/
 .DS_Store
 Thumbs.db
 
-# JMeter reports
-performance/jmeter/report/
-
 # bower
 bower_components/
 
-# screenshots
-screenshots/
-target/ui-dumps/
-
-# generated reports
-reports/
+# allure (không dùng)
 allure-results/
 allure-report/
 
-# JMeter
-*.jtl
-
-# Screenshots
-*.png
-
 # Local scripts
 start-appium-server.bat
+
+!performance/jmeter/jmeter.log
+!performance/jmeter/results/
+!performance/jmeter/results/*.jtl
+!performance/jmeter/results/*.csv
+!performance/jmeter/reports/
+!performance/jmeter/reports/**
+
+# Appium logs, reports, screenshots → tracked
+!automation/appium-java/logs/
+!automation/appium-java/logs/*.log
+!automation/appium-java/reports/
+!automation/appium-java/reports/*.html
+!automation/appium-java/screenshots/
+!automation/appium-java/screenshots/*.png

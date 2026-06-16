@@ -7,7 +7,7 @@ setlocal
 REM Default values
 set USERS=30
 set RAMP_UP=600
-set DURATION=7200
+set DURATION=3600
 set BASE_URL=modis-backend.onrender.com
 
 REM Override with command line arguments if provided
