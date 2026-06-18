@@ -71,6 +71,28 @@ cd C:\DATLTN\testing\automation\appium-java
 mvn test
 ```
 
+Chạy từng module automation theo class test:
+
+```bash
+mvn -Dtest=AuthenticationTests test
+mvn -Dtest=FeedTests test
+mvn -Dtest=FriendsTests test
+mvn -Dtest=MessagingTests test
+mvn -Dtest=PhotoSharingTests test
+mvn -Dtest=SearchTests test
+```
+
+Chạy từng module automation theo group TestNG:
+
+```bash
+mvn test -Dgroups=authentication
+mvn test -Dgroups=feed
+mvn test -Dgroups=friends
+mvn test -Dgroups=messaging
+mvn test -Dgroups=photo-sharing
+mvn test -Dgroups=search
+```
+
 Chạy performance load test qua Maven profile:
 
 ```bash
@@ -78,11 +100,31 @@ cd C:\DATLTN\testing\performance\jmeter
 mvn test -Pload-test
 ```
 
+Chạy từng module performance theo Maven profile:
+
+```bash
+mvn test -Pload-test
+mvn test -Pstress-test
+mvn test -Pspike-test
+mvn test -Pendurance-test
+```
+
 Chạy script JMeter trên Windows:
 
 ```bash
 cd C:\DATLTN\testing\performance\jmeter
 run-load-test.bat
+```
+
+Chạy từng module performance bằng script Windows:
+
+```bash
+run-load-test.bat
+run-stress-test.bat
+run-spike-test.bat
+run-endurance-test.bat
+run-image-upload-test.bat
+run-all-tests.bat
 ```
 
 Sử dụng kết quả:
