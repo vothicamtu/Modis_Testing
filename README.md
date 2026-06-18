@@ -1,116 +1,162 @@
-# Modis Testing Deliverables
+﻿# Modis Testing
 
-Tài liệu tổng hợp các hạng mục cần nộp cho phần kiểm thử tự động của tiểu luận tốt nghiệp Modis.
+## Tổng quan dự án
 
-## 1. Đối chiếu yêu cầu nộp
+`testing` chứa source code kiểm thử cho Modis, gồm hai phần:
 
-| Yêu cầu | File/thư mục hiện có | Trạng thái |
-| --- | --- | --- |
-| Báo cáo tiểu luận tốt nghiệp hoàn chỉnh Word/PDF trình bày lý thuyết, thực hành và đánh giá kết quả | `C:\DATLTN\22130308_ĐỀCƯƠNGTIỂULUẬN.docx` | Thiếu bản báo cáo hoàn chỉnh; hiện mới thấy đề cương, chưa thấy PDF |
-| Bộ test case chi tiết Excel/CSV | `C:\DATLTN\TEST_CASE_TLTN_ANDROID_FROM_CODE.xlsx` | Đã có Excel |
-| Script kiểm thử tự động bằng Java, tổ chức theo Page Object Model | `testing/automation/appium-java/src/main/java/com/modis/pages/`, `testing/automation/appium-java/src/test/java/com/modis/tests/` | Đã có |
-| Source code kiểm thử tự động bằng Appium Java lưu trên GitHub | `testing/automation/appium-java/` có source và `.github/workflows/mobile-tests.yml` | Source đã có; cần kiểm tra đã push lên GitHub hay chưa |
-| Báo cáo kết quả kiểm thử HTML có ảnh và log minh họa | `testing/automation/appium-java/reports/`, `target/surefire-reports/`, `screenshots/`, `logs/` | Đã có |
-| Video demo chạy test bằng Appium Inspector/OBS | Chưa tìm thấy file `.mp4`, `.mkv`, `.avi`, `.mov`, `.wmv` trong workspace ngoài `node_modules/build` | Thiếu |
-| README hướng dẫn cài đặt và chạy test | `testing/automation/appium-java/README.md` | Đã cập nhật |
+- `automation/appium-java`: automation test mobile bằng Java, Appium và TestNG.
+- `performance/jmeter`: performance test backend bằng Apache JMeter và Java utilities.
 
-## 2. Thành phần kiểm thử tự động
+## Công nghệ sử dụng
 
-Thư mục chính:
+- Java 11 cho Appium automation.
+- Maven.
+- Appium Java Client 9.3.0.
+- Selenium 4.22.0.
+- TestNG 7.8.0.
+- ExtentReports và Allure TestNG.
+- Java 17 cho JMeter performance utilities.
+- Apache JMeter 5.6.2 qua Maven dependency/plugin.
+- Jackson, Commons CSV, Commons Math, Logback.
 
-```text
-testing/automation/appium-java/
-```
+## Kiến trúc
 
-Công nghệ:
+- Automation module dùng Page Object Model.
+- Performance module tách JMeter `.jmx` test plans, CSV test data và Java utilities để parse/compare kết quả `.jtl`.
+- Không có application runtime trong thư mục `testing`; đây là workspace test riêng.
 
-- Java 11
-- Maven
-- Appium Java Client 9.3.0
-- Selenium 4.22.0
-- TestNG 7.8.0
-- ExtentReports, TestNG HTML report, Allure results
-
-Mô hình tổ chức:
-
-- `src/main/java/com/modis/pages/`: Page Object Model cho các màn hình.
-- `src/main/java/com/modis/base/BasePage.java`: thao tác dùng chung cho Page Object.
-- `src/test/java/com/modis/base/BaseTest.java`: setup/teardown Appium session.
-- `src/test/java/com/modis/tests/`: test case tự động.
-- `src/test/resources/config/`: cấu hình Android/iOS/test.
-- `src/test/resources/testdata/`: dữ liệu test JSON.
-
-## 3. Module test hiện có
-
-| Module | File |
-| --- | --- |
-| Authentication | `AuthenticationTests.java` |
-| Feed | `FeedTests.java` |
-| Friends | `FriendsTests.java` |
-| Messaging | `MessagingTests.java` |
-| Photo Sharing | `PhotoSharingTests.java` |
-| Search | `SearchTests.java` |
-
-Suite chính:
+## Cấu trúc thư mục
 
 ```text
-testing/automation/appium-java/testng.xml
+testing/
+|-- automation/
+|   `-- appium-java/
+|       |-- src/main/java/com/modis/
+|       |-- src/test/java/com/modis/
+|       |-- src/test/resources/
+|       |-- pom.xml
+|       `-- testng.xml
+`-- performance/
+    `-- jmeter/
+        |-- configs/
+        |-- scripts/
+        |-- src/main/java/com/modis/performance/
+        |-- test-data/
+        |-- test-plans/
+        `-- pom.xml
 ```
 
-## 4. Cách chạy nhanh
+## Cài đặt
 
-Mở terminal tại thư mục automation:
+Automation:
 
 ```bash
 cd C:\DATLTN\testing\automation\appium-java
-```
-
-Khởi động Appium:
-
-```bash
-start-appium-server.bat
-```
-
-Kiểm tra thiết bị:
-
-```bash
-adb devices
-```
-
-Build test:
-
-```bash
 mvn test-compile
 ```
 
-Chạy toàn bộ test:
+Performance:
 
 ```bash
-mvn test -DsuiteXmlFile=testng.xml
+cd C:\DATLTN\testing\performance\jmeter
+mvn clean package -DskipTests
 ```
 
-Chạy smoke/regression:
+## Hướng dẫn chạy và sử dụng
+
+Chạy automation suite:
 
 ```bash
-mvn test -Dgroups=smoke
-mvn test -Dgroups=regression
+cd C:\DATLTN\testing\automation\appium-java
+mvn test
 ```
 
-## 5. Vị trí kết quả
+Chạy performance load test qua Maven profile:
 
-| Kết quả | Đường dẫn |
-| --- | --- |
-| Extent HTML report mới nhất | `testing/automation/appium-java/reports/ModisReport_*.html` |
-| TestNG HTML report | `testing/automation/appium-java/target/surefire-reports/index.html` |
-| Email-friendly report | `testing/automation/appium-java/target/surefire-reports/emailable-report.html` |
-| Screenshot minh họa | `testing/automation/appium-java/screenshots/` |
-| Log chạy test | `testing/automation/appium-java/logs/` |
-| Allure raw results | `testing/automation/appium-java/target/allure-results/` |
+```bash
+cd C:\DATLTN\testing\performance\jmeter
+mvn test -Pload-test
+```
 
-## 6. Việc còn cần bổ sung trước khi nộp
+Chạy script JMeter trên Windows:
 
-1. Viết bản báo cáo tiểu luận hoàn chỉnh dạng Word và export PDF. File hiện có ở root là đề cương, chưa phải báo cáo hoàn chỉnh.
-2. Quay video demo chạy test bằng OBS hoặc Appium Inspector, lưu vào workspace, ví dụ `testing/automation/appium-java/demo/Modis_Appium_Demo.mp4`.
-3. Xác nhận repository GitHub đã chứa source `testing/automation/appium-java` và cập nhật link GitHub vào báo cáo/README nếu giảng viên yêu cầu.
-4. Mở file Excel `TEST_CASE_TLTN_ANDROID_FROM_CODE.xlsx` kiểm tra lần cuối các cột thường cần có: ID, module, mục tiêu, precondition, steps, expected result, actual result, status, note.
+```bash
+cd C:\DATLTN\testing\performance\jmeter
+run-load-test.bat
+```
 
+Sử dụng kết quả:
+
+- Automation tạo report trong `automation/appium-java/reports`, `target/surefire-reports`, `target/allure-results`, `screenshots` và `logs`.
+- Performance tạo file `.jtl` trong `performance/jmeter/results` và HTML report trong `performance/jmeter/reports`.
+
+## Biến môi trường và cấu hình
+
+Không có `.env` trong testing module. Cấu hình test nằm trong các file:
+
+```text
+automation/appium-java/src/test/resources/config/test.properties
+automation/appium-java/src/test/resources/config/android.properties
+automation/appium-java/src/test/resources/config/ios.properties
+performance/jmeter/configs/modis-config.properties
+```
+
+## API Documentation
+
+Testing module không tạo API. Performance tests đang trỏ tới backend URL trong:
+
+```text
+performance/jmeter/configs/modis-config.properties
+```
+
+Giá trị hiện tại:
+
+```text
+https://modis-backend.onrender.com
+```
+
+## Dependency quan trọng
+
+Dependency được khai báo trong hai file Maven:
+
+- `automation/appium-java/pom.xml`
+- `performance/jmeter/pom.xml`
+
+## Scripts
+
+Automation:
+
+```bash
+run-tests.bat
+run-tests.sh
+run-real-data-tests.bat
+run-real-data-tests.sh
+```
+
+Performance:
+
+```bash
+run-tests.bat
+run-tests.sh
+run-load-test.bat
+run-load-test.sh
+run-stress-test.bat
+run-stress-test.sh
+run-spike-test.bat
+run-endurance-test.bat
+run-image-upload-test.bat
+run-all-tests.bat
+run-all-tests.sh
+```
+
+## Giải thích số liệu và cấu hình quan trọng
+
+- Automation compile target là Java 11 theo `automation/appium-java/pom.xml`.
+- Performance compile target là Java 17 theo `performance/jmeter/pom.xml`.
+- Appium server mặc định là `http://127.0.0.1:4723` theo `test.properties`.
+- Android package test là `com.modis`, activity là `com.modis.MainActivity`.
+- JMeter target backend là `https://modis-backend.onrender.com`.
+- Load test mặc định: 50 users, ramp-up 300 giây, duration 600 giây.
+- Stress test mặc định: 200 users, ramp-up 180 giây, duration 900 giây.
+- Spike test mặc định: 500 users, ramp-up 60 giây, duration 300 giây.
+- Endurance test mặc định: 30 users, ramp-up 600 giây, duration 3600 giây.

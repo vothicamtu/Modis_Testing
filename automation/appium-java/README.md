@@ -1,185 +1,149 @@
-# Modis Appium Java Automation Testing
+﻿# Modis Appium Java Automation
 
-Tài liệu hướng dẫn cài đặt, chạy test và xem kết quả kiểm thử tự động cho ứng dụng Android Modis. Bộ test được viết bằng Java, Appium, TestNG và tổ chức theo mô hình Page Object Model (POM).
+## Tổng quan dự án
 
-## 1. Thông tin nhanh
+Module này chứa automation tests cho mobile app Modis bằng Java, Appium và TestNG. Source code được tổ chức theo Page Object Model và có test cho:
 
-| Hạng mục | Nội dung |
-| --- | --- |
-| Nền tảng kiểm thử | Android |
-| Ngôn ngữ | Java 11 |
-| Build tool | Maven |
-| Automation tool | Appium Java Client 9.3.0 |
-| Test runner | TestNG 7.8.0 |
-| Báo cáo | TestNG HTML, ExtentReports, Allure results |
-| Ảnh minh họa | `screenshots/`, `target/screenshots/` |
-| Log | `logs/` |
+- Authentication.
+- Feed.
+- Friends.
+- Messaging.
+- Photo sharing.
+- Search.
 
-## 2. Cấu trúc thư mục
+## Công nghệ sử dụng
+
+- Java 11.
+- Maven.
+- Appium Java Client 9.3.0.
+- Selenium 4.22.0.
+- TestNG 7.8.0.
+- ExtentReports 5.1.1.
+- Allure TestNG 2.24.0.
+- Jackson Databind/YAML.
+- Logback.
+- AssertJ.
+- WebDriverManager.
+- JavaFaker.
+- JsonPath.
+- OkHttp.
+- Awaitility.
+
+## Kiến trúc
+
+- Page Object Model trong `src/main/java/com/modis/pages`.
+- Base page trong `src/main/java/com/modis/base/BasePage.java`.
+- Driver/session management trong `drivers/DriverManager.java` và `src/test/java/com/modis/base/BaseTest.java`.
+- Test listener trong `listeners/TestListener.java`.
+- Test data JSON trong `src/test/resources/testdata`.
+- Cấu hình platform và Appium capabilities trong `src/test/resources/config`.
+
+## Cấu trúc thư mục
 
 ```text
-testing/automation/appium-java/
-├── src/main/java/com/modis/
-│   ├── base/BasePage.java
-│   ├── constants/AppConstants.java
-│   ├── constants/TestIDs.java
-│   ├── drivers/DriverManager.java
-│   ├── listeners/TestListener.java
-│   ├── pages/
-│   │   ├── AllImagesPage.java
-│   │   ├── ConversationPage.java
-│   │   ├── FriendsPage.java
-│   │   ├── HomePage.java
-│   │   ├── LoadingPage.java
-│   │   ├── LoginPage.java
-│   │   ├── MessagePage.java
-│   │   ├── ProfilePage.java
-│   │   ├── SendPhotoPage.java
-│   │   ├── SignupPage.java
-│   │   └── TakePage.java
-│   └── utils/
-├── src/test/java/com/modis/
-│   ├── base/BaseTest.java
-│   └── tests/
-│       ├── AuthenticationTests.java
-│       ├── FeedTests.java
-│       ├── FriendsTests.java
-│       ├── MessagingTests.java
-│       ├── PhotoSharingTests.java
-│       ├── SearchTests.java
-│       └── TestSessionHelper.java
-├── src/test/resources/
-│   ├── config/
-│   ├── testdata/
-│   └── testsuites/modis-real-data-tests.xml
-├── reports/
-├── screenshots/
-├── logs/
-├── pom.xml
-├── testng.xml
-├── run-tests.bat
-├── run-real-data-tests.bat
-└── start-appium-server.bat
+automation/appium-java/
+|-- src/
+|   |-- main/java/com/modis/
+|   |   |-- base/        BasePage
+|   |   |-- constants/   App constants và testIDs
+|   |   |-- drivers/     DriverManager
+|   |   |-- listeners/   TestNG listener/report hook
+|   |   |-- pages/       Page Object classes
+|   |   `-- utils/       Config, wait, gesture, screenshot, logger, API helpers
+|   `-- test/
+|       |-- java/com/modis/
+|       |   |-- base/    BaseTest
+|       |   `-- tests/   Test classes
+|       `-- resources/
+|           |-- config/      Android/iOS/test properties
+|           |-- testdata/    JSON test data
+|           `-- testsuites/  TestNG suite XML
+|-- pom.xml
+|-- testng.xml
+|-- run-tests.bat
+|-- run-tests.sh
+|-- run-real-data-tests.bat
+`-- run-real-data-tests.sh
 ```
 
-## 3. Test scope hiện có
+## Cài đặt
 
-| Module | File test | Nội dung chính |
-| --- | --- | --- |
-| Authentication | `AuthenticationTests.java` | Loading, login hợp lệ/không hợp lệ, validation, signup, logout |
-| Feed | `FeedTests.java` | Xem feed, refresh, scroll, mở bài viết/ảnh, reaction, comment ảnh |
-| Friends | `FriendsTests.java` | Danh sách bạn bè, request, accept/decline, sent request, search, unfriend |
-| Messaging | `MessagingTests.java` | Danh sách hội thoại, mở chat, gửi tin nhắn, input validation, dữ liệu thật |
-| Photo Sharing | `PhotoSharingTests.java` | Mở camera, chụp ảnh, chọn người nhận, gửi ảnh, caption |
-| Search | `SearchTests.java` | Tìm user, không có kết quả, input rỗng/ngắn/dài/ký tự đặc biệt |
+Yêu cầu môi trường:
 
-## 4. Cài đặt môi trường
-
-### 4.1 Công cụ cần có
-
-- JDK 11 hoặc JDK 17, project compile target Java 11.
-- Maven 3.8 trở lên.
-- Node.js LTS.
-- Android Studio, Android SDK Platform Tools, Android Emulator.
+- JDK 11 hoặc JDK mới hơn có thể compile target 11.
+- Maven.
+- Node.js/npm nếu cài Appium qua npm.
+- Android SDK và `adb` nếu chạy Android.
 - Appium Server 2.x.
-- Appium UiAutomator2 driver.
+- UiAutomator2 driver cho Android.
 
-### 4.2 Biến môi trường trên Windows
-
-Thêm các biến sau vào System Environment Variables:
-
-```text
-JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.x.x
-MAVEN_HOME=C:\apache-maven-3.9.x
-ANDROID_HOME=C:\Users\<user>\AppData\Local\Android\Sdk
-```
-
-Thêm vào `Path`:
-
-```text
-%JAVA_HOME%\bin
-%MAVEN_HOME%\bin
-%ANDROID_HOME%\platform-tools
-%ANDROID_HOME%\emulator
-%ANDROID_HOME%\cmdline-tools\latest\bin
-```
-
-Kiểm tra:
-
-```bash
-java -version
-mvn -version
-adb devices
-```
-
-### 4.3 Cài Appium
+Cài Appium và driver:
 
 ```bash
 npm install -g appium
 appium driver install uiautomator2
-appium driver list --installed
 ```
 
-## 5. Chuẩn bị trước khi chạy test
-
-1. Build APK Android của app Modis hoặc đảm bảo app đã cài sẵn trên emulator/thiết bị thật.
-2. Mở emulator hoặc kết nối điện thoại Android đã bật USB debugging.
-3. Kiểm tra thiết bị:
-
-```bash
-adb devices
-```
-
-4. Khởi động Appium server:
+Build test code:
 
 ```bash
 cd C:\DATLTN\testing\automation\appium-java
-start-appium-server.bat
+mvn test-compile
 ```
 
-Hoặc chạy thủ công:
+## Biến môi trường và cấu hình
+
+Module không dùng `.env`. Cấu hình nằm trong:
+
+```text
+src/test/resources/config/test.properties
+src/test/resources/config/android.properties
+src/test/resources/config/ios.properties
+```
+
+Giá trị đang được cấu hình trong source:
+
+- Appium server: `http://127.0.0.1:4723`
+- Android package: `com.modis`
+- Android activity: `com.modis.MainActivity`
+- Android app path: `C:\DATLTN\Modis_FE_TL_ANDROID\android\app\build\outputs\apk\release\app-release.apk`
+- iOS bundle id: `com.modis.app`
+- Platform mặc định: `android`
+
+## Hướng dẫn chạy và sử dụng
+
+Khởi động Appium server:
 
 ```bash
 appium server --port 4723 --address 127.0.0.1
 ```
 
-Kiểm tra server:
+Kiểm tra Android device:
 
 ```bash
-curl http://127.0.0.1:4723/status
+adb devices
 ```
 
-## 6. Chạy test
-
-Di chuyển vào thư mục automation:
+Chạy toàn bộ suite:
 
 ```bash
-cd C:\DATLTN\testing\automation\appium-java
+mvn test
 ```
 
-Biên dịch code:
-
-```bash
-mvn test-compile
-```
-
-Chạy toàn bộ suite theo `testng.xml`:
+Chạy suite XML:
 
 ```bash
 mvn test -DsuiteXmlFile=testng.xml
 ```
 
-Chạy theo group:
+Chạy theo Maven profile:
 
 ```bash
-mvn test -Dgroups=smoke
-mvn test -Dgroups=regression
-mvn test -Dgroups=authentication
-mvn test -Dgroups=friends
-mvn test -Dgroups=photo-sharing
-mvn test -Dgroups=feed
-mvn test -Dgroups=search
-mvn test -Dgroups=messaging
+mvn test -Pandroid
+mvn test -Pios
+mvn test -Psmoke
+mvn test -Pregression
+mvn test -Pparallel
 ```
 
 Chạy từng class:
@@ -193,66 +157,66 @@ mvn -Dtest=PhotoSharingTests test
 mvn -Dtest=SearchTests test
 ```
 
-Chạy bằng script Windows:
+Chạy bằng script:
 
 ```bash
-run-tests.bat --suite smoke
-run-tests.bat --suite regression
+run-tests.bat
 run-real-data-tests.bat
 ```
 
-## 7. Xem báo cáo, ảnh và log
+## API Documentation
 
-Sau khi chạy test, kiểm tra các thư mục sau:
+Module này không cung cấp API. `ApiUtils.java` là helper HTTP client cho test.
 
-| Loại kết quả | Đường dẫn |
-| --- | --- |
-| TestNG report | `target/surefire-reports/index.html` |
-| TestNG emailable report | `target/surefire-reports/emailable-report.html` |
-| ExtentReports | `reports/ModisReport_*.html` |
-| Allure raw results | `target/allure-results/` |
-| Screenshots | `screenshots/`, `target/screenshots/` |
-| Logs | `logs/` |
+## Database
 
-Nếu muốn tạo Allure HTML report:
+Module automation không kết nối database trực tiếp.
+
+## Test Data
+
+```text
+src/test/resources/testdata/users.json
+src/test/resources/testdata/photos.json
+src/test/resources/testdata/messages.json
+src/test/resources/testdata/invalid_login.json
+src/test/resources/testdata/friends.json
+```
+
+## Reports
+
+Sau khi chạy test, kết quả được tạo tại:
+
+```text
+target/surefire-reports/
+target/allure-results/
+reports/
+screenshots/
+logs/
+```
+
+Tạo Allure report:
 
 ```bash
 mvn allure:report
 ```
 
-Report sẽ nằm ở:
+## Scripts
 
-```text
-target/allure-report/index.html
+```bash
+run-tests.bat
+run-tests.sh
+run-real-data-tests.bat
+run-real-data-tests.sh
 ```
 
-## 8. GitHub Actions
+## Giải thích số liệu và cấu hình quan trọng
 
-Project có workflow CI tại:
-
-```text
-.github/workflows/mobile-tests.yml
-```
-
-Khi đưa source lên GitHub, workflow này có thể dùng để build/chạy mobile test và upload report artifact. Cần cấu hình runner/emulator phù hợp trước khi dùng cho môi trường thật.
-
-## 9. Troubleshooting
-
-| Lỗi | Cách xử lý |
-| --- | --- |
-| `adb is not recognized` | Kiểm tra `ANDROID_HOME` và thêm `%ANDROID_HOME%\platform-tools` vào `Path` |
-| `No connected devices` | Mở emulator, cắm lại thiết bị, chạy `adb kill-server` rồi `adb start-server` |
-| `Connection refused` tới Appium | Khởi động Appium server và kiểm tra port `4723` |
-| Không tạo được session | Kiểm tra app package/activity, Android version và UiAutomator2 driver |
-| Test fail do element chưa xuất hiện | Kiểm tra `testID` trong app React Native và wait trong Page Object |
-
-## 10. Checklist bàn giao automation
-
-| Yêu cầu | Trạng thái trong thư mục này |
-| --- | --- |
-| Script kiểm thử tự động Java theo POM | Đã có trong `src/main/java/com/modis` và `src/test/java/com/modis` |
-| Source Appium Java | Đã có, có thể đưa lên GitHub |
-| HTML report có log và ảnh | Đã có `reports/`, `target/surefire-reports/`, `screenshots/`, `logs/` |
-| Hướng dẫn cài đặt/chạy test | README này đã cập nhật |
-| Video demo | Chưa thấy file video trong thư mục này; cần bổ sung file quay bằng OBS/Appium Inspector |
-
+- Maven compiler source/target là `11`.
+- `newCommandTimeout=300`: Appium session cho phép 300 giây không có command trước khi timeout.
+- `implicit.wait=0`: không dùng implicit wait mặc định; test dựa vào explicit wait.
+- `explicit.wait=10`: explicit wait mặc định là 10 giây.
+- `short.wait=3`, `long.wait=30`: các mức chờ phụ trợ cho test.
+- `test.retryCount=2`: retry test tối đa 2 lần theo cấu hình.
+- `screenshot.onFailure=true`: tự chụp ảnh khi test fail.
+- `report.extent.name=ModisAutomationReport.html`: tên report Extent mặc định.
+- `parallel.enabled=false`: cấu hình properties mặc định không bật parallel execution.
